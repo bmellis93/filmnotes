@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Share2 } from "lucide-react";
 
 export type GalleryVideo = {
   id: string;
@@ -18,7 +18,7 @@ export type GalleryVideo = {
   failureReason?: string | null;
 };
 
-type MenuAction = "MANAGE_VERSIONS" | "UNSTACK" | "EDIT_THUMBNAIL";
+type MenuAction = "MANAGE_VERSIONS" | "UNSTACK" | "EDIT_THUMBNAIL" | "SHARE";
 
 type Props = {
   videos: GalleryVideo[];
@@ -212,6 +212,23 @@ export default function VideoGrid({
                     className="absolute right-0 top-10 w-44 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
                   >
+                    <button
+                      role="menuitem"
+                      type="button"
+                      onClick={() => {
+                        closeMenu();
+                        onMenuAction?.(v.id, "SHARE");
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Share2 className="h-3.5 w-3.5" />
+                        Share
+                      </span>
+                    </button>
+
+                    <div className="h-px bg-neutral-900" />
+
                     <button
                       role="menuitem"
                       type="button"

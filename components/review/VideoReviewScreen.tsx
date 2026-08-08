@@ -409,6 +409,8 @@ export default function VideoReviewScreen(props: Props) {
         isComparing={isComparing}
         onToggleCompare={toggleCompare}
         canDownload={canDownload}
+        canShare={isOwner}
+        onShare={() => setIsShareOpen(true)}
         onDownload={() => {
           if (!downloadSrc) return;
           const a = document.createElement("a");

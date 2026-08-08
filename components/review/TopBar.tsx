@@ -6,6 +6,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Columns2,
+  Share2,
 } from "lucide-react";
 
 type Props = {
@@ -27,6 +28,9 @@ type Props = {
   canDownload?: boolean;
   onDownload?: () => void;
 
+  canShare?: boolean;
+  onShare?: () => void;
+
   commentsOpen: boolean;
   onToggleComments: () => void;
 };
@@ -46,6 +50,10 @@ export default function TopBar({
 
   canDownload = false,
   onDownload,
+
+  canShare = false,
+  onShare,
+
   commentsOpen,
   onToggleComments,
 }: Props) {
@@ -123,6 +131,18 @@ export default function TopBar({
             >
               <Download className="h-4 w-4" />
               Download
+            </button>
+          )}
+
+          {canShare && (
+            <button
+              type="button"
+              onClick={onShare}
+              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-200 ring-1 ring-neutral-800 hover:bg-neutral-800"
+              title="Share"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
             </button>
           )}
 

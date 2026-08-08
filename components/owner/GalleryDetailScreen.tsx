@@ -10,6 +10,7 @@ import VideoGrid, { GalleryVideo } from "@/components/owner/VideoGrid";
 
 import UploadVideoModal from "@/components/owner/UploadVideoModal";
 import ShareGalleryModal from "@/components/owner/ShareGalleryModal";
+import ShareModal from "@/components/share-modal";
 import ManageVersionsModal from "@/components/owner/ManageVersionsModal";
 import EditThumbnailModal from "@/components/owner/EditThumbnailModal";
 
@@ -49,6 +50,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
   // Modals
   const [uploadOpen, setUploadOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareVideoId, setShareVideoId] = useState<string | null>(null);
   const [manageOpen, setManageOpen] = useState(false);
   const [retryForVideoId, setRetryForVideoId] = useState<string | null>(null);
   const [editThumbnailVideoId, setEditThumbnailVideoId] = useState<string | null>(null);
@@ -89,6 +91,15 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
       versionsCount: getStackIds(v.id, stacks).length,
     }));
   }, [visibleVideos, showArchived, stacks]);
+
+  // Gallery-level share: every non-archived, playable video, including every
+  // version in a stack (not just the latest) so clients can still switch versions.
+  const shareableVideoIds = useMemo(() => {
+    return visibleVideos
+      .filter((v) => !v.archivedAt)
+      .flatMap((v) => getStackIds(v.id, stacks))
+      .filter((id) => byId.get(id)?.status === "READY");
+  }, [visibleVideos, stacks, byId]);
 
   const inflightReal = useMemo(() => {
     return videos.filter(
@@ -712,6 +723,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
                 if (action === "MANAGE_VERSIONS") openManageFor(videoId);
                 if (action === "UNSTACK") unstack(videoId);
                 if (action === "EDIT_THUMBNAIL") setEditThumbnailVideoId(videoId);
+                if (action === "SHARE") setShareVideoId(videoId);
               }}
               isStackCard={(videoId) => {
                 const parentId = getParentId(videoId, childToParent);
@@ -758,7 +770,20 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
         }}
       />
 
-      <ShareGalleryModal open={shareOpen} onClose={() => setShareOpen(false)} galleryId={galleryId} />
+      <ShareGalleryModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        galleryId={galleryId}
+        title={gallery.name}
+        allowedVideoIds={shareableVideoIds}
+        stacks={stacks}
+      />
+
+      <ShareModal
+        open={Boolean(shareVideoId)}
+        onClose={() => setShareVideoId(null)}
+        videoId={shareVideoId ?? ""}
+      />
 
       <ManageVersionsModal
         open={manageOpen && !manageParentId}
