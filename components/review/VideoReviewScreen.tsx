@@ -86,7 +86,12 @@ export default function VideoReviewScreen(props: Props) {
 
   const sources = sourcesById[videoId];
   const viewSrc = sources?.viewSrc ?? "";
-  const downloadSrc = sources?.originalSrc;
+
+  const downloadHref = useMemo(() => {
+    const base = `/api/owner/videos/${videoId}/download`;
+    const shareToken = mode === "token" ? token : mode === "client" ? shareId : null;
+    return shareToken ? `${base}?token=${encodeURIComponent(shareToken)}` : base;
+  }, [videoId, mode, token, shareId]);
 
   const player = useVideoPlayer({ src: viewSrc });
 
@@ -412,13 +417,7 @@ export default function VideoReviewScreen(props: Props) {
         canShare={isOwner}
         onShare={() => setIsShareOpen(true)}
         onDownload={() => {
-          if (!downloadSrc) return;
-          const a = document.createElement("a");
-          a.href = downloadSrc;
-          a.download = "";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          window.location.href = downloadHref;
         }}
         commentsOpen={commentsOpen}
         onToggleComments={() => {

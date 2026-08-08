@@ -12,18 +12,17 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  // ✅ Owner auth (Phase 4+ can add token access too)
-  const owner = await requireOwnerContext();
-
   // -----------------------------
-  // 1) Fetch video + originalKey
+  // 1) Fetch video + originalKey (unscoped -- permission check happens below,
+  //    since this endpoint serves both owner and share-token requests)
   // -----------------------------
-  const video = await prisma.video.findFirst({
-    where: { id: id, orgId: owner.orgId },
+  const video = await prisma.video.findUnique({
+    where: { id },
     select: {
       id: true,
       orgId: true,
       originalKey: true,
+      originalName: true,
     },
   });
 
@@ -43,13 +42,18 @@ export async function GET(
       allowed = true;
     }
   } catch {
-    // not owner, fall through
+    // not an owner session, fall through to share-token check
   }
 
-  // Token access (only if not owner)
+  // Share-token access (only if not owner), respecting the link's download permission
   if (!allowed) {
     const share = await getShareContextFromRequest(req);
-    if (share && share.orgId === video.orgId && share.videoIds.includes(id)) {
+    if (
+      share &&
+      share.orgId === video.orgId &&
+      share.videoIds.includes(id) &&
+      share.allowDownload
+    ) {
       allowed = true;
     }
   }
@@ -63,7 +67,8 @@ export async function GET(
   // -----------------------------
   const signedUrl = await signR2GetUrl(
     video.originalKey,
-    60 // seconds (short-lived)
+    60, // seconds (short-lived)
+    video.originalName ?? undefined
   );
 
   return NextResponse.redirect(signedUrl);
