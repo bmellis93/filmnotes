@@ -254,9 +254,14 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     setIsAutoQuality(true);
 
     const isHlsSource = src.includes(".m3u8");
-    const hasNativeHls = Boolean(video.canPlayType("application/vnd.apple.mpegurl"));
 
-    if (isHlsSource && !hasNativeHls && Hls.isSupported()) {
+    // Always prefer hls.js over native HLS (e.g. Safari) when MSE is
+    // available, same approach YouTube's web player uses: native playback
+    // gives the browser's built-in decoder no JS API for picking a quality
+    // level, so relying on it means manual selection silently doesn't work
+    // anywhere it's actually needed. Native <video src> is only a fallback
+    // for engines without MSE support at all (e.g. very old iOS Safari).
+    if (isHlsSource && Hls.isSupported()) {
       setIsHlsActive(true);
 
       const hls = new Hls();
