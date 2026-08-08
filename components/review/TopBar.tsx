@@ -23,6 +23,7 @@ type Props = {
   canCompare?: boolean;
   isComparing?: boolean;
   onToggleCompare?: () => void;
+  onSelectCompare?: () => void;
 
   // right
   canDownload?: boolean;
@@ -47,6 +48,7 @@ export default function TopBar({
   canCompare = false,
   isComparing = false,
   onToggleCompare,
+  onSelectCompare,
 
   canDownload = false,
   onDownload,
@@ -88,7 +90,14 @@ export default function TopBar({
           <div className="shrink-0">
             <select
               value={version}
-              onChange={(e) => onVersionChange(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (next === "__compare__") {
+                  onSelectCompare?.();
+                  return;
+                }
+                onVersionChange(next);
+              }}
               className="rounded-lg bg-neutral-900 px-2 py-1 text-xs text-neutral-200 outline-none ring-1 ring-neutral-800 hover:bg-neutral-800"
               aria-label="Version"
               title="Version"
@@ -98,6 +107,9 @@ export default function TopBar({
                   v{idx + 1}
                 </option>
               ))}
+              {canCompare && onSelectCompare && (
+                <option value="__compare__">Side by side…</option>
+              )}
             </select>
           </div>
         </div>

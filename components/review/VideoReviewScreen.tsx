@@ -413,6 +413,7 @@ export default function VideoReviewScreen(props: Props) {
         canCompare={canCompare}
         isComparing={isComparing}
         onToggleCompare={toggleCompare}
+        onSelectCompare={enterComparisonView}
         canDownload={canDownload}
         canShare={isOwner}
         onShare={() => setIsShareOpen(true)}
