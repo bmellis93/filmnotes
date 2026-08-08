@@ -128,7 +128,7 @@ export async function initOwnerUpload(opts: {
   return data;
 }
 
-async function uploadThumbnail(videoId: string, thumbnailFile: File) {
+export async function uploadThumbnail(videoId: string, thumbnailFile: File) {
   const initRes = await fetch(`/api/owner/videos/${videoId}/thumbnail/init`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -165,6 +165,9 @@ async function uploadThumbnail(videoId: string, thumbnailFile: File) {
     const text = await confirmRes.text().catch(() => "");
     throw new Error(`Thumbnail confirm failed (${confirmRes.status}): ${text}`);
   }
+
+  const confirmData = (await confirmRes.json()) as { thumbnailUrl: string };
+  return confirmData.thumbnailUrl;
 }
 
 export async function uploadVideoToR2(params: {

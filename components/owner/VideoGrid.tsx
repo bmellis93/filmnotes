@@ -18,7 +18,7 @@ export type GalleryVideo = {
   failureReason?: string | null;
 };
 
-type MenuAction = "MANAGE_VERSIONS" | "UNSTACK";
+type MenuAction = "MANAGE_VERSIONS" | "UNSTACK" | "EDIT_THUMBNAIL";
 
 type Props = {
   videos: GalleryVideo[];
@@ -183,65 +183,81 @@ export default function VideoGrid({
                 </button>
               )}
 
-              {/* menu (STACK CARDS ONLY) */}
-              {stackCard && (
-                <div className="relative" ref={menuOpen ? openMenuRootRef : null}>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpenForId((prev) => (prev === v.id ? null : v.id));
-                    }}
-                    className={[
-                      "h-8 w-8 rounded-lg border border-neutral-800 bg-neutral-950/60 backdrop-blur",
-                      "grid place-items-center text-neutral-200 transition hover:bg-neutral-900",
-                      "opacity-0 group-hover:opacity-100",
-                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
-                    ].join(" ")}
+              {/* menu (all cards) */}
+              <div className="relative" ref={menuOpen ? openMenuRootRef : null}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpenForId((prev) => (prev === v.id ? null : v.id));
+                  }}
+                  className={[
+                    "h-8 w-8 rounded-lg border border-neutral-800 bg-neutral-950/60 backdrop-blur",
+                    "grid place-items-center text-neutral-200 transition hover:bg-neutral-900",
+                    "opacity-0 group-hover:opacity-100",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+                  ].join(" ")}
+                  aria-label="Video options"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  title="Options"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+
+                {menuOpen && (
+                  <div
+                    role="menu"
                     aria-label="Video options"
-                    aria-haspopup="menu"
-                    aria-expanded={menuOpen}
-                    title="Options"
+                    className="absolute right-0 top-10 w-44 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
-
-                  {menuOpen && (
-                    <div
-                      role="menu"
-                      aria-label="Video options"
-                      className="absolute right-0 top-10 w-44 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl"
-                      onClick={(e) => e.stopPropagation()}
+                    <button
+                      role="menuitem"
+                      type="button"
+                      onClick={() => {
+                        closeMenu();
+                        onMenuAction?.(v.id, "EDIT_THUMBNAIL");
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
                     >
-                      <button
-                        role="menuitem"
-                        type="button"
-                        onClick={() => {
-                          closeMenu();
-                          onMenuAction?.(v.id, "MANAGE_VERSIONS");
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
-                      >
-                        Manage Versions
-                      </button>
+                      Edit Thumbnail
+                    </button>
 
-                      <div className="h-px bg-neutral-900" />
+                    {stackCard && (
+                      <>
+                        <div className="h-px bg-neutral-900" />
 
-                      <button
-                        role="menuitem"
-                        type="button"
-                        onClick={() => {
-                          closeMenu();
-                          onMenuAction?.(v.id, "UNSTACK");
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
-                      >
-                        Unstack
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+                        <button
+                          role="menuitem"
+                          type="button"
+                          onClick={() => {
+                            closeMenu();
+                            onMenuAction?.(v.id, "MANAGE_VERSIONS");
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
+                        >
+                          Manage Versions
+                        </button>
+
+                        <div className="h-px bg-neutral-900" />
+
+                        <button
+                          role="menuitem"
+                          type="button"
+                          onClick={() => {
+                            closeMenu();
+                            onMenuAction?.(v.id, "UNSTACK");
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
+                        >
+                          Unstack
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Card click target */}

@@ -11,6 +11,7 @@ import VideoGrid, { GalleryVideo } from "@/components/owner/VideoGrid";
 import UploadVideoModal from "@/components/owner/UploadVideoModal";
 import ShareGalleryModal from "@/components/owner/ShareGalleryModal";
 import ManageVersionsModal from "@/components/owner/ManageVersionsModal";
+import EditThumbnailModal from "@/components/owner/EditThumbnailModal";
 
 import type { StackMap } from "@/components/domain/stacks";
 
@@ -49,6 +50,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
   const [shareOpen, setShareOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [retryForVideoId, setRetryForVideoId] = useState<string | null>(null);
+  const [editThumbnailVideoId, setEditThumbnailVideoId] = useState<string | null>(null);
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -702,6 +704,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
               onMenuAction={(videoId, action) => {
                 if (action === "MANAGE_VERSIONS") openManageFor(videoId);
                 if (action === "UNSTACK") unstack(videoId);
+                if (action === "EDIT_THUMBNAIL") setEditThumbnailVideoId(videoId);
               }}
               isStackCard={(videoId) => {
                 const parentId = getParentId(videoId, childToParent);
@@ -771,6 +774,18 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
           applyStackOrder(orderedIds);
           setManageOpen(false);
           setManageParentId(null);
+        }}
+      />
+
+      <EditThumbnailModal
+        open={Boolean(editThumbnailVideoId)}
+        onClose={() => setEditThumbnailVideoId(null)}
+        videoId={editThumbnailVideoId}
+        currentThumbnailUrl={
+          editThumbnailVideoId ? (byId.get(editThumbnailVideoId)?.thumbnailUrl ?? null) : null
+        }
+        onUpdated={(videoId, thumbnailUrl) => {
+          patchVideo(videoId, { thumbnailUrl });
         }}
       />
     </div>
