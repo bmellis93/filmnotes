@@ -10,27 +10,21 @@ function mustEnv(name: string) {
   return v;
 }
 
-const MARKETPLACE_AUTH_URL = "https://marketplace.gohighlevel.com/oauth/authorize";
-
 export async function GET(req: NextRequest) {
+  const authorizeUrl = mustEnv("GHL_AUTHORIZE_URL"); // ✅ marketplace
   const clientId = mustEnv("GHL_CLIENT_ID");
   const redirectUri = mustEnv("GHL_REDIRECT_URI");
   const scopes = process.env.GHL_SCOPES || "locations.read";
 
   const url = new URL(req.url);
+  const next = url.searchParams.get("next");
+  const safeNext = next && next.startsWith("/") ? next : "/owner/galleries";
 
-  // ✅ fix double-encoding problems by reading param once and decoding defensively
-  const nextRaw = url.searchParams.get("next");
-  const nextDecoded = nextRaw ? decodeURIComponent(nextRaw) : null;
-  const safeNext =
-    nextDecoded && nextDecoded.startsWith("/") ? nextDecoded : "/owner/galleries";
-
-  // CSRF nonce in state + cookie
   const nonce = crypto.randomBytes(16).toString("hex");
-  const state = JSON.stringify({ next: safeNext, nonce });
+  const stateObj = { next: safeNext, nonce };
+  const state = JSON.stringify(stateObj); // ✅ don’t pre-encode it
 
-  // ✅ build via URLSearchParams (no double-encoding)
-  const auth = new URL(MARKETPLACE_AUTH_URL);
+  const auth = new URL(authorizeUrl);
   auth.searchParams.set("client_id", clientId);
   auth.searchParams.set("redirect_uri", redirectUri);
   auth.searchParams.set("response_type", "code");
@@ -38,7 +32,6 @@ export async function GET(req: NextRequest) {
   auth.searchParams.set("state", state);
 
   const res = NextResponse.redirect(auth.toString());
-
   res.cookies.set("rm_oauth_nonce", nonce, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

@@ -10,7 +10,7 @@ function mustEnv(name: string) {
 }
 
 async function exchangeCodeForToken(code: string) {
-  const base = mustEnv("GHL_BASE_URL");
+  const base = mustEnv("GHL_API_BASE_URL"); // ✅ leadconnector
   const clientId = mustEnv("GHL_CLIENT_ID");
   const clientSecret = mustEnv("GHL_CLIENT_SECRET");
   const redirectUri = mustEnv("GHL_REDIRECT_URI");
@@ -42,7 +42,7 @@ async function exchangeCodeForToken(code: string) {
 }
 
 async function resolveOrgAndUser(accessToken: string) {
-  const base = mustEnv("GHL_BASE_URL");
+  const base = mustEnv("GHL_API_BASE_URL");
 
   // Try users/me (if scope allows)
   let userId: string | null = null;
@@ -107,10 +107,19 @@ export async function GET(req: NextRequest) {
     const token = await exchangeCodeForToken(code);
 
     // If token includes these, use them; otherwise call API
-    const orgId = token.locationId ? String(token.locationId) : null;
-    const userId = token.userId ? String(token.userId) : null;
+    let orgId = token.locationId ? String(token.locationId) : null;
+    let userId = token.userId ? String(token.userId) : null;
 
-    const ctx = orgId && userId ? { orgId, userId } : await resolveOrgAndUser(token.access_token);
+    if (!orgId) {
+      // Only hit the API when the token exchange didn't give us a location.
+      const resolved = await resolveOrgAndUser(token.access_token);
+      orgId = resolved.orgId;
+      userId = userId ?? resolved.userId;
+    } else if (!userId) {
+      userId = "unknown";
+    }
+
+    const ctx = { orgId, userId };
 
     // Everyone is "ADMIN" in your app model
     await setOwnerSession({ orgId: ctx.orgId, userId: ctx.userId, role: "ADMIN" });

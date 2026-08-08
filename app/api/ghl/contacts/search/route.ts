@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
 import { getGhlAccessToken, ghlHeaders } from "@/lib/ghl/client";
 
-const GHL_BASE_URL = process.env.GHL_BASE_URL!;
+const GHL_BASE_URL = process.env.GHL_API_BASE_URL!;
 
 export async function POST(req: NextRequest) {
   try {

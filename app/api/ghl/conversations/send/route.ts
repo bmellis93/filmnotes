@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
   try {
     const { orgId } = await requireOrgSession(req);
 
-    const GHL_BASE_URL = mustEnv("GHL_BASE_URL"); // e.g. https://services.leadconnectorhq.com
+    const GHL_BASE_URL = mustEnv("GHL_API_BASE_URL"); // e.g. https://services.leadconnectorhq.com
 
     const body = await req.json();
 
