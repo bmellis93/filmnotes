@@ -283,7 +283,7 @@ export default function RecipientShareModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <button
         aria-label="Close"
@@ -293,10 +293,9 @@ export default function RecipientShareModal({
       />
 
       {/* Modal */}
-      <div className="absolute left-1/2 top-1/2 w-[min(920px,94vw)] -translate-x-1/2 -translate-y-1/2">
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl">
+      <div className="relative flex max-h-full w-[min(920px,94vw)] flex-col overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-4">
+          <div className="flex shrink-0 items-center justify-between border-b border-neutral-800 px-5 py-4">
             <div>
               <div className="text-xs text-neutral-400">Share</div>
               <div className="text-base font-semibold">{subtitle}</div>
@@ -310,7 +309,7 @@ export default function RecipientShareModal({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-0 md:grid-cols-[1fr_360px]">
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-y-auto md:grid-cols-[1fr_360px]">
             {/* Left: contact picker */}
             <div className="p-5">
               <div className="text-sm font-semibold">Recipients</div>
@@ -540,7 +539,7 @@ export default function RecipientShareModal({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-neutral-800 px-5 py-4">
+          <div className="flex shrink-0 items-center justify-between border-t border-neutral-800 px-5 py-4">
             <div className="text-xs text-neutral-500">Frame.io vibe, Renowned build 😄</div>
             <button
               className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-neutral-200 hover:bg-neutral-800"
@@ -550,7 +549,6 @@ export default function RecipientShareModal({
               Done
             </button>
           </div>
-        </div>
       </div>
     </div>
   );
