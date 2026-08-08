@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
 import { mux } from "@/lib/mux";
-import { deleteFromR2 } from "@/lib/r2Delete";
+import { deleteFromR2, deleteFromR2Public } from "@/lib/r2Delete";
 
 export const runtime = "nodejs";
 
@@ -18,6 +18,13 @@ async function safeR2Delete(originalKey: string | null) {
   if (!originalKey) return;
   try {
     await deleteFromR2(originalKey);
+  } catch {}
+}
+
+async function safeR2PublicDelete(thumbnailKey: string | null) {
+  if (!thumbnailKey) return;
+  try {
+    await deleteFromR2Public(thumbnailKey);
   } catch {}
 }
 
@@ -45,6 +52,8 @@ export async function POST(
               muxAssetId: true,
               originalKey: true,
               originalSize: true,
+              thumbnailKey: true,
+              thumbnailIsCustom: true,
             },
           },
         },
@@ -66,6 +75,7 @@ export async function POST(
   for (const gv of gallery.videos) {
     await safeMuxDelete(gv.video.muxAssetId);
     await safeR2Delete(gv.video.originalKey);
+    if (gv.video.thumbnailIsCustom) await safeR2PublicDelete(gv.video.thumbnailKey);
   }
 
   const now = new Date();

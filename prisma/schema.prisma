@@ -62,6 +62,8 @@ model Video {
 
   sourceUrl     String
   thumbnailUrl  String?
+  thumbnailKey      String?
+  thumbnailIsCustom Boolean @default(false)
   muxAssetId    String?
   muxPlaybackId String?
   playbackUrl   String?

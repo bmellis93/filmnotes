@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { STORAGE_LIMIT_BYTES } from "@/lib/storageLimit";
 import { mux } from "@/lib/mux";
-import { deleteFromR2 } from "@/lib/r2Delete";
+import { deleteFromR2, deleteFromR2Public } from "@/lib/r2Delete";
 
 export const runtime = "nodejs";
 
@@ -76,6 +76,8 @@ async function hardBlockIfOverLimit(videoId: string) {
       originalKey: true,
       originalSize: true,
       deletedAt: true,
+      thumbnailKey: true,
+      thumbnailIsCustom: true,
     },
   });
 
@@ -100,6 +102,9 @@ async function hardBlockIfOverLimit(videoId: string) {
   if (video.originalKey) {
     try { await deleteFromR2(video.originalKey); } catch {}
   }
+  if (video.thumbnailIsCustom && video.thumbnailKey) {
+    try { await deleteFromR2Public(video.thumbnailKey); } catch {}
+  }
 
   const dec = BigInt(size);
   const now = new Date();
@@ -117,6 +122,8 @@ async function hardBlockIfOverLimit(videoId: string) {
         deletedAt: now,
         archivedAt: null,
         thumbnailUrl: null,
+        thumbnailKey: null,
+        thumbnailIsCustom: false,
         playbackUrl: null,
         muxPlaybackId: null,
         muxAssetId: null,
@@ -159,7 +166,7 @@ export async function POST(req: NextRequest) {
     // Find your video by muxAssetId
     const video = await prisma.video.findFirst({
       where: { muxAssetId },
-      select: { id: true, thumbnailUrl: true },
+      select: { id: true, thumbnailUrl: true, thumbnailIsCustom: true },
     });
 
     if (!video) {
@@ -184,9 +191,14 @@ export async function POST(req: NextRequest) {
           status: "READY",
           muxPlaybackId: playbackId,
           playbackUrl: playbackId ? hlsUrl(playbackId) : null,
-          thumbnailUrl: playbackId
-            ? thumbUrl(playbackId, pickThumbTime(duration))
-            : null,
+          // Don't clobber a thumbnail the owner uploaded on purpose.
+          ...(video.thumbnailIsCustom
+            ? {}
+            : {
+                thumbnailUrl: playbackId
+                  ? thumbUrl(playbackId, pickThumbTime(duration))
+                  : null,
+              }),
           failureReason: null,
         },
       });

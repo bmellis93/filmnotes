@@ -48,7 +48,8 @@ export default function UploadVideoModal({
 }: Props) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
-  const [thumbUrl, setThumbUrl] = useState("");
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const [thumbPreviewUrl, setThumbPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const [file, setFile] = useState<File | null>(initialFile);
@@ -61,9 +62,20 @@ export default function UploadVideoModal({
   useEffect(() => {
     if (!open) return;
     setFile(initialFile ?? null);
+    setThumbFile(null);
     setProgress(0);
     setErrorMsg(null);
   }, [open, initialFile]);
+
+  useEffect(() => {
+    if (!thumbFile) {
+      setThumbPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(thumbFile);
+    setThumbPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [thumbFile]);
 
   useEffect(() => {
     if (!open) return;
@@ -159,6 +171,7 @@ export default function UploadVideoModal({
         file,
         title: name.trim() || file.name,
         description: desc.trim() || undefined,
+        thumbnailFile: thumbFile,
         onProgress: (pct) => setProgress(pct),
       });
 
@@ -171,7 +184,7 @@ export default function UploadVideoModal({
       // reset + close
       setName("");
       setDesc("");
-      setThumbUrl("");
+      setThumbFile(null);
       setFile(null);
       setProgress(0);
       onClose();
@@ -320,15 +333,28 @@ export default function UploadVideoModal({
             </div>
 
             <div>
-              <label className="text-xs text-neutral-400">Thumbnail URL</label>
-              <input
-                value={thumbUrl}
-                onChange={(e) => setThumbUrl(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none"
-                placeholder="https://…"
-              />
-              <div className="mt-1 text-xs text-neutral-500">
-                We’ll replace this with “Upload thumbnail” later.
+              <label className="text-xs text-neutral-400">Thumbnail (optional)</label>
+              <div className="mt-1 flex items-center gap-3">
+                {thumbPreviewUrl ? (
+                  <img
+                    src={thumbPreviewUrl}
+                    alt="Thumbnail preview"
+                    className="h-14 w-24 shrink-0 rounded-lg border border-neutral-800 object-cover"
+                  />
+                ) : null}
+
+                <div className="min-w-0 flex-1">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={(e) => setThumbFile(e.currentTarget.files?.[0] ?? null)}
+                    disabled={busy}
+                    className="block w-full text-sm text-neutral-200"
+                  />
+                  <div className="mt-1 text-xs text-neutral-500">
+                    Defaults to an auto-generated frame if you skip this.
+                  </div>
+                </div>
               </div>
             </div>
 

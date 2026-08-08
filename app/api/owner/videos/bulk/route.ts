@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
 import { mux } from "@/lib/mux";
-import { deleteFromR2 } from "@/lib/r2Delete";
+import { deleteFromR2, deleteFromR2Public } from "@/lib/r2Delete";
 import { normalizeStacks, safeParseStacks } from "@/lib/stacks/normalizeStacks";
 
 export const runtime = "nodejs";
@@ -25,6 +25,15 @@ async function safeR2Delete(originalKey: string | null) {
     await deleteFromR2(originalKey);
   } catch (e) {
     console.error("R2 delete failed:", originalKey, e);
+  }
+}
+
+async function safeR2PublicDelete(thumbnailKey: string | null) {
+  if (!thumbnailKey) return;
+  try {
+    await deleteFromR2Public(thumbnailKey);
+  } catch (e) {
+    console.error("R2 public delete failed:", thumbnailKey, e);
   }
 }
 
@@ -151,7 +160,14 @@ export async function POST(req: NextRequest) {
     // Fetch videos (org-scoped, not deleted)
     const videos = await prisma.video.findMany({
       where: { id: { in: videoIds }, orgId: owner.orgId, deletedAt: null },
-      select: { id: true, muxAssetId: true, originalKey: true, originalSize: true },
+      select: {
+        id: true,
+        muxAssetId: true,
+        originalKey: true,
+        originalSize: true,
+        thumbnailKey: true,
+        thumbnailIsCustom: true,
+      },
     });
 
     const totalDec = videos.reduce((acc, v) => {
@@ -175,6 +191,7 @@ export async function POST(req: NextRequest) {
     for (const v of videos) {
       await safeMuxDelete(v.muxAssetId);
       await safeR2Delete(v.originalKey);
+      if (v.thumbnailIsCustom) await safeR2PublicDelete(v.thumbnailKey);
     }
 
     // 2) Prune stacks for deleted ids (must run BEFORE we delete joins)

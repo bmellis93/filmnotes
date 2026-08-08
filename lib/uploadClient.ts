@@ -128,14 +128,54 @@ export async function initOwnerUpload(opts: {
   return data;
 }
 
+async function uploadThumbnail(videoId: string, thumbnailFile: File) {
+  const initRes = await fetch(`/api/owner/videos/${videoId}/thumbnail/init`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      filename: thumbnailFile.name,
+      contentType: thumbnailFile.type,
+    }),
+  });
+
+  if (!initRes.ok) {
+    const text = await initRes.text().catch(() => "");
+    throw new Error(`Thumbnail init failed (${initRes.status}): ${text}`);
+  }
+
+  const init = (await initRes.json()) as {
+    key: string;
+    uploadUrl: string;
+    headers: Record<string, string>;
+  };
+
+  await putWithProgress({
+    url: init.uploadUrl,
+    headers: init.headers ?? {},
+    file: thumbnailFile,
+  });
+
+  const confirmRes = await fetch(`/api/owner/videos/${videoId}/thumbnail/confirm`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ key: init.key }),
+  });
+
+  if (!confirmRes.ok) {
+    const text = await confirmRes.text().catch(() => "");
+    throw new Error(`Thumbnail confirm failed (${confirmRes.status}): ${text}`);
+  }
+}
+
 export async function uploadVideoToR2(params: {
   galleryId: string;
   file: File;
   title?: string;
   description?: string;
+  thumbnailFile?: File | null;
   onProgress?: (percent: number) => void;
 }): Promise<{ videoId: string }> {
-  const { galleryId, file, title, description, onProgress } = params;
+  const { galleryId, file, title, description, thumbnailFile, onProgress } = params;
 
   const init = await initOwnerUpload({
     galleryId,
@@ -152,6 +192,15 @@ export async function uploadVideoToR2(params: {
   });
 
   onProgress?.(100);
+
+  if (thumbnailFile) {
+    // Non-fatal: Mux's auto-generated thumbnail is a fine fallback.
+    try {
+      await uploadThumbnail(init.videoId, thumbnailFile);
+    } catch (e) {
+      console.error("Custom thumbnail upload failed:", e);
+    }
+  }
 
   const transRes = await fetch("/api/owner/videos/transcode", {
     method: "POST",

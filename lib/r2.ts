@@ -11,6 +11,14 @@ export function getR2Bucket() {
   return R2_BUCKET;
 }
 
+export function getR2PublicBucket() {
+  return mustGet("R2_PUBLIC_BUCKET");
+}
+
+export function getR2PublicBaseUrl() {
+  return mustGet("R2_PUBLIC_BASE_URL").replace(/\/+$/, "");
+}
+
 export function getR2SignedUrlTtlSeconds() {
   const raw = process.env.R2_SIGNED_URL_TTL || "300";
   const n = Number(raw);

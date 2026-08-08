@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
 import { mux } from "@/lib/mux";
-import { deleteFromR2 } from "@/lib/r2Delete";
+import { deleteFromR2, deleteFromR2Public } from "@/lib/r2Delete";
 
 type Body =
   | { action: "ARCHIVE" | "UNARCHIVE"; galleryIds: string[] }
@@ -26,6 +26,15 @@ async function safeR2Delete(originalKey: string | null) {
     await deleteFromR2(originalKey);
   } catch (e) {
     console.error("R2 delete failed:", originalKey, e);
+  }
+}
+
+async function safeR2PublicDelete(thumbnailKey: string | null) {
+  if (!thumbnailKey) return;
+  try {
+    await deleteFromR2Public(thumbnailKey);
+  } catch (e) {
+    console.error("R2 public delete failed:", thumbnailKey, e);
   }
 }
 
@@ -53,6 +62,8 @@ export async function POST(req: NextRequest) {
                 muxAssetId: true,
                 originalKey: true,
                 originalSize: true, // ✅ add
+                thumbnailKey: true,
+                thumbnailIsCustom: true,
               },
             },
           },
@@ -81,6 +92,7 @@ export async function POST(req: NextRequest) {
         const v = gv.video;
         await safeMuxDelete(v.muxAssetId);
         await safeR2Delete(v.originalKey);
+        if (v.thumbnailIsCustom) await safeR2PublicDelete(v.thumbnailKey);
       }
     }
 
