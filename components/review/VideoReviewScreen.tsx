@@ -139,6 +139,15 @@ export default function VideoReviewScreen(props: Props) {
 
   const [commentsOpen, setCommentsOpen] = useState(true);
 
+  // On mobile, comments render as a full-screen overlay, so default to
+  // closed there (otherwise the video is hidden behind comments on load).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setCommentsOpen(false);
+    }
+  }, []);
+
   // Compare mode state
   const [isComparing, setIsComparing] = useState(false);
   const [leftVersionId, setLeftVersionId] = useState<string | null>(null);
@@ -427,12 +436,17 @@ export default function VideoReviewScreen(props: Props) {
         }}
       />
 
-      {/* LAYOUT: hide comments column during compare */}
+      {/* LAYOUT: hide comments column during compare.
+          Below md, comments render as a full-screen overlay (see CommentsPanel)
+          instead of a side column, so the grid only ever has one real track. */}
       <div
-        className="flex-1 min-h-0 overflow-hidden grid grid-cols-1 lg:transition-[grid-template-columns] lg:duration-300 lg:ease-in-out"
-        style={{
-          gridTemplateColumns: showCommentsPanel && commentsOpen ? "1fr 380px" : "1fr 0px",
-        }}
+        className={[
+          "flex-1 min-h-0 overflow-hidden relative grid grid-cols-1",
+          "md:transition-[grid-template-columns] md:duration-300 md:ease-in-out",
+          showCommentsPanel && commentsOpen
+            ? "md:grid-cols-[1fr_380px]"
+            : "md:grid-cols-[1fr_0px]",
+        ].join(" ")}
       >
         <section ref={player.viewerRef} className="relative min-h-0 flex flex-col overflow-hidden">
           {/* COMPARE MODE */}

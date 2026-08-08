@@ -184,9 +184,9 @@ export default function VideoCompareView({
   return (
     <div className="flex h-full flex-col bg-neutral-950">
       {/* VIDEOS */}
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 p-4">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto p-4 sm:grid-cols-2 sm:overflow-hidden">
         {/* LEFT */}
-        <div className="flex min-h-0 flex-col">
+        <div className="flex min-h-[45vh] flex-col sm:min-h-0">
           <div
             onClick={() => setAudioSide("left")}
             className={
@@ -238,7 +238,7 @@ export default function VideoCompareView({
         </div>
 
         {/* RIGHT */}
-        <div className="flex min-h-0 flex-col">
+        <div className="flex min-h-[45vh] flex-col sm:min-h-0">
           <div
             onClick={() => setAudioSide("right")}
             className={

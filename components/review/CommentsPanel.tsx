@@ -90,7 +90,7 @@ export default function CommentsPanel({
 
   return (
     <aside
-      className="min-h-0 overflow-hidden lg:border-l lg:border-neutral-800"
+      className="absolute inset-0 z-30 min-h-0 overflow-hidden md:static md:z-auto md:border-l md:border-neutral-800"
       aria-label="Comments panel"
       aria-hidden={!commentsOpen}
     >
