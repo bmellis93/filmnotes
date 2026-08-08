@@ -42,6 +42,7 @@ type UseVideoPlayerReturn = {
   qualityLevels: QualityLevel[];
   currentQualityIndex: number; // the level actually playing right now
   isAutoQuality: boolean; // whether that level was chosen by ABR vs. pinned by the user
+  isHlsActive: boolean; // false when the browser plays HLS natively (no manual quality control possible)
   setQualityLevel: (index: number) => void; // -1 = Auto
 
   // setters
@@ -83,6 +84,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
   const [qualityLevels, setQualityLevels] = useState<QualityLevel[]>([]);
   const [currentQualityIndex, setCurrentQualityIndex] = useState(-1);
   const [isAutoQuality, setIsAutoQuality] = useState(true);
+  const [isHlsActive, setIsHlsActive] = useState(false);
 
   const [durationMs, setDurationMs] = useState(0);
   const [currentMs, setCurrentMs] = useState(0);
@@ -255,6 +257,8 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     const hasNativeHls = Boolean(video.canPlayType("application/vnd.apple.mpegurl"));
 
     if (isHlsSource && !hasNativeHls && Hls.isSupported()) {
+      setIsHlsActive(true);
+
       const hls = new Hls();
       hlsRef.current = hls;
 
@@ -272,9 +276,30 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
         setCurrentQualityIndex(data.level);
       });
 
+      hls.on(Hls.Events.ERROR, (_evt, data) => {
+        if (!data.fatal) return;
+        console.error("hls.js fatal error:", data.type, data.details);
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            hls.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            hls.recoverMediaError();
+            break;
+          default:
+            // Unrecoverable: fall back to native playback rather than a dead player.
+            hls.destroy();
+            hlsRef.current = null;
+            setIsHlsActive(false);
+            video.src = src;
+            break;
+        }
+      });
+
       hls.loadSource(src);
       hls.attachMedia(video);
     } else {
+      setIsHlsActive(false);
       video.src = src;
     }
 
@@ -352,6 +377,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     qualityLevels,
     currentQualityIndex,
     isAutoQuality,
+    isHlsActive,
     setQualityLevel,
 
     setLoop,

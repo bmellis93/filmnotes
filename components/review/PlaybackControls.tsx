@@ -63,6 +63,7 @@ type Props = {
   qualityLevels?: { index: number; label: string }[];
   currentQualityIndex?: number; // the level actually playing right now
   isAutoQuality?: boolean; // whether that level was chosen by ABR vs. pinned by the user
+  isHlsActive?: boolean; // false when the browser plays HLS natively (no manual quality control possible)
   onQualityChange?: (index: number) => void;
 
   snapToZeroThreshold?: number; // default 0.02
@@ -99,6 +100,7 @@ export default function PlaybackControls({
   qualityLevels = [],
   currentQualityIndex = -1,
   isAutoQuality = true,
+  isHlsActive = false,
   onQualityChange,
 
   snapToZeroThreshold = 0.02,
@@ -454,9 +456,9 @@ export default function PlaybackControls({
               </div>
               {qualityLevels.length === 0 && (
                 <div className="mt-3 text-[11px] text-neutral-500">
-                  {onQualityChange
+                  {isHlsActive
                     ? "Detecting available qualities…"
-                    : "Quality selection isn’t available for this source."}
+                    : "This browser streams adaptive quality automatically; manual selection isn’t available here."}
                 </div>
               )}
             </div>

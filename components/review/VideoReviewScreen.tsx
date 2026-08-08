@@ -492,6 +492,7 @@ export default function VideoReviewScreen(props: Props) {
                   qualityLevels={player.qualityLevels}
                   currentQualityIndex={player.currentQualityIndex}
                   isAutoQuality={player.isAutoQuality}
+                  isHlsActive={player.isHlsActive}
                   onQualityChange={player.setQualityLevel}
                   isFullscreen={player.isFullscreen}
                   onToggleFullscreen={player.toggleFullscreen}
