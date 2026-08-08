@@ -42,15 +42,15 @@ function statusPillClasses(status: OwnerVideoStatus) {
   // keep it neutral, but give subtle semantic hints
   switch (status) {
     case "READY":
-      return "border-emerald-900/50 bg-emerald-950/40 text-emerald-200";
+      return "border-emerald-900/50 bg-emerald-950/40 text-emerald-700 dark:text-emerald-200";
     case "FAILED":
-      return "border-red-900/50 bg-red-950/40 text-red-200";
+      return "border-red-900/50 bg-red-950/40 text-red-700 dark:text-red-200";
     case "PROCESSING":
-      return "border-sky-900/50 bg-sky-950/40 text-sky-200";
+      return "border-sky-900/50 bg-sky-950/40 text-sky-700 dark:text-sky-200";
     case "UPLOADING":
-      return "border-amber-900/50 bg-amber-950/40 text-amber-200";
+      return "border-amber-900/50 bg-amber-950/40 text-amber-700 dark:text-amber-200";
     default:
-      return "border-neutral-800 bg-neutral-950/70 text-neutral-200";
+      return "border-[var(--border-1)] bg-[var(--surface-0)]/70 text-[var(--text-2)]";
   }
 }
 
@@ -73,13 +73,13 @@ export default function VideoCard({ galleryId, video }: Props) {
       href={href}
       aria-label={`Open ${video.title}`}
       className={[
-        "group block overflow-hidden rounded-2xl border border-neutral-900 bg-neutral-950/40 transition",
-        "hover:bg-neutral-900/25 hover:border-neutral-700",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700",
+        "group block overflow-hidden rounded-2xl border border-[var(--border-2)] bg-[var(--surface-0)]/40 transition",
+        "hover:bg-[var(--surface-1)]/25 hover:border-[var(--border-3)]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)]",
       ].join(" ")}
     >
       {/* media */}
-      <div className="relative aspect-video bg-neutral-900/60">
+      <div className="relative aspect-video bg-[var(--surface-1)]/60">
         {video.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -93,7 +93,7 @@ export default function VideoCard({ galleryId, video }: Props) {
             loading="lazy"
           />
         ) : (
-          <div className="absolute inset-0 grid place-items-center text-neutral-400 text-sm">
+          <div className="absolute inset-0 grid place-items-center text-[var(--text-muted)] text-sm">
             Thumbnail
           </div>
         )}
@@ -110,7 +110,7 @@ export default function VideoCard({ galleryId, video }: Props) {
 
         {/* top-right hover checkbox placeholder (scaffold) */}
         <div className="absolute right-3 top-3 opacity-0 transition group-hover:opacity-100">
-          <div className="h-6 w-6 rounded-md border border-neutral-700 bg-neutral-950/70" />
+          <div className="h-6 w-6 rounded-md border border-[var(--border-3)] bg-[var(--surface-0)]/70" />
         </div>
 
         {/* status pill */}
@@ -131,12 +131,12 @@ export default function VideoCard({ galleryId, video }: Props) {
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-white">
+            <div className="truncate text-sm font-semibold text-[var(--text-1)]">
               {video.title}
             </div>
 
             {video.description ? (
-              <div className="mt-1 line-clamp-2 text-xs text-neutral-400">
+              <div className="mt-1 line-clamp-2 text-xs text-[var(--text-muted)]">
                 {video.description}
               </div>
             ) : (
@@ -145,7 +145,7 @@ export default function VideoCard({ galleryId, video }: Props) {
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between text-xs text-neutral-400">
+        <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-muted)]">
           <div className="inline-flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="tabular-nums">{createdLabel}</span>

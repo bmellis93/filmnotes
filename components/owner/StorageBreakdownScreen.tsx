@@ -88,11 +88,11 @@ export default function StorageBreakdownScreen() {
 
   if (error) {
     return (
-      <div className="min-h-[100dvh] bg-neutral-950 text-neutral-100">
+      <div className="min-h-[100dvh] bg-[var(--surface-0)] text-[var(--text-1)]">
         <div className="mx-auto w-full max-w-6xl p-5">
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4 text-sm">
+          <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)]/40 p-4 text-sm">
             <div className="font-semibold">Storage</div>
-            <div className="mt-2 text-neutral-300">{error}</div>
+            <div className="mt-2 text-[var(--text-3)]">{error}</div>
           </div>
         </div>
       </div>
@@ -101,9 +101,9 @@ export default function StorageBreakdownScreen() {
 
   if (!data || !computed) {
     return (
-      <div className="min-h-[100dvh] bg-neutral-950 text-neutral-100">
+      <div className="min-h-[100dvh] bg-[var(--surface-0)] text-[var(--text-1)]">
         <div className="mx-auto w-full max-w-6xl p-5">
-          <div className="flex items-center gap-2 text-sm text-neutral-300">
+          <div className="flex items-center gap-2 text-sm text-[var(--text-3)]">
             <Cloud className="h-4 w-4" /> Loading storage…
           </div>
         </div>
@@ -112,13 +112,13 @@ export default function StorageBreakdownScreen() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-neutral-950 text-neutral-100">
+    <div className="min-h-[100dvh] bg-[var(--surface-0)] text-[var(--text-1)]">
       <div className="mx-auto w-full max-w-6xl p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
               href="/owner/galleries"
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-200 hover:bg-neutral-800"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -126,7 +126,7 @@ export default function StorageBreakdownScreen() {
 
             <div>
               <div className="text-lg font-semibold">Storage</div>
-              <div className="text-sm text-neutral-400">
+              <div className="text-sm text-[var(--text-muted)]">
                 Archived videos still count toward storage.
               </div>
             </div>
@@ -134,37 +134,37 @@ export default function StorageBreakdownScreen() {
         </div>
 
         {/* Top bar */}
-        <div className="mt-5 rounded-3xl border border-neutral-800 bg-neutral-950/40 p-4">
+        <div className="mt-5 rounded-3xl border border-[var(--border-1)] bg-[var(--surface-0)]/40 p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <HardDrive className="h-4 w-4 text-neutral-200" />
+              <HardDrive className="h-4 w-4 text-[var(--text-2)]" />
               <div className="text-sm font-semibold">Usage</div>
             </div>
 
-            <div className={computed.warn ? "text-red-300 text-sm" : "text-neutral-300 text-sm"}>
+            <div className={computed.warn ? "text-red-600 dark:text-red-300 text-sm" : "text-[var(--text-3)] text-sm"}>
               {fmtGB(computed.used)} / {fmtGB(computed.limit)} GB
             </div>
           </div>
 
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-neutral-800">
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
             <div
-              className="h-full bg-white/80"
+              className="h-full bg-[var(--accent-solid)]/80"
               style={{ width: `${Math.round(computed.pct * 100)}%` }}
             />
           </div>
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-3">
+            <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
               <div className="text-[11px] uppercase tracking-wide text-neutral-500">Active</div>
               <div className="mt-1 text-sm font-semibold">{fmtGB(computed.active)} GB</div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-3">
+            <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
               <div className="text-[11px] uppercase tracking-wide text-neutral-500">Archived</div>
               <div className="mt-1 text-sm font-semibold">{fmtGB(computed.archived)} GB</div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-3">
+            <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
               <div className="text-[11px] uppercase tracking-wide text-neutral-500">
                 Counter drift
               </div>
@@ -173,7 +173,7 @@ export default function StorageBreakdownScreen() {
               </div>
               {computed.driftPct > 0.02 ? (
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="text-xs text-neutral-400">Counter drift detected.</div>
+                  <div className="text-xs text-[var(--text-muted)]">Counter drift detected.</div>
 
                   <button
                     type="button"
@@ -190,7 +190,7 @@ export default function StorageBreakdownScreen() {
                       // simplest: reload breakdown
                       window.location.reload();
                     }}
-                    className="inline-flex rounded-lg bg-white/10 px-2 py-1 text-[11px] text-white hover:bg-white/15"
+                    className="inline-flex rounded-lg bg-[var(--accent-solid)]/10 px-2 py-1 text-[11px] text-[var(--text-1)] hover:bg-[var(--accent-solid)]/15"
                   >
                     Run reconcile
                   </button>
@@ -202,7 +202,7 @@ export default function StorageBreakdownScreen() {
           <div className="mt-3">
             <Link
               href="/owner/galleries"
-              className="text-xs text-neutral-300 underline decoration-neutral-700 hover:text-white"
+              className="text-xs text-[var(--text-3)] underline decoration-neutral-700 hover:text-[var(--text-1)]"
             >
               Go manage galleries →
             </Link>
@@ -210,11 +210,11 @@ export default function StorageBreakdownScreen() {
         </div>
 
         {/* Top galleries */}
-        <div className="mt-6 rounded-3xl border border-neutral-800 bg-neutral-950/40 p-4">
+        <div className="mt-6 rounded-3xl border border-[var(--border-1)] bg-[var(--surface-0)]/40 p-4">
           <div className="text-sm font-semibold">Top galleries by storage</div>
           <div className="mt-3 space-y-2">
             {data.topGalleries.length === 0 ? (
-              <div className="text-sm text-neutral-400">No videos yet.</div>
+              <div className="text-sm text-[var(--text-muted)]">No videos yet.</div>
             ) : (
               data.topGalleries.map((g) => {
                 const bytes = toNum(g.bytes);
@@ -222,13 +222,13 @@ export default function StorageBreakdownScreen() {
                   <Link
                     key={g.galleryId}
                     href={`/owner/galleries/${g.galleryId}`}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/20 px-3 py-2 hover:bg-neutral-900/40"
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/20 px-3 py-2 hover:bg-[var(--surface-1)]/40"
                   >
                     <div className="min-w-0">
-                      <div className="truncate text-sm text-neutral-100">{g.galleryName}</div>
+                      <div className="truncate text-sm text-[var(--text-1)]">{g.galleryName}</div>
                       <div className="text-xs text-neutral-500">{g.videoCount} videos</div>
                     </div>
-                    <div className="shrink-0 text-sm text-neutral-200">
+                    <div className="shrink-0 text-sm text-[var(--text-2)]">
                       {fmtGB(bytes)} GB
                     </div>
                   </Link>
@@ -243,8 +243,8 @@ export default function StorageBreakdownScreen() {
             className={[
               "mt-4 rounded-2xl border px-4 py-3 text-sm",
               critical
-                ? "border-red-500/40 bg-red-500/10 text-red-200"
-                : "border-yellow-500/40 bg-yellow-500/10 text-yellow-200",
+                ? "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-200"
+                : "border-yellow-500/40 bg-yellow-500/10 text-yellow-800 dark:text-yellow-200",
             ].join(" ")}
           >
             <div className="font-semibold">
@@ -259,14 +259,14 @@ export default function StorageBreakdownScreen() {
             <div className="mt-3 flex flex-wrap gap-2">
               <a
                 href="/owner/galleries?archived=1"
-                className="inline-flex rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/15"
+                className="inline-flex rounded-lg bg-[var(--accent-solid)]/10 px-3 py-1.5 text-xs text-[var(--text-1)] hover:bg-[var(--accent-solid)]/15"
               >
                 Review archived videos
               </a>
 
               <a
                 href="/owner/galleries"
-                className="inline-flex rounded-lg border border-white/20 px-3 py-1.5 text-xs text-white hover:bg-white/10"
+                className="inline-flex rounded-lg border border-[var(--accent-solid)]/20 px-3 py-1.5 text-xs text-[var(--text-1)] hover:bg-[var(--accent-solid)]/10"
               >
                 Manage galleries
               </a>
@@ -275,23 +275,23 @@ export default function StorageBreakdownScreen() {
         )}
         
         {/* Largest videos */}
-        <div className="mt-6 rounded-3xl border border-neutral-800 bg-neutral-950/40 p-4">
+        <div className="mt-6 rounded-3xl border border-[var(--border-1)] bg-[var(--surface-0)]/40 p-4">
           <div className="text-sm font-semibold">Largest videos</div>
 
           <div className="mt-3 space-y-2">
             {data.largestVideos.length === 0 ? (
-              <div className="text-sm text-neutral-400">No videos yet.</div>
+              <div className="text-sm text-[var(--text-muted)]">No videos yet.</div>
             ) : (
               data.largestVideos.map((v) => (
                 <div
                   key={v.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/20 px-3 py-2"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/20 px-3 py-2"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <div className="truncate text-sm text-neutral-100">{v.title}</div>
+                      <div className="truncate text-sm text-[var(--text-1)]">{v.title}</div>
                       {v.archivedAt ? (
-                        <span className="rounded-full border border-neutral-700 bg-black/30 px-2 py-0.5 text-[10px] font-semibold text-neutral-200">
+                        <span className="rounded-full border border-[var(--border-3)] bg-black/30 px-2 py-0.5 text-[10px] font-semibold text-[var(--text-2)]">
                           Archived
                         </span>
                       ) : null}
@@ -300,7 +300,7 @@ export default function StorageBreakdownScreen() {
                     {v.galleryId ? (
                       <Link
                         href={`/owner/galleries/${v.galleryId}`}
-                        className="text-xs text-neutral-500 underline decoration-neutral-800 hover:text-neutral-300"
+                        className="text-xs text-neutral-500 underline decoration-neutral-800 hover:text-[var(--text-3)]"
                       >
                         {v.galleryName ?? "View gallery"}
                       </Link>
@@ -309,7 +309,7 @@ export default function StorageBreakdownScreen() {
                     )}
                   </div>
 
-                  <div className="shrink-0 text-sm text-neutral-200">
+                  <div className="shrink-0 text-sm text-[var(--text-2)]">
                     {fmtGB(v.sizeBytes)} GB
                   </div>
                 </div>

@@ -293,15 +293,15 @@ export default function RecipientShareModal({
       />
 
       {/* Modal */}
-      <div className="relative flex max-h-full w-[min(920px,94vw)] flex-col overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl">
+      <div className="relative flex max-h-full w-[min(920px,94vw)] flex-col overflow-hidden rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl">
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-neutral-800 px-5 py-4">
+          <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-1)] px-5 py-4">
             <div>
-              <div className="text-xs text-neutral-400">Share</div>
+              <div className="text-xs text-[var(--text-muted)]">Share</div>
               <div className="text-base font-semibold">{subtitle}</div>
             </div>
             <button
-              className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-800"
+              className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)]"
               onClick={onClose}
               type="button"
             >
@@ -318,7 +318,7 @@ export default function RecipientShareModal({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search contacts by name, email, or phone…"
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm outline-none placeholder:text-neutral-500 focus:border-neutral-600"
+                  className="w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-neutral-500 focus:border-neutral-600"
                 />
               </div>
 
@@ -330,7 +330,7 @@ export default function RecipientShareModal({
                       key={c.id}
                       type="button"
                       onClick={() => toggleSelect(c)}
-                      className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800"
+                      className="inline-flex items-center gap-2 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-1.5 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)]"
                       title="Remove"
                     >
                       <span className="max-w-[220px] truncate">{c.name}</span>
@@ -341,9 +341,9 @@ export default function RecipientShareModal({
               )}
 
               {/* Results */}
-              <div className="mt-3 rounded-2xl border border-neutral-800 bg-neutral-900">
-                <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
-                  <div className="text-xs text-neutral-400">
+              <div className="mt-3 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]">
+                <div className="flex items-center justify-between border-b border-[var(--border-1)] px-4 py-3">
+                  <div className="text-xs text-[var(--text-muted)]">
                     {isSearching ? "Searching…" : "Results"}
                   </div>
                   <div className="text-xs text-neutral-500">
@@ -368,16 +368,16 @@ export default function RecipientShareModal({
                             type="button"
                             onClick={() => toggleSelect(c)}
                             className={[
-                              "w-full rounded-xl px-3 py-3 text-left hover:bg-neutral-800",
-                              isSelected ? "bg-neutral-800" : "bg-transparent",
+                              "w-full rounded-xl px-3 py-3 text-left hover:bg-[var(--surface-2)]",
+                              isSelected ? "bg-[var(--surface-2)]" : "bg-transparent",
                             ].join(" ")}
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0">
-                                <div className="truncate text-sm font-semibold text-neutral-100">
+                                <div className="truncate text-sm font-semibold text-[var(--text-1)]">
                                   {c.name}
                                 </div>
-                                <div className="truncate text-xs text-neutral-400">
+                                <div className="truncate text-xs text-[var(--text-muted)]">
                                   {c.email || "—"} • {c.phone || "—"}
                                 </div>
                               </div>
@@ -386,8 +386,8 @@ export default function RecipientShareModal({
                                   className={[
                                     "rounded-md border px-2 py-1 text-[10px]",
                                     c.phone
-                                      ? "border-neutral-700 text-neutral-300"
-                                      : "border-neutral-900 text-neutral-600",
+                                      ? "border-[var(--border-3)] text-[var(--text-3)]"
+                                      : "border-[var(--border-2)] text-neutral-600",
                                   ].join(" ")}
                                 >
                                   SMS
@@ -396,8 +396,8 @@ export default function RecipientShareModal({
                                   className={[
                                     "rounded-md border px-2 py-1 text-[10px]",
                                     c.email
-                                      ? "border-neutral-700 text-neutral-300"
-                                      : "border-neutral-900 text-neutral-600",
+                                      ? "border-[var(--border-3)] text-[var(--text-3)]"
+                                      : "border-[var(--border-2)] text-neutral-600",
                                   ].join(" ")}
                                 >
                                   Email
@@ -414,22 +414,22 @@ export default function RecipientShareModal({
 
               {/* Error / status */}
               {error && (
-                <div className="mt-3 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                <div className="mt-3 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-200">
                   {error}
                 </div>
               )}
 
               {lastSend?.results && (
-                <div className="mt-3 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3">
+                <div className="mt-3 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3">
                   <div className="text-sm font-semibold">Send results</div>
-                  <div className="mt-2 space-y-2 text-xs text-neutral-300">
+                  <div className="mt-2 space-y-2 text-xs text-[var(--text-3)]">
                     {lastSend.results.map((r, idx) => (
                       <div key={idx} className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="truncate">{r.contactName}</div>
                           <div className="truncate text-neutral-500">{r.contactId}</div>
                         </div>
-                        <div className={r.ok ? "text-green-300" : "text-red-300"}>
+                        <div className={r.ok ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}>
                           {r.ok ? "Sent" : "Failed"}
                         </div>
                       </div>
@@ -440,14 +440,14 @@ export default function RecipientShareModal({
             </div>
 
             {/* Right: message + options */}
-            <div className="border-t border-neutral-800 p-5 md:border-l md:border-t-0">
+            <div className="border-t border-[var(--border-1)] p-5 md:border-l md:border-t-0">
               <div className="text-sm font-semibold">Message</div>
               <div className="mt-2">
                 <textarea
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   placeholder={defaultMessage}
-                  className="h-40 w-full resize-none rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+                  className="h-40 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
                 />
                 <div className="mt-2 text-xs text-neutral-500">
                   Leave blank to use default message.
@@ -457,8 +457,8 @@ export default function RecipientShareModal({
               <div className="mt-5">
                 <div className="text-sm font-semibold">Permissions</div>
                 <div className="mt-2 space-y-2">
-                  <label className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm">
-                    <span className="text-neutral-200">Allow comments</span>
+                  <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
+                    <span className="text-[var(--text-2)]">Allow comments</span>
                     <input
                       type="checkbox"
                       checked={allowComments}
@@ -467,8 +467,8 @@ export default function RecipientShareModal({
                     />
                   </label>
 
-                  <label className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm">
-                    <span className="text-neutral-200">Allow downloads</span>
+                  <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
+                    <span className="text-[var(--text-2)]">Allow downloads</span>
                     <input
                       type="checkbox"
                       checked={allowDownloads}
@@ -482,8 +482,8 @@ export default function RecipientShareModal({
               <div className="mt-5">
                 <div className="text-sm font-semibold">Delivery</div>
                 <div className="mt-2 space-y-2">
-                  <label className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm">
-                    <span className="text-neutral-200">Send SMS</span>
+                  <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
+                    <span className="text-[var(--text-2)]">Send SMS</span>
                     <input
                       type="checkbox"
                       checked={sendSms}
@@ -491,8 +491,8 @@ export default function RecipientShareModal({
                       className="h-4 w-4"
                     />
                   </label>
-                  <label className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm">
-                    <span className="text-neutral-200">Send Email</span>
+                  <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
+                    <span className="text-[var(--text-2)]">Send Email</span>
                     <input
                       type="checkbox"
                       checked={sendEmail}
@@ -509,14 +509,14 @@ export default function RecipientShareModal({
 
               <div className="mt-6 flex items-center justify-between gap-3">
                 <div className="text-xs text-neutral-500">
-                  {subjectLabel}: <span className="text-neutral-300">{subjectValue}</span>
+                  {subjectLabel}: <span className="text-[var(--text-3)]">{subjectValue}</span>
                 </div>
 
                 <button
                   type="button"
                   disabled={isSending || selected.length === 0 || Boolean(sendDisabledReason)}
                   onClick={handleSend}
-                  className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 disabled:opacity-60"
+                  className="rounded-xl bg-[var(--accent-solid)] px-4 py-3 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-60"
                   title={
                     sendDisabledReason ??
                     (selected.length === 0 ? "Select at least one recipient" : "Send")
@@ -526,9 +526,9 @@ export default function RecipientShareModal({
                 </button>
               </div>
 
-              <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3">
-                <div className="text-xs text-neutral-400">Review links</div>
-                <div className="mt-1 text-sm text-neutral-200">
+              <div className="mt-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3">
+                <div className="text-xs text-[var(--text-muted)]">Review links</div>
+                <div className="mt-1 text-sm text-[var(--text-2)]">
                   A unique review link will be generated for each recipient when you send.
                 </div>
                 <div className="mt-2 text-xs text-neutral-500">
@@ -539,9 +539,9 @@ export default function RecipientShareModal({
           </div>
 
           {/* Footer */}
-          <div className="flex shrink-0 items-center justify-end border-t border-neutral-800 px-5 py-4">
+          <div className="flex shrink-0 items-center justify-end border-t border-[var(--border-1)] px-5 py-4">
             <button
-              className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-neutral-200 hover:bg-neutral-800"
+              className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)]"
               onClick={onClose}
               type="button"
             >

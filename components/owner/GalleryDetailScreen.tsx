@@ -514,14 +514,14 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
 
   return (
     <div className="min-h-full">
-      <div className="sticky top-0 z-10 border-b border-neutral-900 bg-neutral-950/80 backdrop-blur">
+      <div className="sticky top-0 z-10 border-b border-[var(--border-2)] bg-[var(--surface-0)]/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => router.push("/owner/galleries")}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900/40 text-neutral-200 hover:bg-neutral-900"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 text-[var(--text-2)] hover:bg-[var(--surface-1)]"
                 aria-label="Back to galleries"
                 title="Back"
               >
@@ -529,9 +529,9 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
               </button>
 
               <div className="min-w-0">
-                <div className="truncate text-base font-semibold text-white">{gallery.name}</div>
+                <div className="truncate text-base font-semibold text-[var(--text-1)]">{gallery.name}</div>
                 {gallery.description ? (
-                  <div className="truncate text-sm text-neutral-400">{gallery.description}</div>
+                  <div className="truncate text-sm text-[var(--text-muted)]">{gallery.description}</div>
                 ) : (
                   <div className="text-sm text-neutral-500">No description</div>
                 )}
@@ -551,8 +551,8 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
                     className={[
                       "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition",
                       canCreateStack
-                        ? "bg-white text-neutral-900 hover:bg-neutral-200"
-                        : "border border-neutral-800 bg-neutral-900 text-neutral-400 opacity-70 cursor-not-allowed",
+                        ? "bg-[var(--accent-solid)] text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
+                        : "border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-muted)] opacity-70 cursor-not-allowed",
                     ].join(" ")}
                     title={canCreateStack ? "Create a version stack" : "Select at least 2 videos"}
                   >
@@ -581,7 +581,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
                       );
                       setSelectedIds([]);
                     }}
-                    className="inline-flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 hover:bg-neutral-800"
+                    className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
                   >
                     Archive
                   </button>
@@ -624,8 +624,8 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
                 className={[
                   "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-semibold transition",
                   showArchived
-                    ? "bg-red-600/20 text-red-300 border border-red-500/40 hover:bg-red-600/30"
-                    : "border border-neutral-800 bg-neutral-900 text-neutral-100 hover:bg-neutral-800",
+                    ? "bg-red-600/20 text-red-600 dark:text-red-300 border border-red-500/40 hover:bg-red-600/30"
+                    : "border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-1)] hover:bg-[var(--surface-2)]",
                 ].join(" ")}
               >
                 {showArchived ? "Hide Archived" : "Show Archived"}
@@ -637,7 +637,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
                     <button
                       type="button"
                       onClick={() => pollForceRef.current?.()}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/40 bg-orange-500/10 px-3 py-2 text-xs font-semibold text-orange-200 hover:bg-orange-500/15"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/40 bg-orange-500/10 px-3 py-2 text-xs font-semibold text-orange-700 dark:text-orange-200 hover:bg-orange-500/15"
                       title="Force refresh processing status"
                     >
                       Refresh status
@@ -648,8 +648,8 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
                     className={[
                       "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold",
                       inflightStuck
-                        ? "border-orange-500/40 bg-orange-500/10 text-orange-200"
-                        : "border-neutral-800 bg-neutral-900/40 text-neutral-200",
+                        ? "border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-200"
+                        : "border-[var(--border-1)] bg-[var(--surface-1)]/40 text-[var(--text-2)]",
                     ].join(" ")}
                     title={
                       inflightStuck
@@ -666,7 +666,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
               <button
                 type="button"
                 onClick={() => setShareOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 hover:bg-neutral-800"
+                className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
               >
                 <Share2 className="h-4 w-4" />
                 Share
@@ -674,7 +674,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
 
               <UploadDropzone.Button
                 onFiles={handleFiles}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-200"
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
               >
                 <Upload className="h-4 w-4" />
                 Upload Video
@@ -689,18 +689,18 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
 
         <div className="mt-6">
           {visibleForGrid.length === 0 ? (
-            <div className="rounded-2xl border border-neutral-900 bg-neutral-950/40 p-8">
+            <div className="rounded-2xl border border-[var(--border-2)] bg-[var(--surface-0)]/40 p-8">
               <div className="flex items-start justify-between gap-6">
                 <div>
-                  <div className="text-lg font-semibold text-white">No videos yet</div>
-                  <div className="mt-1 text-sm text-neutral-400">
+                  <div className="text-lg font-semibold text-[var(--text-1)]">No videos yet</div>
+                  <div className="mt-1 text-sm text-[var(--text-muted)]">
                     Drag a video into the drop zone above, or click “Upload Video”.
                   </div>
                 </div>
 
                 <UploadDropzone.Button
                   onFiles={handleFiles}
-                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 hover:bg-neutral-800"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
                 >
                   <Plus className="h-4 w-4" />
                   Add first video

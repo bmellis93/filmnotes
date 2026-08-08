@@ -1,15 +1,54 @@
 @import "tailwindcss";
 
+/* Tailwind v4 CSS-first config: bind the `dark:` variant to the .dark class
+   (set by next-themes) instead of the OS prefers-color-scheme media query. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Base variables (light) */
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Owner/share app-shell tokens (video player + review UI intentionally stay dark-only) */
+  --surface-0: #ffffff; /* page background */
+  --surface-1: #f5f5f5; /* panel / card / input background */
+  --surface-2: #e5e5e5; /* hover / elevated background */
+
+  --border-1: #e5e5e5; /* standard border */
+  --border-2: #f5f5f5; /* subtle divider */
+  --border-3: #d4d4d4; /* input / focus ring border */
+
+  --text-1: #171717; /* primary text */
+  --text-2: #262626; /* secondary text */
+  --text-3: #404040; /* tertiary text */
+  --text-muted: #737373; /* muted / label text */
+
+  --accent-solid: #171717; /* primary CTA background */
+  --accent-solid-fg: #ffffff; /* primary CTA text */
+  --accent-solid-hover: #404040; /* primary CTA hover */
 }
 
 /* Dark variables (next-themes will add .dark to <html>) */
 html.dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+
+  --surface-0: #0a0a0a;
+  --surface-1: #171717;
+  --surface-2: #262626;
+
+  --border-1: #262626;
+  --border-2: #171717;
+  --border-3: #404040;
+
+  --text-1: #f5f5f5;
+  --text-2: #e5e5e5;
+  --text-3: #d4d4d4;
+  --text-muted: #a3a3a3;
+
+  --accent-solid: #ffffff;
+  --accent-solid-fg: #171717;
+  --accent-solid-hover: #e5e5e5;
 }
 
 /* Optional but nice: makes native UI match */

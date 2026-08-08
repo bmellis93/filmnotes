@@ -227,8 +227,8 @@ export default function UploadVideoModal({
         }}
       />
       <div className="absolute inset-x-0 top-12 mx-auto w-full max-w-lg px-4">
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl">
-          <div className="flex items-center justify-between border-b border-neutral-900 p-4">
+        <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl">
+          <div className="flex items-center justify-between border-b border-[var(--border-2)] p-4">
             <div className="text-sm font-semibold">Upload Video</div>
             <button
               type="button"
@@ -237,7 +237,7 @@ export default function UploadVideoModal({
                 setFile(null);
                 onClose();
               }}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 hover:bg-neutral-900 hover:text-white"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-3)] hover:bg-[var(--surface-1)] hover:text-[var(--text-1)]"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
@@ -245,7 +245,7 @@ export default function UploadVideoModal({
           </div>
 
           <div className="p-4 space-y-4">
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-4">
+            <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-4">
             <div className="text-sm font-semibold">Choose a video</div>
             <div className="mt-2">
               <FilePickerButton
@@ -256,7 +256,7 @@ export default function UploadVideoModal({
               />
             </div>
             {file ? (
-              <div className="mt-2 text-xs text-neutral-400">
+              <div className="mt-2 text-xs text-[var(--text-muted)]">
                 {file.name} • {(file.size / 1024 / 1024).toFixed(2)} MB
               </div>
             ) : (
@@ -270,8 +270,8 @@ export default function UploadVideoModal({
                 className={[
                   "mt-2 rounded-xl border px-3 py-2 text-xs",
                   usageLevel === "high"
-                    ? "border-orange-500/40 bg-orange-500/10 text-orange-200"
-                    : "border-yellow-500/40 bg-yellow-500/10 text-yellow-200",
+                    ? "border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-200"
+                    : "border-yellow-500/40 bg-yellow-500/10 text-yellow-800 dark:text-yellow-200",
                 ].join(" ")}
               >
                 {usageLevel === "high" ? (
@@ -287,12 +287,12 @@ export default function UploadVideoModal({
                 className={[
                   "mt-2 rounded-xl border px-3 py-2 text-xs",
                   willFit === false
-                    ? "border-red-500/30 bg-red-500/10 text-red-200"
+                    ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200"
                     : projectedPct != null && projectedPct >= 0.9
-                      ? "border-orange-500/40 bg-orange-500/10 text-orange-200"
+                      ? "border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-200"
                       : projectedPct != null && projectedPct >= 0.8
-                        ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-200"
-                        : "border-neutral-800 bg-neutral-900/20 text-neutral-300",
+                        ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-800 dark:text-yellow-200"
+                        : "border-[var(--border-1)] bg-[var(--surface-1)]/20 text-[var(--text-3)]",
                 ].join(" ")}
               >
                 {willFit === false ? (
@@ -312,34 +312,34 @@ export default function UploadVideoModal({
           </div>
 
             <div>
-              <label className="text-xs text-neutral-400">Video name</label>
+              <label className="text-xs text-[var(--text-muted)]">Video name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none"
+                className="mt-1 w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder-neutral-500 focus:outline-none"
                 placeholder="Trailer v1"
               />
             </div>
 
             <div>
-              <label className="text-xs text-neutral-400">Description</label>
+              <label className="text-xs text-[var(--text-muted)]">Description</label>
               <textarea
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
                 rows={3}
-                className="mt-1 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none"
+                className="mt-1 w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder-neutral-500 focus:outline-none"
                 placeholder="Optional notes…"
               />
             </div>
 
             <div>
-              <label className="text-xs text-neutral-400">Thumbnail (optional)</label>
+              <label className="text-xs text-[var(--text-muted)]">Thumbnail (optional)</label>
               <div className="mt-1 flex items-center gap-3">
                 {thumbPreviewUrl ? (
                   <img
                     src={thumbPreviewUrl}
                     alt="Thumbnail preview"
-                    className="h-14 w-24 shrink-0 rounded-lg border border-neutral-800 object-cover"
+                    className="h-14 w-24 shrink-0 rounded-lg border border-[var(--border-1)] object-cover"
                   />
                 ) : null}
 
@@ -360,10 +360,10 @@ export default function UploadVideoModal({
             </div>
 
             {errorMsg && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-200">
                 {errorMsg}
 
-                <div className="mt-1 text-[11px] text-red-300/80">
+                <div className="mt-1 text-[11px] text-red-600/80 dark:text-red-300/80">
                   Archived videos still count toward storage.
                 </div>
 
@@ -374,7 +374,7 @@ export default function UploadVideoModal({
                       onClose();
                       router.push("/owner/galleries?archived=1");
                     }}
-                    className="inline-flex rounded-lg bg-white/10 px-2 py-1 text-[11px] text-white hover:bg-white/15"
+                    className="inline-flex rounded-lg bg-[var(--accent-solid)]/10 px-2 py-1 text-[11px] text-[var(--text-1)] hover:bg-[var(--accent-solid)]/15"
                   >
                     Review archived items
                   </button>
@@ -385,7 +385,7 @@ export default function UploadVideoModal({
                       onClose();
                       router.push("/owner/storage");
                     }}
-                    className="inline-flex rounded-lg border border-white/20 px-2 py-1 text-[11px] text-white hover:bg-white/10"
+                    className="inline-flex rounded-lg border border-[var(--accent-solid)]/20 px-2 py-1 text-[11px] text-[var(--text-1)] hover:bg-[var(--accent-solid)]/10"
                   >
                     Manage storage
                   </button>
@@ -395,13 +395,13 @@ export default function UploadVideoModal({
             
             {(busy || progress > 0) && (
               <div className="mt-3">
-                <div className="flex items-center justify-between text-xs text-neutral-400">
+                <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
                   <span>Uploading…</span>
                   <span>{Math.round(progress)}%</span>
                 </div>
-                <div className="mt-2 h-2 w-full rounded-full bg-neutral-900">
+                <div className="mt-2 h-2 w-full rounded-full bg-[var(--surface-1)]">
                   <div
-                    className="h-2 rounded-full bg-white transition-[width]"
+                    className="h-2 rounded-full bg-[var(--accent-solid)] transition-[width]"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -409,7 +409,7 @@ export default function UploadVideoModal({
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-neutral-900 p-4">
+          <div className="flex items-center justify-end gap-2 border-t border-[var(--border-2)] p-4">
             <button
               type="button"
               onClick={() => {
@@ -417,7 +417,7 @@ export default function UploadVideoModal({
                 setFile(null);
                 onClose();
               }}
-              className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 hover:bg-neutral-800"
+              className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
               disabled={busy}
             >
               Cancel
@@ -432,8 +432,8 @@ export default function UploadVideoModal({
               className={[
                 "rounded-xl px-3 py-2 text-sm font-semibold transition",
                 willFit === false
-                  ? "bg-red-500/30 text-red-200 cursor-not-allowed"
-                  : "bg-white text-neutral-900 hover:bg-neutral-200",
+                  ? "bg-red-500/30 text-red-700 dark:text-red-200 cursor-not-allowed"
+                  : "bg-[var(--accent-solid)] text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]",
                 "disabled:opacity-60",
               ].join(" ")}
             >

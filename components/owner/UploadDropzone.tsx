@@ -44,21 +44,21 @@ export default function UploadDropzone({ onFiles }: Props) {
         if (files.length) onFiles(files);
       }}
       className={[
-        "rounded-2xl border border-neutral-900 bg-neutral-950/30 p-6",
+        "rounded-2xl border border-[var(--border-2)] bg-[var(--surface-0)]/30 p-6",
         "transition",
-        over ? "ring-2 ring-white/20 bg-neutral-900/20" : "",
+        over ? "ring-2 ring-[var(--accent-solid)]/20 bg-[var(--surface-1)]/20" : "",
       ].join(" ")}
     >
       <div className="flex items-center gap-4">
-        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-neutral-900 ring-1 ring-neutral-800">
-          <UploadCloud className="h-6 w-6 text-neutral-200" />
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-1)] ring-1 ring-[var(--border-1)]">
+          <UploadCloud className="h-6 w-6 text-[var(--text-2)]" />
         </div>
 
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-white">
+          <div className="text-sm font-semibold text-[var(--text-1)]">
             Drag and drop videos here
           </div>
-          <div className="text-sm text-neutral-400">
+          <div className="text-sm text-[var(--text-muted)]">
             Or use “Upload Video” to pick files.
           </div>
         </div>

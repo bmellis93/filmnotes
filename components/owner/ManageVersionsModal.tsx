@@ -150,14 +150,14 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
           aria-modal="true"
           aria-labelledby="manage-versions-title"
           aria-describedby="manage-versions-desc"
-          className="rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl"
+          className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl"
         >
-          <div className="flex items-center justify-between border-b border-neutral-900 p-4">
+          <div className="flex items-center justify-between border-b border-[var(--border-2)] p-4">
             <div>
               <div id="manage-versions-title" className="text-sm font-semibold">
                 Manage Versions
               </div>
-              <div id="manage-versions-desc" className="mt-0.5 text-xs text-neutral-400">
+              <div id="manage-versions-desc" className="mt-0.5 text-xs text-[var(--text-muted)]">
                 Drag to reorder or use the arrows. Top item becomes Version 1.
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
               ref={closeBtnRef}
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 hover:bg-neutral-900 hover:text-white"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-3)] hover:bg-[var(--surface-1)] hover:text-[var(--text-1)]"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
@@ -178,8 +178,8 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
               <div
                 key={v.id}
                 className={[
-                  "flex items-center justify-between gap-3 rounded-xl border border-neutral-900 bg-neutral-950/40 p-3",
-                  dragId === v.id ? "ring-1 ring-neutral-700" : "",
+                  "flex items-center justify-between gap-3 rounded-xl border border-[var(--border-2)] bg-[var(--surface-0)]/40 p-3",
+                  dragId === v.id ? "ring-1 ring-[var(--border-3)]" : "",
                 ].join(" ")}
                 draggable
                 onDragStart={() => onDragStart(v.id)}
@@ -188,7 +188,7 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <div
-                    className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-300"
+                    className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-3)]"
                     aria-hidden="true"
                     title="Drag to reorder"
                   >
@@ -196,9 +196,9 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
                   </div>
 
                   <div className="min-w-0">
-                    <div className="text-xs text-neutral-400">Version {idx + 1}</div>
-                    <div className="truncate text-sm font-semibold text-white">{v.name}</div>
-                    <div className="truncate text-sm text-neutral-400">{v.description || "—"}</div>
+                    <div className="text-xs text-[var(--text-muted)]">Version {idx + 1}</div>
+                    <div className="truncate text-sm font-semibold text-[var(--text-1)]">{v.name}</div>
+                    <div className="truncate text-sm text-[var(--text-muted)]">{v.description || "—"}</div>
                   </div>
                 </div>
 
@@ -207,7 +207,7 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
                     type="button"
                     onClick={() => bump(idx, -1)}
                     disabled={idx === 0}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 hover:bg-neutral-800 disabled:opacity-40"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-2)] hover:bg-[var(--surface-2)] disabled:opacity-40"
                     aria-label={`Move ${v.name} up`}
                     title="Move up"
                   >
@@ -218,7 +218,7 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
                     type="button"
                     onClick={() => bump(idx, 1)}
                     disabled={idx === ordered.length - 1}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900 text-neutral-200 hover:bg-neutral-800 disabled:opacity-40"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-2)] hover:bg-[var(--surface-2)] disabled:opacity-40"
                     aria-label={`Move ${v.name} down`}
                     title="Move down"
                   >
@@ -229,17 +229,17 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
             ))}
 
             {ordered.length === 0 && (
-              <div className="rounded-xl border border-neutral-900 bg-neutral-950/40 p-4 text-sm text-neutral-400">
+              <div className="rounded-xl border border-[var(--border-2)] bg-[var(--surface-0)]/40 p-4 text-sm text-[var(--text-muted)]">
                 No videos selected.
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-neutral-900 p-4">
+          <div className="flex items-center justify-end gap-2 border-t border-[var(--border-2)] p-4">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 hover:bg-neutral-800"
+              className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
             >
               Cancel
             </button>
@@ -252,7 +252,7 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
                 onClose();
               }}
               disabled={!canSave}
-              className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 disabled:opacity-50"
+              className="rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-50"
             >
               Save versions
             </button>

@@ -74,12 +74,12 @@ export default function ClientGalleryScreen({
   }
 
   return (
-    <div className="min-h-[100dvh] bg-neutral-950 text-neutral-100">
-      <div className="sticky top-0 z-10 border-b border-neutral-900 bg-neutral-950/80 backdrop-blur">
+    <div className="min-h-[100dvh] bg-[var(--surface-0)] text-[var(--text-1)]">
+      <div className="sticky top-0 z-10 border-b border-[var(--border-2)] bg-[var(--surface-0)]/80 backdrop-blur">
         <div className="mx-auto w-full max-w-6xl px-4 py-4">
           <div className="min-w-0">
-            <div className="truncate text-base font-semibold text-white">{title}</div>
-            <div className="mt-1 text-sm text-neutral-400">
+            <div className="truncate text-base font-semibold text-[var(--text-1)]">{title}</div>
+            <div className="mt-1 text-sm text-[var(--text-muted)]">
               {permissions.view === "VIEW_ONLY" ? "View only" : "Review & download"}
             </div>
           </div>
@@ -88,14 +88,14 @@ export default function ClientGalleryScreen({
 
       <div className="mx-auto w-full max-w-6xl px-4 py-6">
         {visibleVideos.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-900 bg-neutral-950/40 p-8">
+          <div className="rounded-2xl border border-[var(--border-2)] bg-[var(--surface-0)]/40 p-8">
             <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-neutral-900 ring-1 ring-neutral-800">
-                <Film className="h-5 w-5 text-neutral-200" />
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--surface-1)] ring-1 ring-[var(--border-1)]">
+                <Film className="h-5 w-5 text-[var(--text-2)]" />
               </div>
               <div>
                 <div className="text-sm font-semibold">No videos available</div>
-                <div className="text-sm text-neutral-400">
+                <div className="text-sm text-[var(--text-muted)]">
                   This link may not have any videos yet.
                 </div>
               </div>
@@ -112,15 +112,15 @@ export default function ClientGalleryScreen({
                   key={v.id}
                   type="button"
                   onClick={() => openVideo(v.id)}
-                  className="group relative overflow-hidden rounded-2xl border border-neutral-900 bg-neutral-950/40 hover:bg-neutral-900/20 transition text-left"
+                  className="group relative overflow-hidden rounded-2xl border border-[var(--border-2)] bg-[var(--surface-0)]/40 hover:bg-[var(--surface-1)]/20 transition text-left"
                 >
                   {isStackParent && (
-                    <div className="absolute left-3 top-3 z-10 rounded-full border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-200">
+                    <div className="absolute left-3 top-3 z-10 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-0.5 text-xs text-[var(--text-2)]">
                       Latest of {stackCount}
                     </div>
                   )}
 
-                  <div className="aspect-video w-full bg-neutral-950">
+                  <div className="aspect-video w-full bg-[var(--surface-0)]">
                     {v.thumbnailUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -130,15 +130,15 @@ export default function ClientGalleryScreen({
                         loading="lazy"
                       />
                     ) : (
-                      <div className="h-full w-full flex items-center justify-center text-xs text-neutral-400">
+                      <div className="h-full w-full flex items-center justify-center text-xs text-[var(--text-muted)]">
                         No thumbnail
                       </div>
                     )}
                   </div>
 
                   <div className="p-4">
-                    <div className="truncate text-sm font-semibold text-white">{v.name}</div>
-                    <div className="mt-1 truncate text-sm text-neutral-400">
+                    <div className="truncate text-sm font-semibold text-[var(--text-1)]">{v.name}</div>
+                    <div className="mt-1 truncate text-sm text-[var(--text-muted)]">
                       {v.description || "—"}
                     </div>
                     <div className="mt-3 text-xs text-neutral-500">

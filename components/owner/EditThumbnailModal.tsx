@@ -72,8 +72,8 @@ export default function EditThumbnailModal({
         }}
       />
       <div className="absolute inset-x-0 top-12 mx-auto w-full max-w-md px-4">
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl">
-          <div className="flex items-center justify-between border-b border-neutral-900 p-4">
+        <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl">
+          <div className="flex items-center justify-between border-b border-[var(--border-2)] p-4">
             <div className="text-sm font-semibold">Edit Thumbnail</div>
             <button
               type="button"
@@ -81,7 +81,7 @@ export default function EditThumbnailModal({
                 if (busy) return;
                 onClose();
               }}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-neutral-300 hover:bg-neutral-900 hover:text-white"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-3)] hover:bg-[var(--surface-1)] hover:text-[var(--text-1)]"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
@@ -89,7 +89,7 @@ export default function EditThumbnailModal({
           </div>
 
           <div className="p-4 space-y-4">
-            <div className="aspect-video w-full overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900/60">
+            <div className="aspect-video w-full overflow-hidden rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/60">
               {displayUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={displayUrl} alt="Thumbnail preview" className="h-full w-full object-cover" />
@@ -107,24 +107,24 @@ export default function EditThumbnailModal({
                 label={file ? "Change Image" : "Choose Image"}
                 onFile={setFile}
               />
-              {file && <span className="text-xs text-neutral-400">{file.name}</span>}
+              {file && <span className="text-xs text-[var(--text-muted)]">{file.name}</span>}
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-200">
                 {error}
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-neutral-900 p-4">
+          <div className="flex items-center justify-end gap-2 border-t border-[var(--border-2)] p-4">
             <button
               type="button"
               onClick={() => {
                 if (busy) return;
                 onClose();
               }}
-              className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 hover:bg-neutral-800"
+              className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
               disabled={busy}
             >
               Cancel
@@ -133,7 +133,7 @@ export default function EditThumbnailModal({
               type="button"
               onClick={handleSave}
               disabled={busy || !file}
-              className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-200 disabled:opacity-60"
+              className="rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-60"
             >
               {busy ? "Saving…" : "Save"}
             </button>

@@ -45,7 +45,7 @@ export default function StorageUsagePill() {
 
   if (used == null || limit == null) {
     return (
-      <div className="hidden sm:flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/40 px-3 py-2 text-xs text-neutral-300">
+      <div className="hidden sm:flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 px-3 py-2 text-xs text-[var(--text-3)]">
         <Cloud className="h-4 w-4" />
         Storage…
       </div>
@@ -59,13 +59,13 @@ export default function StorageUsagePill() {
       ? "border-orange-500/40 bg-orange-500/10"
       : level === "mid"
         ? "border-yellow-500/40 bg-yellow-500/10"
-        : "border-neutral-800 bg-neutral-900/40";
+        : "border-[var(--border-1)] bg-[var(--surface-1)]/40";
 
   const textClass =
     level === "high"
-      ? "text-orange-300"
+      ? "text-orange-600 dark:text-orange-300"
       : level === "mid"
-        ? "text-yellow-300"
+        ? "text-yellow-700 dark:text-yellow-300"
         : "";
 
   return (
@@ -77,19 +77,19 @@ export default function StorageUsagePill() {
         ].join(" ")}
         title={`${fmtGB(used)}GB of ${fmtGB(limit)}GB used`}
       >
-        <Cloud className="h-4 w-4 text-neutral-200" />
+        <Cloud className="h-4 w-4 text-[var(--text-2)]" />
 
         <div className="min-w-[140px]">
-          <div className="flex items-center justify-between text-[11px] text-neutral-300">
+          <div className="flex items-center justify-between text-[11px] text-[var(--text-3)]">
             <span>Storage</span>
             <span className={textClass}>
               {fmtGB(used)} / {fmtGB(limit)} GB
             </span>
           </div>
 
-          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
             <div
-              className="h-full bg-white/80"
+              className="h-full bg-[var(--accent-solid)]/80"
               style={{ width: `${Math.round(pct * 100)}%` }}
             />
           </div>

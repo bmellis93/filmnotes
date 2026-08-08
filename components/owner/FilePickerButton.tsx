@@ -11,7 +11,7 @@ type Props = {
 };
 
 const defaultClassName =
-  "inline-flex items-center rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 hover:bg-neutral-800 disabled:opacity-60";
+  "inline-flex items-center rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)] disabled:opacity-60";
 
 export default function FilePickerButton({
   accept,

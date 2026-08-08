@@ -17,7 +17,7 @@ export type GallerySort = {
 };
 
 const btnBase =
-  "inline-flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-200 hover:bg-neutral-800 transition";
+  "inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)] transition";
 
 export default function GallerySortMenu({
   value,
@@ -142,7 +142,7 @@ export default function GallerySortMenu({
         aria-label="Gallery sort menu"
         onKeyDown={onMenuKeyDown}
         className={[
-          "absolute right-0 z-20 mt-2 w-50 rounded-2xl border border-neutral-800 bg-neutral-950 p-2 shadow-xl",
+          "absolute right-0 z-20 mt-2 w-50 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] p-2 shadow-xl",
           "origin-top-right transition duration-150 focus:outline-none",
           open ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-95",
         ].join(" ")}
@@ -171,8 +171,8 @@ export default function GallerySortMenu({
                 className={[
                   "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs outline-none",
                   active
-                    ? "bg-neutral-200 text-neutral-900"
-                    : "text-neutral-200 focus:bg-neutral-900 focus-visible:bg-neutral-900",
+                    ? "bg-[var(--accent-solid-hover)] text-[var(--accent-solid-fg)]"
+                    : "text-[var(--text-2)] focus:bg-[var(--surface-1)] focus-visible:bg-[var(--surface-1)]",
                 ].join(" ")}
               >
                 <span>{i.label}</span>
@@ -182,7 +182,7 @@ export default function GallerySortMenu({
           })}
         </div>
 
-        <div className="mt-2 border-t border-neutral-800 pt-2">
+        <div className="mt-2 border-t border-[var(--border-1)] pt-2">
           <button
             type="button"
             role="menuitem"
@@ -190,8 +190,8 @@ export default function GallerySortMenu({
             tabIndex={-1}
             onClick={toggleDir}
             className={[
-              "w-full rounded-xl px-3 py-2 text-left text-xs text-neutral-200 hover:bg-neutral-900 outline-none",
-              "focus:ring-2 focus:ring-neutral-700",
+              "w-full rounded-xl px-3 py-2 text-left text-xs text-[var(--text-2)] hover:bg-[var(--surface-1)] outline-none",
+              "focus:ring-2 focus:ring-[var(--border-3)]",
             ].join(" ")}
           >
             Direction: <span className="font-semibold">{dirLabel}</span>

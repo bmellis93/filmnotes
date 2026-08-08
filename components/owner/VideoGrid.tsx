@@ -53,9 +53,9 @@ function statusLabel(status: GalleryVideo["status"]) {
 }
 
 function statusPill(status: GalleryVideo["status"]) {
-  if (status === "UPLOADING") return { label: "Uploading…", cls: "bg-white/10 text-neutral-200 border-white/15" };
-  if (status === "UPLOADED" || status === "PROCESSING") return { label: "Processing…", cls: "bg-yellow-500/10 text-yellow-200 border-yellow-500/30" };
-  if (status === "FAILED") return { label: "Failed", cls: "bg-red-500/10 text-red-200 border-red-500/30" };
+  if (status === "UPLOADING") return { label: "Uploading…", cls: "bg-[var(--accent-solid)]/10 text-[var(--text-2)] border-[var(--accent-solid)]/15" };
+  if (status === "UPLOADED" || status === "PROCESSING") return { label: "Processing…", cls: "bg-yellow-500/10 text-yellow-800 dark:text-yellow-200 border-yellow-500/30" };
+  if (status === "FAILED") return { label: "Failed", cls: "bg-red-500/10 text-red-700 dark:text-red-200 border-red-500/30" };
   return null;
 }
 
@@ -143,13 +143,13 @@ export default function VideoGrid({
               onDropOnCard?.(v.id);
             }}
             className={[
-              "group relative overflow-hidden rounded-2xl border bg-neutral-950/40 transition",
-              "focus-within:ring-2 focus-within:ring-white/15",
+              "group relative overflow-hidden rounded-2xl border bg-[var(--surface-0)]/40 transition",
+              "focus-within:ring-2 focus-within:ring-[var(--accent-solid)]/15",
               isArchived ? "opacity-60" : "",
               canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default",
               isDropTarget
-                ? "border-white/40 ring-2 ring-white/15 bg-neutral-900/25"
-                : "border-neutral-900 hover:bg-neutral-900/20",
+                ? "border-[var(--accent-solid)]/40 ring-2 ring-[var(--accent-solid)]/15 bg-[var(--surface-1)]/25"
+                : "border-[var(--border-2)] hover:bg-[var(--surface-1)]/20",
             ].join(" ")}
           >
             {/* Top-right controls */}
@@ -164,11 +164,11 @@ export default function VideoGrid({
                     onToggleSelect(v.id);
                   }}
                   className={[
-                    "h-8 w-8 rounded-lg border border-neutral-800 bg-neutral-950/60 backdrop-blur",
+                    "h-8 w-8 rounded-lg border border-[var(--border-1)] bg-[var(--surface-0)]/60 backdrop-blur",
                     "grid place-items-center transition",
                     showSelectionUI || isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                    isSelected ? "ring-2 ring-white/40" : "hover:bg-neutral-900",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+                    isSelected ? "ring-2 ring-[var(--accent-solid)]/40" : "hover:bg-[var(--surface-1)]",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]/20",
                   ].join(" ")}
                   aria-label={isSelected ? "Deselect video" : "Select video"}
                   aria-pressed={isSelected}
@@ -177,7 +177,7 @@ export default function VideoGrid({
                   <div
                     className={[
                       "h-4 w-4 rounded border transition",
-                      isSelected ? "bg-white border-white" : "border-neutral-400",
+                      isSelected ? "bg-[var(--accent-solid)] border-[var(--accent-solid)]" : "border-neutral-400",
                     ].join(" ")}
                   />
                 </button>
@@ -192,10 +192,10 @@ export default function VideoGrid({
                     setMenuOpenForId((prev) => (prev === v.id ? null : v.id));
                   }}
                   className={[
-                    "h-8 w-8 rounded-lg border border-neutral-800 bg-neutral-950/60 backdrop-blur",
-                    "grid place-items-center text-neutral-200 transition hover:bg-neutral-900",
+                    "h-8 w-8 rounded-lg border border-[var(--border-1)] bg-[var(--surface-0)]/60 backdrop-blur",
+                    "grid place-items-center text-[var(--text-2)] transition hover:bg-[var(--surface-1)]",
                     "opacity-0 group-hover:opacity-100",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]/20",
                   ].join(" ")}
                   aria-label="Video options"
                   aria-haspopup="menu"
@@ -209,7 +209,7 @@ export default function VideoGrid({
                   <div
                     role="menu"
                     aria-label="Video options"
-                    className="absolute right-0 top-10 w-44 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl"
+                    className="absolute right-0 top-10 w-44 overflow-hidden rounded-xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
@@ -219,7 +219,7 @@ export default function VideoGrid({
                         closeMenu();
                         onMenuAction?.(v.id, "SHARE");
                       }}
-                      className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
+                      className="w-full px-3 py-2 text-left text-sm text-[var(--text-1)] hover:bg-[var(--surface-1)] focus:outline-none focus-visible:bg-[var(--surface-1)]"
                     >
                       <span className="inline-flex items-center gap-2">
                         <Share2 className="h-3.5 w-3.5" />
@@ -227,7 +227,7 @@ export default function VideoGrid({
                       </span>
                     </button>
 
-                    <div className="h-px bg-neutral-900" />
+                    <div className="h-px bg-[var(--surface-1)]" />
 
                     <button
                       role="menuitem"
@@ -236,14 +236,14 @@ export default function VideoGrid({
                         closeMenu();
                         onMenuAction?.(v.id, "EDIT_THUMBNAIL");
                       }}
-                      className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
+                      className="w-full px-3 py-2 text-left text-sm text-[var(--text-1)] hover:bg-[var(--surface-1)] focus:outline-none focus-visible:bg-[var(--surface-1)]"
                     >
                       Edit Thumbnail
                     </button>
 
                     {stackCard && (
                       <>
-                        <div className="h-px bg-neutral-900" />
+                        <div className="h-px bg-[var(--surface-1)]" />
 
                         <button
                           role="menuitem"
@@ -252,12 +252,12 @@ export default function VideoGrid({
                             closeMenu();
                             onMenuAction?.(v.id, "MANAGE_VERSIONS");
                           }}
-                          className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
+                          className="w-full px-3 py-2 text-left text-sm text-[var(--text-1)] hover:bg-[var(--surface-1)] focus:outline-none focus-visible:bg-[var(--surface-1)]"
                         >
                           Manage Versions
                         </button>
 
-                        <div className="h-px bg-neutral-900" />
+                        <div className="h-px bg-[var(--surface-1)]" />
 
                         <button
                           role="menuitem"
@@ -266,7 +266,7 @@ export default function VideoGrid({
                             closeMenu();
                             onMenuAction?.(v.id, "UNSTACK");
                           }}
-                          className="w-full px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-900 focus:outline-none focus-visible:bg-neutral-900"
+                          className="w-full px-3 py-2 text-left text-sm text-[var(--text-1)] hover:bg-[var(--surface-1)] focus:outline-none focus-visible:bg-[var(--surface-1)]"
                         >
                           Unstack
                         </button>
@@ -299,13 +299,13 @@ export default function VideoGrid({
               title={isArchived ? "Archived video" : "Open"}
             >
               {isArchived ? (
-                <div className="absolute right-4 top-4 z-10 rounded-full border border-neutral-700 bg-black/40 px-2 py-1 text-[10px] font-semibold text-neutral-200 backdrop-blur">
+                <div className="absolute right-4 top-4 z-10 rounded-full border border-[var(--border-3)] bg-black/40 px-2 py-1 text-[10px] font-semibold text-[var(--text-2)] backdrop-blur">
                   Archived
                 </div>
               ) : null}
 
               {/* thumbnail area */}
-              <div className="aspect-video w-full bg-neutral-900/60 relative">
+              <div className="aspect-video w-full bg-[var(--surface-1)]/60 relative">
                 {pill ? (
                   <div className="absolute left-3 top-3 z-10">
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${pill.cls}`}>
@@ -328,12 +328,12 @@ export default function VideoGrid({
                 ) : v.status === "UPLOADING" || v.status === "UPLOADED" || v.status === "PROCESSING" ? (
                   <div className="absolute inset-0">
                     <div className="h-full w-full animate-pulse bg-gradient-to-br from-neutral-900/60 via-neutral-800/30 to-neutral-900/60" />
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-neutral-300">
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-3)]">
                       {statusLabel(v.status)}
                     </div>
                   </div>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-neutral-400">
+                  <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-muted)]">
                     {statusLabel(v.status)}
                   </div>
                 )}
@@ -347,12 +347,12 @@ export default function VideoGrid({
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-white">{v.name}</div>
-                    <div className="truncate text-sm text-neutral-400">{v.description || "—"}</div>
+                    <div className="truncate text-sm font-semibold text-[var(--text-1)]">{v.name}</div>
+                    <div className="truncate text-sm text-[var(--text-muted)]">{v.description || "—"}</div>
                   </div>
 
                   {v.versionsCount > 1 && (
-                    <div className="shrink-0 rounded-full border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-200">
+                    <div className="shrink-0 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-0.5 text-xs text-[var(--text-2)]">
                       v{v.versionsCount}
                     </div>
                   )}
@@ -365,20 +365,20 @@ export default function VideoGrid({
                       e.stopPropagation();
                       onRetryFailed(v.id);
                     }}
-                    className="mt-3 inline-flex items-center rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-semibold text-neutral-100 hover:bg-neutral-800"
+                    className="mt-3 inline-flex items-center rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
                   >
                     Retry upload
                   </button>
                 ) : null}
                 
                 {v.status === "FAILED" && v.failureReason ? (
-                  <div className="mt-2 text-xs text-red-200/90 line-clamp-2">
+                  <div className="mt-2 text-xs text-red-700/90 dark:text-red-200/90 line-clamp-2">
                     {v.failureReason}
                   </div>
                 ) : null}
 
                 {v.status === "FAILED" ? (
-                  <div className="mt-2 text-[11px] text-neutral-300/80">
+                  <div className="mt-2 text-[11px] text-[var(--text-3)]/80">
                     Try “Retry upload”. If it fails again, the file may be unsupported.
                   </div>
                 ) : null}
