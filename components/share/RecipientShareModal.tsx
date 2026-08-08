@@ -539,8 +539,7 @@ export default function RecipientShareModal({
           </div>
 
           {/* Footer */}
-          <div className="flex shrink-0 items-center justify-between border-t border-neutral-800 px-5 py-4">
-            <div className="text-xs text-neutral-500">Frame.io vibe, Renowned build 😄</div>
+          <div className="flex shrink-0 items-center justify-end border-t border-neutral-800 px-5 py-4">
             <button
               className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-neutral-200 hover:bg-neutral-800"
               onClick={onClose}
