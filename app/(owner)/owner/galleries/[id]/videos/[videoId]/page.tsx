@@ -1,7 +1,6 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import VideoReviewScreen from "@/components/review/VideoReviewScreen";
 import { prisma } from "@/lib/prisma";
-import { getLatestIdForVideo } from "@/lib/share/stackView";
 import { Prisma } from "@prisma/client";
 import { safeParseStacks, buildVideoMaps } from "@/lib/videoMaps";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
@@ -70,11 +69,9 @@ export default async function OwnerGalleryVideoPage({ params }: Props) {
   const allowedIds = allVideos.map((v) => v.id);
   if (!allowedIds.includes(vId)) notFound();
 
-  // Keep URL pointed at the latest version in stack
-  const latestId = getLatestIdForVideo(vId, stacks);
-  if (latestId !== vId) {
-    redirect(`/owner/galleries/${galleryId}/videos/${latestId}`);
-  }
+  // Note: unlike share/client links, the owner view does NOT force-redirect
+  // to the latest version — the version dropdown needs to be able to land
+  // on (and stay on) any specific version in the stack.
 
   const { videoMetaById, sourcesById } = buildVideoMaps(allVideos);
 

@@ -24,6 +24,7 @@ import {
   buildById,
   buildChildToParent,
   getParentId,
+  getStackIds,
   isStackParent,
   latestIdForCard,
   nextStacksFromOrder,
@@ -79,9 +80,15 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
 
   const visibleForGrid = useMemo(() => {
     const base = visibleVideos;
-    if (showArchived) return base;
-    return base.filter((v) => !v.archivedAt);
-  }, [visibleVideos, showArchived]);
+    const filtered = showArchived ? base : base.filter((v) => !v.archivedAt);
+    // Recompute from live stacks state so the "vN" badge doesn't go stale
+    // after stack/unstack/reorder actions (server-computed initialVideos
+    // only reflects the count at page load).
+    return filtered.map((v) => ({
+      ...v,
+      versionsCount: getStackIds(v.id, stacks).length,
+    }));
+  }, [visibleVideos, showArchived, stacks]);
 
   const inflightReal = useMemo(() => {
     return videos.filter(

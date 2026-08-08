@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { uploadThumbnail } from "@/lib/uploadClient";
+import FilePickerButton from "@/components/owner/FilePickerButton";
 
 type Props = {
   open: boolean;
@@ -99,14 +100,14 @@ export default function EditThumbnailModal({
               )}
             </div>
 
-            <div>
-              <input
-                type="file"
+            <div className="flex items-center gap-3">
+              <FilePickerButton
                 accept="image/png,image/jpeg,image/webp,image/gif"
-                onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)}
                 disabled={busy}
-                className="block w-full text-sm text-neutral-200"
+                label={file ? "Change Image" : "Choose Image"}
+                onFile={setFile}
               />
+              {file && <span className="text-xs text-neutral-400">{file.name}</span>}
             </div>
 
             {error && (

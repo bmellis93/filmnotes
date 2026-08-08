@@ -7,6 +7,7 @@ import type { GalleryVideo } from "@/components/owner/VideoGrid";
 import { uploadVideoToR2, fmtGB, type StorageLimitError } from "@/lib/uploadClient";
 import { useRouter } from "next/navigation";
 import { logUploadFailure } from "@/lib/telemetry";
+import FilePickerButton from "@/components/owner/FilePickerButton";
 
 type Props = {
   open: boolean;
@@ -247,12 +248,11 @@ export default function UploadVideoModal({
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-4">
             <div className="text-sm font-semibold">Choose a video</div>
             <div className="mt-2">
-              <input
-                type="file"
+              <FilePickerButton
                 accept="video/*"
-                onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)}
                 disabled={busy}
-                className="block w-full text-sm text-neutral-200"
+                label={file ? "Change Video File" : "Choose Video File"}
+                onFile={setFile}
               />
             </div>
             {file ? (
@@ -344,15 +344,16 @@ export default function UploadVideoModal({
                 ) : null}
 
                 <div className="min-w-0 flex-1">
-                  <input
-                    type="file"
+                  <FilePickerButton
                     accept="image/png,image/jpeg,image/webp,image/gif"
-                    onChange={(e) => setThumbFile(e.currentTarget.files?.[0] ?? null)}
                     disabled={busy}
-                    className="block w-full text-sm text-neutral-200"
+                    label={thumbFile ? "Change Thumbnail" : "Choose Thumbnail"}
+                    onFile={setThumbFile}
                   />
                   <div className="mt-1 text-xs text-neutral-500">
-                    Defaults to an auto-generated frame if you skip this.
+                    {thumbFile
+                      ? thumbFile.name
+                      : "Defaults to an auto-generated frame if you skip this."}
                   </div>
                 </div>
               </div>

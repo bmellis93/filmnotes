@@ -159,16 +159,18 @@ export function unstackPreserveOrder(args: {
   // Remove all stack ids
   const without = videos.filter((v) => !setIds.has(v.id));
 
-  // Find where the parent ended up
+  // Find where the parent ended up. If every video in the gallery was part
+  // of this stack, `without` is empty and there's nothing to anchor to —
+  // just place the unstacked videos at the front in that case.
   const parentIdx = without.findIndex((v) => v.id === parentId);
-  if (parentIdx === -1) return null;
 
-  const head = without.slice(0, parentIdx + 1);
-  const tail = without.slice(parentIdx + 1);
+  const head = parentIdx === -1 ? [] : without.slice(0, parentIdx + 1);
+  const tail = parentIdx === -1 ? without : without.slice(parentIdx + 1);
 
   const rest = ordered.filter((v) => v.id !== parentId);
 
-  const nextVideos = [...head, ...rest, ...tail];
+  const nextVideos =
+    parentIdx === -1 ? [...ordered, ...tail] : [...head, ...rest, ...tail];
   const nextStacks: StackMap = { ...stacks };
   delete nextStacks[parentId];
 

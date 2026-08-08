@@ -27,7 +27,11 @@ export function getStackIdsForVideo(
 
   if (stacks[id]?.length) return stacks[id];
 
-  const parentId = childToParent?.get(id);
+  // Build lazily if the caller didn't supply one — most callers pass a
+  // bare videoId that may be a child (non-parent) member of the stack,
+  // and without this we'd silently fall back to a fake single-item stack.
+  const map = childToParent ?? buildChildToParent(stacks);
+  const parentId = map.get(id);
   if (parentId && stacks[parentId]) return stacks[parentId];
 
   return [id];

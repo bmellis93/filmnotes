@@ -70,7 +70,6 @@ export default function VideoReviewScreen(props: Props) {
   } = props;
 
   const router = useRouter();
-  const player = useVideoPlayer();
 
   const isToken = mode === "token";
   const isOwner = mode === "owner";
@@ -88,6 +87,8 @@ export default function VideoReviewScreen(props: Props) {
   const sources = sourcesById[videoId];
   const viewSrc = sources?.viewSrc ?? "";
   const downloadSrc = sources?.originalSrc;
+
+  const player = useVideoPlayer({ src: viewSrc });
 
   // Versions in the stack (for dropdown + compare)
   const versions = useMemo(() => getStackIdsForVideo(videoId, stacks), [videoId, stacks]);
@@ -401,6 +402,7 @@ export default function VideoReviewScreen(props: Props) {
 
           if (mode === "token" && token) router.push(`/r/${token}/videos/${nextId}`);
           else if (mode === "client" && shareId) router.push(`/share/${shareId}/videos/${nextId}`);
+          else if (mode === "owner" && backHref) router.push(`${backHref}/videos/${nextId}`);
           else router.push(`/videos/${nextId}`);
         }}
         canCompare={canCompare}
@@ -447,7 +449,6 @@ export default function VideoReviewScreen(props: Props) {
               <div className="flex-1 min-h-0">
                 <VideoStage
                   ref={player.videoRef}
-                  src={viewSrc}
                   className="h-full"
                   onLoadedMetadata={player.syncDuration}
                   onLoadedData={player.syncDuration}
@@ -488,6 +489,10 @@ export default function VideoReviewScreen(props: Props) {
                   onToggleLoop={() => player.setLoop((v) => !v)}
                   playbackRate={player.playbackRate}
                   onPlaybackRateChange={player.setPlaybackRate}
+                  qualityLevels={player.qualityLevels}
+                  currentQualityIndex={player.currentQualityIndex}
+                  isAutoQuality={player.isAutoQuality}
+                  onQualityChange={player.setQualityLevel}
                   isFullscreen={player.isFullscreen}
                   onToggleFullscreen={player.toggleFullscreen}
                 />

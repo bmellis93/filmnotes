@@ -3,7 +3,9 @@
 import React, { forwardRef } from "react";
 
 type VideoStageProps = {
-  src: string;
+  // Optional: omit when the caller (e.g. useVideoPlayer) manages the
+  // source itself, such as attaching hls.js for real quality switching.
+  src?: string;
   poster?: string;
 
   className?: string; // outer wrapper

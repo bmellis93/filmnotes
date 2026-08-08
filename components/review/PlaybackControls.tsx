@@ -59,13 +59,16 @@ type Props = {
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
 
+  // quality (real HLS renditions, when available)
+  qualityLevels?: { index: number; label: string }[];
+  currentQualityIndex?: number; // the level actually playing right now
+  isAutoQuality?: boolean; // whether that level was chosen by ABR vs. pinned by the user
+  onQualityChange?: (index: number) => void;
+
   snapToZeroThreshold?: number; // default 0.02
 };
 
 const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75];
-
-const QUALITIES = ["Auto", "8K", "4K", "1080p", "720p", "540p", "360p"] as const;
-type Quality = (typeof QUALITIES)[number];
 
 export default function PlaybackControls({
   isPlaying,
@@ -93,6 +96,11 @@ export default function PlaybackControls({
   onToggleFullscreen,
   isFullscreen,
 
+  qualityLevels = [],
+  currentQualityIndex = -1,
+  isAutoQuality = true,
+  onQualityChange,
+
   snapToZeroThreshold = 0.02,
 }: Props) {
   const safeDuration = Math.max(durationMs, 1);
@@ -100,7 +108,6 @@ export default function PlaybackControls({
 
   const [speedOpen, setSpeedOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [quality, setQuality] = useState<Quality>("Auto");
 
   const speedWrapRef = useRef<HTMLDivElement | null>(null);
   const settingsWrapRef = useRef<HTMLDivElement | null>(null);
@@ -394,35 +401,64 @@ export default function PlaybackControls({
             >
               <div className="text-xs font-semibold text-neutral-300">Quality</div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                {QUALITIES.map((q) => {
-                  const active = q === quality;
-                  return (
-                    <button
-                      key={q}
-                      role="menuitemradio"
-                      aria-checked={active}
-                      type="button"
-                      onClick={() => {
-                        setQuality(q);
-                        setSettingsOpen(false);
-                        // later: hook this into your player quality selection
-                      }}
-                      className={[
-                        "rounded-lg px-2 py-1 text-xs transition",
-                        active
-                          ? "bg-neutral-200 text-neutral-900"
-                          : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800",
-                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700",
-                      ].join(" ")}
-                    >
-                      {q}
-                    </button>
-                  );
-                })}
+                <button
+                  role="menuitemradio"
+                  aria-checked={isAutoQuality}
+                  type="button"
+                  disabled={!onQualityChange}
+                  onClick={() => {
+                    onQualityChange?.(-1);
+                    setSettingsOpen(false);
+                  }}
+                  className={[
+                    "rounded-lg px-2 py-1 text-xs transition",
+                    isAutoQuality
+                      ? "bg-neutral-200 text-neutral-900"
+                      : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700",
+                    "disabled:opacity-60 disabled:cursor-default",
+                  ].join(" ")}
+                >
+                  {isAutoQuality && currentQualityIndex !== -1
+                    ? `Auto (${qualityLevels.find((l) => l.index === currentQualityIndex)?.label ?? "…"})`
+                    : "Auto"}
+                </button>
+
+                {qualityLevels
+                  .slice()
+                  .sort((a, b) => b.index - a.index)
+                  .map((lvl) => {
+                    const active = !isAutoQuality && currentQualityIndex === lvl.index;
+                    return (
+                      <button
+                        key={lvl.index}
+                        role="menuitemradio"
+                        aria-checked={active}
+                        type="button"
+                        onClick={() => {
+                          onQualityChange?.(lvl.index);
+                          setSettingsOpen(false);
+                        }}
+                        className={[
+                          "rounded-lg px-2 py-1 text-xs transition",
+                          active
+                            ? "bg-neutral-200 text-neutral-900"
+                            : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800",
+                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700",
+                        ].join(" ")}
+                      >
+                        {lvl.label}
+                      </button>
+                    );
+                  })}
               </div>
-              <div className="mt-3 text-[11px] text-neutral-500">
-                (We’ll wire real quality options once your video source supports it.)
-              </div>
+              {qualityLevels.length === 0 && (
+                <div className="mt-3 text-[11px] text-neutral-500">
+                  {onQualityChange
+                    ? "Detecting available qualities…"
+                    : "Quality selection isn’t available for this source."}
+                </div>
+              )}
             </div>
           </div>
 
