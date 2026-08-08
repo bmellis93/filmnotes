@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setOwnerSession } from "@/lib/auth/ownerSession";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
@@ -120,6 +121,33 @@ export async function GET(req: NextRequest) {
     }
 
     const ctx = { orgId, userId };
+
+    // Org row must exist before Installation can reference it.
+    await prisma.org.upsert({
+      where: { id: ctx.orgId },
+      create: { id: ctx.orgId },
+      update: {},
+    });
+
+    const expiresAt =
+      typeof token.expires_in === "number" && token.expires_in > 0
+        ? new Date(Date.now() + token.expires_in * 1000)
+        : null;
+
+    await prisma.installation.upsert({
+      where: { orgId: ctx.orgId },
+      create: {
+        orgId: ctx.orgId,
+        accessToken: token.access_token,
+        refreshToken: token.refresh_token ?? null,
+        expiresAt,
+      },
+      update: {
+        accessToken: token.access_token,
+        refreshToken: token.refresh_token ?? null,
+        ...(expiresAt ? { expiresAt } : {}),
+      },
+    });
 
     // Everyone is "ADMIN" in your app model
     await setOwnerSession({ orgId: ctx.orgId, userId: ctx.userId, role: "ADMIN" });
