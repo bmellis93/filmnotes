@@ -77,8 +77,10 @@ export default function VideoReviewScreen(props: Props) {
   const canAddComment =
     mode === "owner" ? true : view !== "VIEW_ONLY" && Boolean(permissions?.allowComments);
 
+  // Download is a client-side action (their copy of the delivered footage);
+  // the owner already has the original, so no download button for them.
   const canDownload =
-    mode === "owner" ? true : view !== "VIEW_ONLY" && Boolean(permissions?.allowDownload);
+    !isOwner && view !== "VIEW_ONLY" && Boolean(permissions?.allowDownload);
 
   const stacks = stacksProp ?? {};
   const videoMetaById = videoMetaByIdProp ?? {};

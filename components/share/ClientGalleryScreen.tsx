@@ -4,6 +4,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Film } from "lucide-react";
+import ThemeToggleSimple from "@/components/ThemeToggleSimple";
 
 import {
   buildChildToParent,
@@ -76,13 +77,15 @@ export default function ClientGalleryScreen({
   return (
     <div className="min-h-[100dvh] bg-[var(--surface-0)] text-[var(--text-1)]">
       <div className="sticky top-0 z-10 border-b border-[var(--border-2)] bg-[var(--surface-0)]/80 backdrop-blur">
-        <div className="mx-auto w-full max-w-6xl px-4 py-4">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4">
           <div className="min-w-0">
             <div className="truncate text-base font-semibold text-[var(--text-1)]">{title}</div>
             <div className="mt-1 text-sm text-[var(--text-muted)]">
               {permissions.view === "VIEW_ONLY" ? "View only" : "Review & download"}
             </div>
           </div>
+
+          <ThemeToggleSimple />
         </div>
       </div>
 
