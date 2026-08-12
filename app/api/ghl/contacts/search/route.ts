@@ -35,6 +35,8 @@ export async function POST(req: NextRequest) {
       return {
         id: c.id,
         name: name || "Unnamed Contact",
+        firstName: c.firstName || null,
+        lastName: c.lastName || null,
         email: c.email || null,
         phone: c.phone || null,
         canEmail: Boolean(c.email),

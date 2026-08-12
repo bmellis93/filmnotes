@@ -22,6 +22,7 @@ model ShareLink {
   expiresAt           DateTime?
   contactId           String?
   conversationId      String?
+  nudgedAt            DateTime?
   video               Video?    @relation(fields: [videoId], references: [id])
 
   @@index([token])
@@ -40,6 +41,8 @@ model Comment {
   createdAt  DateTime      @default(now())
   parentId   String?
   status     CommentStatus @default(OPEN)
+  isApprovalNote Boolean   @default(false)
+  annotationJson String?
   parent     Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies    Comment[]     @relation("CommentReplies")
 
@@ -48,6 +51,20 @@ model Comment {
   @@index([videoId, timecodeMs])
   @@index([parentId, createdAt])
   @@index([videoId, status])
+  @@index([orgId])
+}
+
+model VideoView {
+  id            String   @id @default(cuid())
+  orgId         String
+  token         String
+  videoId       String
+  firstViewedAt DateTime @default(now())
+  lastViewedAt  DateTime @default(now())
+  viewCount     Int      @default(1)
+
+  @@unique([token, videoId])
+  @@index([videoId])
   @@index([orgId])
 }
 
@@ -75,6 +92,12 @@ model Video {
   archivedAt    DateTime?
   deletedAt     DateTime?
 
+  approvalStatus    ApprovalStatus @default(PENDING)
+  approvalUpdatedAt DateTime?
+  approvalNote      String?
+
+  changeNote String?
+
   galleryVideos GalleryVideo[]
 
   shareLinks ShareLink[]
@@ -91,6 +114,7 @@ model Video {
   @@index([orgId])
   @@index([originalKey])
   @@index([archivedAt])
+  @@index([approvalStatus])
   @@index([deletedAt])
 }
 
@@ -147,6 +171,14 @@ model Org {
   galleries Gallery[]
 
   storageUsedBytes  BigInt @default(0)
+
+  defaultSmsTemplateId   String?
+  defaultEmailTemplateId String?
+  defaultEmailTemplateSource String? // "classic" | "builder"
+  defaultEmailTemplateName   String? // display name (mainly for builder templates, which aren't in a flat list)
+  defaultEmailTemplatePreviewUrl String? // builder templates only -- lets us re-fetch content without re-browsing folders
+
+  notificationWebhookUrl String? // POSTed to when a client comments or acts on approval
 }
 
 model Installation {
@@ -208,4 +240,10 @@ enum VideoStatus {
   PROCESSING
   READY
   FAILED
+}
+
+enum ApprovalStatus {
+  PENDING
+  CHANGES_REQUESTED
+  APPROVED
 }

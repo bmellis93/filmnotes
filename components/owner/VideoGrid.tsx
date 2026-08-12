@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MoreHorizontal, Share2 } from "lucide-react";
+import { MoreHorizontal, Share2, Eye } from "lucide-react";
 
 export type GalleryVideo = {
   id: string;
@@ -16,7 +16,16 @@ export type GalleryVideo = {
   originalSize?: number | null;
   playbackUrl?: string | null;
   failureReason?: string | null;
+  approvalStatus?: "PENDING" | "CHANGES_REQUESTED" | "APPROVED";
+  firstViewedAt?: string | null;
 };
+
+function viewedLabel(iso: string | null | undefined) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 type MenuAction = "MANAGE_VERSIONS" | "UNSTACK" | "EDIT_THUMBNAIL" | "SHARE";
 
@@ -50,6 +59,16 @@ function statusLabel(status: GalleryVideo["status"]) {
   if (status === "PROCESSING") return "Processing…";
   if (status === "FAILED") return "Failed";
   return "No thumbnail";
+}
+
+function approvalPill(status: GalleryVideo["approvalStatus"]) {
+  if (status === "APPROVED") {
+    return { label: "Approved", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200" };
+  }
+  if (status === "CHANGES_REQUESTED") {
+    return { label: "Changes requested", cls: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200" };
+  }
+  return { label: "Pending review", cls: "border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-muted)]" };
 }
 
 function statusPill(status: GalleryVideo["status"]) {
@@ -357,6 +376,33 @@ export default function VideoGrid({
                     </div>
                   )}
                 </div>
+
+                {v.status === "READY" && !isArchived && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {(() => {
+                      const ap = approvalPill(v.approvalStatus);
+                      return (
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${ap.cls}`}>
+                          {ap.label}
+                        </span>
+                      );
+                    })()}
+
+                    {(() => {
+                      const label = viewedLabel(v.firstViewedAt);
+                      if (!label) return null;
+                      return (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-muted)]"
+                          title="When the client first opened this video"
+                        >
+                          <Eye className="h-3 w-3" />
+                          Viewed {label}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
 
                 {v.status === "FAILED" && !isArchived && onRetryFailed ? (
                   <button

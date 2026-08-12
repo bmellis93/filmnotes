@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { parseAnnotationJson } from "@/lib/annotations/types";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,8 @@ type FlatComment = {
   status: "OPEN" | "RESOLVED";
   createdAt: Date;
   parentId: string | null;
+  isApprovalNote: boolean;
+  annotationJson: string | null;
 };
 
 function toThreaded(comments: FlatComment[]) {
@@ -33,6 +36,8 @@ function toThreaded(comments: FlatComment[]) {
       replies: [],
       role: c.role,
       status: c.status,
+      isApprovalNote: c.isApprovalNote,
+      annotation: parseAnnotationJson(c.annotationJson),
     });
   }
 
@@ -95,6 +100,8 @@ export async function POST(req: NextRequest) {
         status: true,
         createdAt: true,
         parentId: true,
+        isApprovalNote: true,
+        annotationJson: true,
       },
     });
 

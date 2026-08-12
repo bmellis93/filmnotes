@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { sanitizeAnnotationInput, parseAnnotationJson } from "@/lib/annotations/types";
 
 export const runtime = "nodejs";
 
@@ -8,7 +9,7 @@ export async function POST(req: NextRequest) {
   try {
     const ctx = await requireOwnerContext(); // ✅ await (ctx is OwnerContext now)
 
-    const { videoId, body, timecodeMs, parentId } = await req.json();
+    const { videoId, body, timecodeMs, parentId, annotation } = await req.json();
 
     const vid = String(videoId || "").trim();
     if (!vid) return NextResponse.json({ error: "videoId is required" }, { status: 400 });
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Annotations only make sense on the top-level comment that owns the timecode.
+    const sanitizedAnnotation = !parentId ? sanitizeAnnotationInput(annotation) : null;
+
     const comment = await prisma.comment.create({
       data: {
         orgId: ctx.orgId,
@@ -48,6 +52,7 @@ export async function POST(req: NextRequest) {
         author: null, // or store ctx.userId/name if you want
         role: "OWNER",
         parentId: parentId ? String(parentId) : null,
+        annotationJson: sanitizedAnnotation ? JSON.stringify(sanitizedAnnotation) : null,
       },
       select: {
         id: true,
@@ -58,10 +63,14 @@ export async function POST(req: NextRequest) {
         parentId: true,
         role: true,
         status: true,
+        annotationJson: true,
       },
     });
 
-    return NextResponse.json({ ok: true, comment });
+    return NextResponse.json({
+      ok: true,
+      comment: { ...comment, annotation: parseAnnotationJson(comment.annotationJson) },
+    });
   } catch (err: any) {
     console.error("create-owner error:", err);
     return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 });

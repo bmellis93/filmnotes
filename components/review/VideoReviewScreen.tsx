@@ -7,11 +7,18 @@ import VideoStage from "@/components/VideoStage";
 import PlaybackControls from "@/components/review/PlaybackControls";
 import CommentComposerModal from "@/components/review/CommentComposerModal";
 import CommentsPanel from "@/components/review/CommentsPanel";
+import ApprovalStatusBar, { type ApprovalStatus, type ViewInfo } from "@/components/review/ApprovalStatusBar";
+import RequestChangesModal from "@/components/review/RequestChangesModal";
+import ChangeNoteBar from "@/components/review/ChangeNoteBar";
+import DrawingOverlay from "@/components/review/DrawingOverlay";
 import { useRouter } from "next/navigation";
 import { useVideoPlayer } from "@/components/review/hooks/useVideoPlayer";
 
 import VideoCompareScreen from "@/components/review/VideoCompareScreen";
 import { getStackIdsForVideo, getNextIdInStack } from "@/lib/share/stackView";
+import type { Annotation } from "@/lib/annotations/types";
+import { isEmptyAnnotation } from "@/lib/annotations/types";
+import { Undo2, Eraser, Check } from "lucide-react";
 
 function makeTempId() {
   return `temp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -27,6 +34,8 @@ export type ThreadedComment = {
   replies: ThreadedComment[];
   role?: "OWNER" | "CLIENT";
   status?: "OPEN" | "RESOLVED";
+  isApprovalNote?: boolean;
+  annotation?: Annotation | null;
 };
 
 type Props = {
@@ -51,6 +60,16 @@ type Props = {
   >;
 
   projectTitle?: string;
+
+  // approval workflow (per-video)
+  initialApprovalStatus?: ApprovalStatus;
+  initialApprovalUpdatedAt?: string | null;
+
+  // change notes between versions
+  initialChangeNote?: string | null;
+
+  // view receipts (owner-only, read-only)
+  viewInfo?: ViewInfo | null;
 };
 
 export default function VideoReviewScreen(props: Props) {
@@ -65,6 +84,10 @@ export default function VideoReviewScreen(props: Props) {
     stacks: stacksProp,
     videoMetaById: videoMetaByIdProp,
     projectTitle,
+    initialApprovalStatus,
+    initialApprovalUpdatedAt,
+    initialChangeNote,
+    viewInfo,
   } = props;
 
   const router = useRouter();
@@ -98,6 +121,19 @@ export default function VideoReviewScreen(props: Props) {
   }, [videoId, shareAuthToken]);
 
   const player = useVideoPlayer({ playbackTokenUrl });
+
+  // View receipts: record that the client opened this video (once per mount).
+  useEffect(() => {
+    if (isOwner || !shareAuthToken) return;
+
+    fetch("/api/views/record", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: shareAuthToken, videoId }),
+      keepalive: true,
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId, shareAuthToken, isOwner]);
 
   // Versions in the stack (for dropdown + compare)
   const versions = useMemo(() => getStackIdsForVideo(videoId, stacks), [videoId, stacks]);
@@ -144,6 +180,61 @@ export default function VideoReviewScreen(props: Props) {
 
   const [commentsOpen, setCommentsOpen] = useState(true);
 
+  // Drawing / annotation (scoped to the comment currently being composed)
+  const [draftAnnotation, setDraftAnnotation] = useState<Annotation | null>(null);
+  const [isDrawingActive, setIsDrawingActive] = useState(false);
+  const [viewingAnnotation, setViewingAnnotation] = useState<Annotation | null>(null);
+
+  // A saved read-only annotation only makes sense while paused on that frame.
+  useEffect(() => {
+    if (player.isPlaying) setViewingAnnotation(null);
+  }, [player.isPlaying]);
+
+  // Approval workflow (per-video; resets when the videoId changes)
+  const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus>(
+    initialApprovalStatus ?? "PENDING"
+  );
+  const [approvalUpdatedAt, setApprovalUpdatedAt] = useState<string | null>(
+    initialApprovalUpdatedAt ?? null
+  );
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [requestChangesOpen, setRequestChangesOpen] = useState(false);
+  const [requestChangesNote, setRequestChangesNote] = useState("");
+  const [requestChangesError, setRequestChangesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setApprovalStatus(initialApprovalStatus ?? "PENDING");
+    setApprovalUpdatedAt(initialApprovalUpdatedAt ?? null);
+  }, [videoId, initialApprovalStatus, initialApprovalUpdatedAt]);
+
+  // Change note (per-video; only meaningful for non-first versions in a stack)
+  const isFirstVersion = versions.length <= 1 || versions[0] === videoId;
+  const [changeNote, setChangeNote] = useState(initialChangeNote ?? "");
+  const [isSavingChangeNote, setIsSavingChangeNote] = useState(false);
+
+  useEffect(() => {
+    setChangeNote(initialChangeNote ?? "");
+  }, [videoId, initialChangeNote]);
+
+  async function saveChangeNote(next: string) {
+    if (!isOwner) return;
+    const prev = changeNote;
+    setChangeNote(next);
+    setIsSavingChangeNote(true);
+    try {
+      const res = await fetch(`/api/owner/videos/${videoId}/change-note`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: next }),
+      });
+      if (!res.ok) throw new Error("Failed to save note");
+    } catch {
+      setChangeNote(prev);
+    } finally {
+      setIsSavingChangeNote(false);
+    }
+  }
+
   // On mobile, comments render as a full-screen overlay, so default to
   // closed there (otherwise the video is hidden behind comments on load).
   useEffect(() => {
@@ -164,8 +255,29 @@ export default function VideoReviewScreen(props: Props) {
     if (!canAddComment) return;
     player.pause();
     setStampMs(player.getCurrentTimeMs());
+    setDraftAnnotation(null);
+    setIsDrawingActive(false);
     setComposerOpen(true);
   };
+
+  function handleViewAnnotation(c: ThreadedComment) {
+    if (!c.annotation) return;
+    player.pause();
+    player.seekToMs(c.timecodeMs);
+    setViewingAnnotation(c.annotation);
+  }
+
+  // Escape while actively drawing returns to the text composer rather than
+  // closing everything (CommentComposerModal isn't mounted during drawing,
+  // so it can't handle this itself).
+  useEffect(() => {
+    if (!isDrawingActive) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsDrawingActive(false);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isDrawingActive]);
 
   useEffect(() => {
     if (isToken) setIsShareOpen(false);
@@ -254,6 +366,7 @@ export default function VideoReviewScreen(props: Props) {
       parentId: opts?.parentId ?? null,
       replies: [],
       role: mode === "owner" ? "OWNER" : "CLIENT",
+      annotation: !opts?.parentId ? draftAnnotation : null,
     };
 
     setComments((prev) => {
@@ -289,12 +402,14 @@ export default function VideoReviewScreen(props: Props) {
               body: trimmed,
               timecodeMs: Number(opts?.timecodeMs ?? stampMs ?? 0),
               parentId: opts?.parentId ?? null,
+              annotation: !opts?.parentId && !isEmptyAnnotation(draftAnnotation) ? draftAnnotation : undefined,
             }
           : {
               videoId,
               body: trimmed,
               timecodeMs: Number(opts?.timecodeMs ?? stampMs ?? 0),
               parentId: opts?.parentId ?? null,
+              annotation: !opts?.parentId && !isEmptyAnnotation(draftAnnotation) ? draftAnnotation : undefined,
             };
 
       const res = await fetch(url, {
@@ -323,6 +438,8 @@ export default function VideoReviewScreen(props: Props) {
         setReplyToId(null);
       } else {
         setCommentBody("");
+        setDraftAnnotation(null);
+        setIsDrawingActive(false);
         setComposerOpen(false);
       }
     } catch (e: any) {
@@ -339,6 +456,51 @@ export default function VideoReviewScreen(props: Props) {
     } finally {
       setIsPosting(false);
       setIsReplying(false);
+    }
+  }
+
+  async function submitApproval(nextStatus: "APPROVED" | "CHANGES_REQUESTED", note?: string) {
+    if (isToken && !token) return;
+    if (mode === "client" && !shareId) return;
+    if (!shareAuthToken) return;
+
+    setIsSubmittingApproval(true);
+    setRequestChangesError(null);
+
+    try {
+      const res = await fetch("/api/approvals/set", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: shareAuthToken,
+          videoId,
+          status: nextStatus,
+          note,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to update approval status");
+
+      setApprovalStatus(data.video?.approvalStatus ?? nextStatus);
+      setApprovalUpdatedAt(data.video?.approvalUpdatedAt ?? new Date().toISOString());
+
+      if (data.comment) {
+        setComments((prev) => [...prev, data.comment as ThreadedComment]);
+      }
+
+      if (nextStatus === "CHANGES_REQUESTED") {
+        setRequestChangesOpen(false);
+        setRequestChangesNote("");
+      }
+    } catch (e: any) {
+      if (nextStatus === "CHANGES_REQUESTED") {
+        setRequestChangesError(e?.message || "Failed to send request");
+      } else {
+        setCommentError(e?.message || "Failed to update approval status");
+      }
+    } finally {
+      setIsSubmittingApproval(false);
     }
   }
 
@@ -441,6 +603,28 @@ export default function VideoReviewScreen(props: Props) {
         }}
       />
 
+      {!isComparing && (
+        <ApprovalStatusBar
+          isOwner={isOwner}
+          canAct={canAddComment}
+          status={approvalStatus}
+          updatedAt={approvalUpdatedAt}
+          isSubmitting={isSubmittingApproval}
+          onApprove={() => submitApproval("APPROVED")}
+          onRequestChanges={() => setRequestChangesOpen(true)}
+          viewInfo={viewInfo}
+        />
+      )}
+
+      {!isComparing && !isFirstVersion && (
+        <ChangeNoteBar
+          isOwner={isOwner}
+          note={changeNote}
+          onSave={saveChangeNote}
+          isSaving={isSavingChangeNote}
+        />
+      )}
+
       {/* LAYOUT: hide comments column during compare.
           Below md, comments render as a full-screen overlay (see CommentsPanel)
           instead of a side column, so the grid only ever has one real track. */}
@@ -468,7 +652,7 @@ export default function VideoReviewScreen(props: Props) {
           ) : (
             <>
               {/* SINGLE VIEW */}
-              <div className="flex-1 min-h-0">
+              <div className="relative flex-1 min-h-0">
                 <VideoStage
                   ref={player.videoRef}
                   className="h-full"
@@ -480,6 +664,62 @@ export default function VideoReviewScreen(props: Props) {
                   onPause={player.onPause}
                   onTimeUpdate={player.onTimeUpdate}
                 />
+
+                {isDrawingActive && (
+                  <>
+                    <DrawingOverlay
+                      videoRef={player.videoRef}
+                      interactive
+                      value={draftAnnotation ?? { strokes: [] }}
+                      onChange={setDraftAnnotation}
+                    />
+
+                    <div className="absolute inset-x-0 bottom-3 flex justify-center px-4">
+                      <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-950/95 px-3 py-2 shadow-2xl backdrop-blur">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDraftAnnotation((prev) =>
+                              prev && prev.strokes.length > 0
+                                ? { strokes: prev.strokes.slice(0, -1) }
+                                : prev
+                            )
+                          }
+                          disabled={!draftAnnotation || draftAnnotation.strokes.length === 0}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-800 disabled:opacity-40"
+                        >
+                          <Undo2 className="h-3.5 w-3.5" />
+                          Undo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDraftAnnotation({ strokes: [] })}
+                          disabled={!draftAnnotation || draftAnnotation.strokes.length === 0}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-800 disabled:opacity-40"
+                        >
+                          <Eraser className="h-3.5 w-3.5" />
+                          Clear
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsDrawingActive(false)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-900 hover:bg-white"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {!isDrawingActive && viewingAnnotation && (
+                  <DrawingOverlay
+                    videoRef={player.videoRef}
+                    interactive={false}
+                    value={viewingAnnotation}
+                  />
+                )}
               </div>
 
               <div className="shrink-0 bg-neutral-950/90 backdrop-blur">
@@ -512,7 +752,7 @@ export default function VideoReviewScreen(props: Props) {
               </div>
 
               <CommentComposerModal
-                open={composerOpen}
+                open={composerOpen && !isDrawingActive}
                 onClose={() => setComposerOpen(false)}
                 stampLabel={player.formatTime(stampMs)}
                 body={commentBody}
@@ -521,6 +761,9 @@ export default function VideoReviewScreen(props: Props) {
                 isPosting={isPosting}
                 error={commentError}
                 initials="BE"
+                hasAnnotation={!isEmptyAnnotation(draftAnnotation)}
+                onStartDrawing={() => setIsDrawingActive(true)}
+                onRemoveAnnotation={() => setDraftAnnotation(null)}
               />
             </>
           )}
@@ -547,12 +790,28 @@ export default function VideoReviewScreen(props: Props) {
             onReplySubmit={({ parentId, timecodeMs }) =>
               handlePostComment({ parentId, timecodeMs })
             }
+            onViewAnnotation={handleViewAnnotation}
           />
         )}
       </div>
 
       {!isToken && (
         <ShareModal open={isShareOpen} onClose={() => setIsShareOpen(false)} videoId={videoId} />
+      )}
+
+      {!isOwner && (
+        <RequestChangesModal
+          open={requestChangesOpen}
+          onClose={() => {
+            setRequestChangesOpen(false);
+            setRequestChangesError(null);
+          }}
+          note={requestChangesNote}
+          onNoteChange={setRequestChangesNote}
+          onSubmit={() => submitApproval("CHANGES_REQUESTED", requestChangesNote)}
+          isSubmitting={isSubmittingApproval}
+          error={requestChangesError}
+        />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { safeParseStacks, buildVideoMaps } from "@/lib/videoMaps";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { getViewSummaryForVideo } from "@/lib/views/getViewSummary";
 
 export const runtime = "nodejs";
 
@@ -28,6 +29,9 @@ const gallerySelect = Prisma.validator<Prisma.GalleryDefaultArgs>()({
             playbackUrl: true, // ✅ include here so we don't need a second query
             archivedAt: true,
             deletedAt: true,
+            approvalStatus: true,
+            approvalUpdatedAt: true,
+            changeNote: true,
           },
         },
       },
@@ -75,6 +79,9 @@ export default async function OwnerGalleryVideoPage({ params }: Props) {
 
   const { videoMetaById } = buildVideoMaps(allVideos);
 
+  const currentVideo = allVideos.find((v) => v.id === vId);
+  const viewInfo = await getViewSummaryForVideo(vId);
+
   return (
     <VideoReviewScreen
       mode="owner"
@@ -84,6 +91,10 @@ export default async function OwnerGalleryVideoPage({ params }: Props) {
       videoMetaById={videoMetaById}
       backHref={`/owner/galleries/${galleryId}`}
       view="REVIEW_DOWNLOAD"
+      initialApprovalStatus={currentVideo?.approvalStatus}
+      initialApprovalUpdatedAt={currentVideo?.approvalUpdatedAt?.toISOString() ?? null}
+      initialChangeNote={currentVideo?.changeNote ?? null}
+      viewInfo={viewInfo}
     />
   );
 }

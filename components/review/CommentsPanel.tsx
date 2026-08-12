@@ -31,6 +31,8 @@ type Props = {
   formatTime: (ms: number) => string;
 
   onReplySubmit: (opts: { parentId: string; timecodeMs: number }) => void;
+
+  onViewAnnotation?: (comment: ThreadedComment) => void;
 };
 
 export default function CommentsPanel({
@@ -52,6 +54,7 @@ export default function CommentsPanel({
   onSeek,
   formatTime,
   onReplySubmit,
+  onViewAnnotation,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
@@ -187,6 +190,7 @@ export default function CommentsPanel({
                     onReplySubmit={onReplySubmit}
                     isOwner={isOwner}
                     onToggleResolved={onToggleResolved}
+                    onViewAnnotation={onViewAnnotation}
                   />
                 )}
               </div>

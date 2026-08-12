@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useId } from "react";
+import { Pencil } from "lucide-react";
+import type { Annotation } from "@/lib/annotations/types";
 
 export type ThreadedComment = {
   id: string;
@@ -14,6 +16,8 @@ export type ThreadedComment = {
   // framework fields (optional for now)
   role?: "OWNER" | "CLIENT";
   status?: "OPEN" | "RESOLVED";
+  isApprovalNote?: boolean;
+  annotation?: Annotation | null;
 };
 
 type Props = {
@@ -35,6 +39,8 @@ type Props = {
   formatTime: (ms: number) => string;
 
   onReplySubmit: (opts: { parentId: string; timecodeMs: number }) => void;
+
+  onViewAnnotation?: (comment: ThreadedComment) => void;
 };
 
 function safeDateLabel(iso: string) {
@@ -57,6 +63,7 @@ type CommentNodeProps = {
   onSeek: (ms: number) => void;
   formatTime: (ms: number) => string;
   onReplySubmit: (opts: { parentId: string; timecodeMs: number }) => void;
+  onViewAnnotation?: (comment: ThreadedComment) => void;
 };
 
 function CommentNode({
@@ -73,6 +80,7 @@ function CommentNode({
   onSeek,
   formatTime,
   onReplySubmit,
+  onViewAnnotation,
 }: CommentNodeProps) {
   const replyPanelId = useId();
   const isOpen = replyToId === c.id;
@@ -98,14 +106,34 @@ function CommentNode({
         {/* Only show timestamp + red bubble for top-level comments */}
         {depth === 0 && (
           <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => onSeek(c.timecodeMs)}
-              title="Jump to timecode"
-              className="rounded-full bg-red-950/60 px-2.5 py-0.5 text-xs font-semibold text-red-200 ring-1 ring-red-900/50 hover:bg-red-900/70 hover:text-red-100 transition"
-            >
-              {formatTime(c.timecodeMs)}
-            </button>
+            <div className="flex items-center gap-1.5">
+              {c.isApprovalNote ? (
+                <span className="rounded-full bg-amber-950/50 px-2.5 py-0.5 text-xs font-semibold text-amber-200 ring-1 ring-amber-900/50">
+                  Changes requested
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onSeek(c.timecodeMs)}
+                  title="Jump to timecode"
+                  className="rounded-full bg-red-950/60 px-2.5 py-0.5 text-xs font-semibold text-red-200 ring-1 ring-red-900/50 hover:bg-red-900/70 hover:text-red-100 transition"
+                >
+                  {formatTime(c.timecodeMs)}
+                </button>
+              )}
+
+              {c.annotation && (
+                <button
+                  type="button"
+                  onClick={() => onViewAnnotation?.(c)}
+                  title="Show drawing"
+                  aria-label="Show drawing"
+                  className="rounded-full bg-neutral-900 p-1 text-neutral-300 ring-1 ring-neutral-800 hover:bg-neutral-800 hover:text-white transition"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
+            </div>
 
             <div className="flex items-center gap-2">
               {isResolved && (
@@ -219,6 +247,7 @@ function CommentNode({
               onSeek={onSeek}
               formatTime={formatTime}
               onReplySubmit={onReplySubmit}
+              onViewAnnotation={onViewAnnotation}
             />
           ))}
         </div>
@@ -240,6 +269,7 @@ export default function CommentThread({
   onSeek,
   formatTime,
   onReplySubmit,
+  onViewAnnotation,
 }: Props) {
   return (
     <div className="space-y-3">
@@ -258,6 +288,7 @@ export default function CommentThread({
           onSeek={onSeek}
           formatTime={formatTime}
           onReplySubmit={onReplySubmit}
+          onViewAnnotation={onViewAnnotation}
         />
       ))}
     </div>

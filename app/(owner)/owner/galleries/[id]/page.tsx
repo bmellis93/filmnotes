@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import GalleryDetailScreen from "@/components/owner/GalleryDetailScreen";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { getViewSummariesForVideos } from "@/lib/views/getViewSummary";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,8 @@ export default async function OwnerGalleryDetailPage({ params }: Props) {
               archivedAt: true,
               deletedAt: true,
               originalSize: true,
+              approvalStatus: true,
+              approvalUpdatedAt: true,
             },
           },
         },
@@ -67,6 +70,8 @@ export default async function OwnerGalleryDetailPage({ params }: Props) {
     // (optional) also set count on children if you want consistent badge behavior
     for (const childId of ids ?? []) versionsCountById.set(childId, (ids ?? []).length);
   }
+
+  const viewSummaries = await getViewSummariesForVideos(gallery.videos.map((gv) => gv.video.id));
 
   const initialVideos = gallery.videos.map((gv) => {
     const v = gv.video;
@@ -92,6 +97,8 @@ export default async function OwnerGalleryDetailPage({ params }: Props) {
       versionsCount: versionsCountById.get(v.id) ?? 1,
       archivedAt: v.archivedAt?.toISOString() ?? null,
       originalSize: v.originalSize == null ? null : Number(v.originalSize),
+      approvalStatus: v.approvalStatus,
+      firstViewedAt: viewSummaries.get(v.id)?.firstViewedAt ?? null,
     };
   });
 

@@ -48,10 +48,14 @@ export default async function TokenVideoPage({ params }: Props) {
       thumbnailUrl: true,
       sourceUrl: true,
       playbackUrl: true, // use this for viewing when available
+      approvalStatus: true,
+      approvalUpdatedAt: true,
+      changeNote: true,
     },
   });
 
   const { videoMetaById } = buildVideoMaps(videos);
+  const currentVideo = videos.find((v) => v.id === videoId);
 
   return (
     <VideoReviewScreen
@@ -67,6 +71,9 @@ export default async function TokenVideoPage({ params }: Props) {
         allowDownload: Boolean(share.allowDownload),
       }}
       videoMetaById={videoMetaById}
+      initialApprovalStatus={currentVideo?.approvalStatus}
+      initialApprovalUpdatedAt={currentVideo?.approvalUpdatedAt?.toISOString() ?? null}
+      initialChangeNote={currentVideo?.changeNote ?? null}
     />
   );
 }

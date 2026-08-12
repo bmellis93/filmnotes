@@ -40,11 +40,15 @@ export default async function ClientVideoPage({ params }: Props) {
       thumbnailUrl: true,
       sourceUrl: true,
       playbackUrl: true,
+      approvalStatus: true,
+      approvalUpdatedAt: true,
+      changeNote: true,
     },
     orderBy: { createdAt: "asc" },
   });
 
   const { videoMetaById } = buildVideoMaps(videos);
+  const currentVideo = videos.find((v) => v.id === videoId);
 
   return (
     <VideoReviewScreen
@@ -60,6 +64,9 @@ export default async function ClientVideoPage({ params }: Props) {
         allowDownload: Boolean(share.permissions?.allowDownload),
       }}
       videoMetaById={videoMetaById}
+      initialApprovalStatus={currentVideo?.approvalStatus}
+      initialApprovalUpdatedAt={currentVideo?.approvalUpdatedAt?.toISOString() ?? null}
+      initialChangeNote={currentVideo?.changeNote ?? null}
     />
   );
 }

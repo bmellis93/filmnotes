@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, X } from "lucide-react";
+import { Send, X, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 type Props = {
@@ -17,6 +17,10 @@ type Props = {
 
   error?: string | null;
   initials?: string; // "BE" for now
+
+  hasAnnotation?: boolean;
+  onStartDrawing?: () => void;
+  onRemoveAnnotation?: () => void;
 };
 
 export default function CommentComposerModal({
@@ -29,6 +33,9 @@ export default function CommentComposerModal({
   isPosting,
   error,
   initials = "BE",
+  hasAnnotation = false,
+  onStartDrawing,
+  onRemoveAnnotation,
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -100,6 +107,43 @@ export default function CommentComposerModal({
                 onChange={(e) => onBodyChange(e.target.value)}
                 disabled={isPosting}
               />
+
+              {onStartDrawing && (
+                <div className="mt-2">
+                  {hasAnnotation ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5">
+                      <Pencil className="h-3.5 w-3.5 shrink-0 text-red-300" />
+                      <span className="flex-1 text-xs text-neutral-300">Drawing attached</span>
+                      <button
+                        type="button"
+                        onClick={onStartDrawing}
+                        className="text-xs font-semibold text-neutral-300 hover:text-white"
+                      >
+                        Redraw
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onRemoveAnnotation}
+                        className="text-neutral-400 hover:text-red-300"
+                        aria-label="Remove drawing"
+                        title="Remove drawing"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={onStartDrawing}
+                      disabled={isPosting}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-800 hover:text-white disabled:opacity-50"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Point at something
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Bottom row: time + tip (left) + send icon (right) */}
               <div className="mt-3 flex items-center justify-between gap-3">

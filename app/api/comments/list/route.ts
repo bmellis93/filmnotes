@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { prisma } from "@/lib/prisma";
 import { parseAllowedIds } from "@/lib/share/shareLinkUtils";
+import { parseAnnotationJson } from "@/lib/annotations/types";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,8 @@ export async function POST(req: NextRequest) {
         parentId: true,
         role: true,
         status: true,               // ✅ optional but useful
+        isApprovalNote: true,
+        annotationJson: true,
       },
     });
 
@@ -53,6 +56,8 @@ export async function POST(req: NextRequest) {
         parentId: r.parentId,
         role: r.role,
         status: r.status,
+        isApprovalNote: r.isApprovalNote,
+        annotation: parseAnnotationJson(r.annotationJson),
         replies: [],
       });
     }

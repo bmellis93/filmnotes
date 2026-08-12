@@ -1,23 +1,32 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { resolveTemplateText, resolveTemplateHtml } from "@/lib/ghl/templateMerge";
+import TemplateFolderPicker, { type PickedTemplate } from "@/components/owner/TemplateFolderPicker";
 
 type Contact = {
   id: string;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string | null;
   phone: string | null;
   canEmail?: boolean;
   canSms?: boolean;
 };
 
+type GhlTemplate =
+  | { id: string; type: "sms"; name: string; body: string }
+  | { id: string; type: "email"; name: string; subject: string; html: string };
+
+type ChannelResult = { channel: "SMS" | "Email"; ok: boolean; data?: any };
+
 type SendResultRow = {
   contactId: string;
   contactName: string;
   ok: boolean;
+  channelResults: ChannelResult[];
   share?: any;
-  send?: any;
-  data?: any;
 };
 
 type SendResult = {
@@ -66,6 +75,32 @@ export type RecipientShareModalProps = {
   }) => Promise<CreateShareResult>;
 };
 
+async function sendChannel(args: {
+  contactId: string;
+  channel: "SMS" | "Email";
+  message: string;
+  subject?: string;
+  html?: string;
+}): Promise<ChannelResult> {
+  try {
+    const res = await fetch("/api/ghl/conversations/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contactId: args.contactId,
+        message: args.message,
+        subject: args.subject,
+        html: args.html,
+        channels: [args.channel],
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    return { channel: args.channel, ok: res.ok, data };
+  } catch (e: any) {
+    return { channel: args.channel, ok: false, data: { error: e?.message || String(e) } };
+  }
+}
+
 export default function RecipientShareModal({
   open,
   onClose,
@@ -85,11 +120,31 @@ export default function RecipientShareModal({
   const [allowComments, setAllowComments] = useState(true);
   const [allowDownloads, setAllowDownloads] = useState(false);
 
-  // Delivery checkboxes: if none selected, server uses Option A fallback.
+  // Delivery checkboxes: if none selected, we try SMS then Email client-side.
   const [sendSms, setSendSms] = useState(false);
   const [sendEmail, setSendEmail] = useState(false);
 
   const [customMessage, setCustomMessage] = useState("");
+
+  // Templates
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [smsTemplates, setSmsTemplates] = useState<Extract<GhlTemplate, { type: "sms" }>[]>([]);
+  const [emailTemplates, setEmailTemplates] = useState<Extract<GhlTemplate, { type: "email" }>[]>([]);
+
+  const [smsTemplateId, setSmsTemplateId] = useState("");
+  const [smsTemplateText, setSmsTemplateText] = useState("");
+
+  const [emailTemplateId, setEmailTemplateId] = useState("");
+  const [emailSubject, setEmailSubject] = useState("Your video is ready");
+  const [emailCustomMessage, setEmailCustomMessage] = useState("");
+
+  // Email Builder (separate system from the classic templates above)
+  const [builderPickerOpen, setBuilderPickerOpen] = useState(false);
+  const [builderTemplate, setBuilderTemplate] = useState<PickedTemplate | null>(null);
+  const [builderTemplateHtml, setBuilderTemplateHtml] = useState<string | null>(null);
+  const [isFetchingBuilderContent, setIsFetchingBuilderContent] = useState(false);
+  const [builderContentError, setBuilderContentError] = useState<string | null>(null);
 
   const [isSearching, setIsSearching] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -98,7 +153,7 @@ export default function RecipientShareModal({
 
   const searchAbortRef = useRef<AbortController | null>(null);
 
-  // Reset state when opening
+  // Reset + load templates when opening
   useEffect(() => {
     if (!open) return;
 
@@ -112,6 +167,69 @@ export default function RecipientShareModal({
     setCustomMessage("");
     setError(null);
     setLastSend(null);
+
+    setSmsTemplateId("");
+    setSmsTemplateText("");
+    setEmailTemplateId("");
+    setEmailSubject("Your video is ready");
+    setEmailCustomMessage("");
+    setBuilderPickerOpen(false);
+    setBuilderTemplate(null);
+    setBuilderTemplateHtml(null);
+    setBuilderContentError(null);
+
+    (async () => {
+      setLoadingTemplates(true);
+      setTemplatesError(null);
+      try {
+        const [templatesRes, defaultsRes] = await Promise.all([
+          fetch("/api/ghl/templates", { cache: "no-store" }),
+          fetch("/api/owner/settings/templates", { cache: "no-store" }),
+        ]);
+
+        const templatesJson = await templatesRes.json().catch(() => null);
+        const defaultsJson = await defaultsRes.json().catch(() => null);
+
+        if (!templatesRes.ok || !templatesJson?.ok) {
+          throw new Error(templatesJson?.error || "Failed to load templates from GHL");
+        }
+
+        const sms: Extract<GhlTemplate, { type: "sms" }>[] = templatesJson.sms ?? [];
+        const email: Extract<GhlTemplate, { type: "email" }>[] = templatesJson.email ?? [];
+        setSmsTemplates(sms);
+        setEmailTemplates(email);
+
+        const defaultSms = defaultsJson?.defaultSmsTemplateId ?? "";
+        const defaultEmail = defaultsJson?.defaultEmailTemplateId ?? "";
+        const defaultEmailSource = defaultsJson?.defaultEmailTemplateSource ?? "";
+
+        const smsMatch = sms.find((t) => t.id === defaultSms);
+        if (smsMatch) {
+          setSmsTemplateId(smsMatch.id);
+          setSmsTemplateText(smsMatch.body);
+        }
+
+        if (defaultEmail && defaultEmailSource === "builder") {
+          const previewUrl = defaultsJson?.defaultEmailTemplatePreviewUrl ?? null;
+          setBuilderTemplate({
+            id: defaultEmail,
+            name: defaultsJson?.defaultEmailTemplateName || defaultEmail,
+            previewUrl,
+          });
+          if (previewUrl) void loadBuilderContent(previewUrl);
+        } else {
+          const emailMatch = email.find((t) => t.id === defaultEmail);
+          if (emailMatch) {
+            setEmailTemplateId(emailMatch.id);
+            setEmailSubject(emailMatch.subject || "Your video is ready");
+          }
+        }
+      } catch (e: any) {
+        setTemplatesError(e?.message || "Failed to load templates");
+      } finally {
+        setLoadingTemplates(false);
+      }
+    })();
   }, [open]);
 
   // Abort any pending searches when modal closes/unmounts
@@ -185,6 +303,57 @@ export default function RecipientShareModal({
     }
   }
 
+  function onSmsTemplateChange(id: string) {
+    setSmsTemplateId(id);
+    const t = smsTemplates.find((x) => x.id === id);
+    setSmsTemplateText(t ? t.body : "");
+  }
+
+  function onEmailTemplateChange(id: string) {
+    setEmailTemplateId(id);
+    const t = emailTemplates.find((x) => x.id === id);
+    setEmailSubject(t ? t.subject || "Your video is ready" : "Your video is ready");
+    // Classic and Email Builder selections are mutually exclusive.
+    clearBuilderTemplate();
+  }
+
+  async function loadBuilderContent(previewUrl: string) {
+    setIsFetchingBuilderContent(true);
+    setBuilderContentError(null);
+    try {
+      const res = await fetch(`/api/ghl/email-builder-templates/content?url=${encodeURIComponent(previewUrl)}`, {
+        cache: "no-store",
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to load template content");
+      setBuilderTemplateHtml(json.html);
+    } catch (e: any) {
+      setBuilderContentError(e?.message || "Failed to load template content");
+      setBuilderTemplateHtml(null);
+    } finally {
+      setIsFetchingBuilderContent(false);
+    }
+  }
+
+  function clearBuilderTemplate() {
+    setBuilderTemplate(null);
+    setBuilderTemplateHtml(null);
+    setBuilderContentError(null);
+  }
+
+  function onBuilderTemplateSelected(picked: PickedTemplate) {
+    setBuilderPickerOpen(false);
+    setBuilderTemplate(picked);
+    setBuilderTemplateHtml(null);
+    // Classic and Email Builder selections are mutually exclusive.
+    setEmailTemplateId("");
+    if (picked.previewUrl) void loadBuilderContent(picked.previewUrl);
+    else setBuilderContentError("This template has no content to preview.");
+  }
+
+  const selectedEmailTemplate = emailTemplates.find((t) => t.id === emailTemplateId) ?? null;
+  const effectiveEmailHtml = selectedEmailTemplate?.html ?? builderTemplateHtml ?? null;
+
   async function handleSend() {
     setError(null);
     setLastSend(null);
@@ -199,29 +368,24 @@ export default function RecipientShareModal({
       return;
     }
 
+    if (builderTemplate && isFetchingBuilderContent) {
+      setError("Still loading the Email Builder template — try again in a moment.");
+      return;
+    }
+
+    if (builderTemplate && !builderTemplateHtml) {
+      setError("Couldn't load the Email Builder template content. Pick a different template or clear it.");
+      return;
+    }
+
     setIsSending(true);
     try {
       const origin = window.location.origin;
-
-      const requestedChannels =
-        sendSms || sendEmail
-          ? ([
-              sendSms ? "SMS" : null,
-              sendEmail ? "Email" : null,
-            ].filter(Boolean) as string[])
-          : undefined; // undefined => server uses Option A fallback
+      const explicitChannels = sendSms || sendEmail;
 
       const results: SendResultRow[] = [];
 
       for (const c of selected) {
-        // If user explicitly chose channels, but contact can't support them, filter per-contact.
-        const perContactChannels =
-          requestedChannels?.filter((ch) => {
-            if (ch === "SMS") return Boolean(c.phone);
-            if (ch === "Email") return Boolean(c.email);
-            return true;
-          }) ?? undefined;
-
         // 1) Create tokenized share link for this contact
         const created = await createShare({
           contactId: c.id,
@@ -234,41 +398,94 @@ export default function RecipientShareModal({
             contactId: c.id,
             contactName: c.name,
             ok: false,
-            data: { error: created.error },
+            channelResults: [],
           });
           continue;
         }
 
         const tokenUrl = `${origin}${created.url}`;
 
-        // 2) Build message
-        const base = (customMessage || `${defaultMessage}\n${tokenUrl}`).trim();
+        // 2) Build per-channel content
+        const smsBody = smsTemplateId
+          ? resolveTemplateText(smsTemplateText, { link: tokenUrl })
+          : (() => {
+              const base = (customMessage || `${defaultMessage}\n${tokenUrl}`).trim();
+              return (
+                base +
+                `\n\nPermissions:\n- Comments: ${allowComments ? "Allowed" : "Disabled"}\n- Downloads: ${
+                  allowDownloads ? "Allowed" : "Disabled"
+                }`
+              );
+            })();
 
-        const message =
-          base +
-          `\n\nPermissions:\n- Comments: ${allowComments ? "Allowed" : "Disabled"}\n- Downloads: ${
-            allowDownloads ? "Allowed" : "Disabled"
-          }`;
+        const emailPayload = effectiveEmailHtml
+          ? {
+              subject: emailSubject || selectedEmailTemplate?.subject || "Your video is ready",
+              html: resolveTemplateHtml(effectiveEmailHtml, { link: tokenUrl }),
+              message: resolveTemplateText(
+                emailSubject || selectedEmailTemplate?.subject || "Your video is ready",
+                { link: tokenUrl }
+              ),
+            }
+          : {
+              subject: emailSubject || "Your video is ready",
+              html: undefined as string | undefined,
+              message: (() => {
+                const base = (emailCustomMessage || customMessage || `${defaultMessage}\n${tokenUrl}`).trim();
+                return (
+                  base +
+                  `\n\nPermissions:\n- Comments: ${allowComments ? "Allowed" : "Disabled"}\n- Downloads: ${
+                    allowDownloads ? "Allowed" : "Disabled"
+                  }`
+                );
+              })(),
+            };
 
-        // 3) Send into GHL Conversations
-        const sendRes = await fetch("/api/ghl/conversations/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contactId: c.id,
-            message,
-            channels: perContactChannels, // undefined => server fallback
-          }),
-        });
+        // 3) Decide which channels to attempt for this contact
+        const wantsSms = (explicitChannels ? sendSms : true) && Boolean(c.phone);
+        const wantsEmail = (explicitChannels ? sendEmail : true) && Boolean(c.email);
 
-        const sendData = await sendRes.json();
+        const channelResults: ChannelResult[] = [];
+
+        if (explicitChannels) {
+          // Explicit choice: attempt every requested+capable channel.
+          if (wantsSms) channelResults.push(await sendChannel({ contactId: c.id, channel: "SMS", message: smsBody }));
+          if (wantsEmail)
+            channelResults.push(
+              await sendChannel({
+                contactId: c.id,
+                channel: "Email",
+                message: emailPayload.message,
+                subject: emailPayload.subject,
+                html: emailPayload.html,
+              })
+            );
+        } else {
+          // Fallback: try SMS first, then Email if SMS didn't succeed.
+          if (wantsSms) {
+            const r = await sendChannel({ contactId: c.id, channel: "SMS", message: smsBody });
+            channelResults.push(r);
+          }
+          if (!channelResults.some((r) => r.ok) && wantsEmail) {
+            const r = await sendChannel({
+              contactId: c.id,
+              channel: "Email",
+              message: emailPayload.message,
+              subject: emailPayload.subject,
+              html: emailPayload.html,
+            });
+            channelResults.push(r);
+          }
+        }
+
+        const ok = channelResults.length > 0 && channelResults.every((r) => r.ok);
 
         results.push({
           contactId: c.id,
           contactName: c.name,
-          ok: sendRes.ok,
+          ok,
+          channelResults,
           share: created,
-          send: sendData,
         });
       }
 
@@ -293,7 +510,7 @@ export default function RecipientShareModal({
       />
 
       {/* Modal */}
-      <div className="relative flex max-h-full w-[min(920px,94vw)] flex-col overflow-hidden rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl">
+      <div className="relative flex max-h-full w-[min(960px,96vw)] flex-col overflow-hidden rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl">
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-1)] px-5 py-4">
             <div>
@@ -309,7 +526,7 @@ export default function RecipientShareModal({
             </button>
           </div>
 
-          <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-y-auto md:grid-cols-[1fr_360px]">
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-y-auto md:grid-cols-[1fr_420px]">
             {/* Left: contact picker */}
             <div className="p-5">
               <div className="text-sm font-semibold">Recipients</div>
@@ -427,7 +644,11 @@ export default function RecipientShareModal({
                       <div key={idx} className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="truncate">{r.contactName}</div>
-                          <div className="truncate text-neutral-500">{r.contactId}</div>
+                          {r.channelResults.length > 0 && (
+                            <div className="truncate text-neutral-500">
+                              {r.channelResults.map((cr) => `${cr.channel}: ${cr.ok ? "sent" : "failed"}`).join(" · ")}
+                            </div>
+                          )}
                         </div>
                         <div className={r.ok ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}>
                           {r.ok ? "Sent" : "Failed"}
@@ -441,16 +662,134 @@ export default function RecipientShareModal({
 
             {/* Right: message + options */}
             <div className="border-t border-[var(--border-1)] p-5 md:border-l md:border-t-0">
-              <div className="text-sm font-semibold">Message</div>
-              <div className="mt-2">
-                <textarea
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  placeholder={defaultMessage}
-                  className="h-40 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
-                />
-                <div className="mt-2 text-xs text-neutral-500">
-                  Leave blank to use default message.
+              {templatesError && (
+                <div className="mb-4 rounded-xl border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-200">
+                  {templatesError}
+                </div>
+              )}
+
+              {/* SMS message */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">SMS message</div>
+                  <select
+                    value={smsTemplateId}
+                    onChange={(e) => onSmsTemplateChange(e.target.value)}
+                    disabled={loadingTemplates}
+                    className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)]"
+                  >
+                    <option value="">Custom message</option>
+                    {smsTemplates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mt-2">
+                  <textarea
+                    value={smsTemplateId ? smsTemplateText : customMessage}
+                    onChange={(e) =>
+                      smsTemplateId ? setSmsTemplateText(e.target.value) : setCustomMessage(e.target.value)
+                    }
+                    placeholder={defaultMessage}
+                    className="h-24 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+                  />
+                  <div className="mt-1 text-xs text-neutral-500">
+                    {smsTemplateId
+                      ? "The review link fills in automatically wherever {{review_link}} appears (or gets appended)."
+                      : "Leave blank to use default message."}
+                  </div>
+                </div>
+              </div>
+
+              {/* Email message */}
+              <div className="mt-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-semibold">Email message</div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={builderTemplate ? "" : emailTemplateId}
+                      onChange={(e) => onEmailTemplateChange(e.target.value)}
+                      disabled={loadingTemplates}
+                      className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)]"
+                    >
+                      <option value="">Custom message</option>
+                      {emailTemplates.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => setBuilderPickerOpen(true)}
+                      className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)]"
+                    >
+                      Browse Email Builder…
+                    </button>
+                  </div>
+                </div>
+
+                {builderTemplate && (
+                  <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)]/60 px-3 py-1.5">
+                    <span className="truncate text-xs text-[var(--text-2)]">
+                      Using Email Builder: <span className="font-semibold">{builderTemplate.name}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearBuilderTemplate}
+                      className="shrink-0 text-xs text-neutral-400 underline hover:text-neutral-200"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
+                <div className="mt-2">
+                  <input
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder="Subject"
+                    className="w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-2.5 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+                  />
+                </div>
+
+                <div className="mt-2">
+                  {isFetchingBuilderContent ? (
+                    <div className="flex h-56 w-full items-center justify-center rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] text-sm text-[var(--text-muted)]">
+                      Loading template…
+                    </div>
+                  ) : builderContentError ? (
+                    <div className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-200">
+                      {builderContentError}
+                    </div>
+                  ) : effectiveEmailHtml ? (
+                    <div className="overflow-hidden rounded-xl border border-[var(--border-1)]">
+                      <iframe
+                        title="Email template preview"
+                        srcDoc={resolveTemplateHtml(effectiveEmailHtml, {
+                          link: "#your-review-link",
+                        })}
+                        sandbox=""
+                        className="h-56 w-full bg-white"
+                      />
+                    </div>
+                  ) : (
+                    <textarea
+                      value={emailCustomMessage}
+                      onChange={(e) => setEmailCustomMessage(e.target.value)}
+                      placeholder={customMessage || defaultMessage}
+                      className="h-24 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+                    />
+                  )}
+                  <div className="mt-1 text-xs text-neutral-500">
+                    {effectiveEmailHtml
+                      ? "Preview only — the review link fills in automatically wherever {{review_link}} appears (or gets appended)."
+                      : "Leave blank to reuse the SMS message text."}
+                  </div>
                 </div>
               </div>
 
@@ -501,8 +840,7 @@ export default function RecipientShareModal({
                     />
                   </label>
                   <div className="text-xs text-neutral-500">
-                    If you leave both unchecked, the server will use Option A:
-                    SMS first, then Email if SMS fails.
+                    If you leave both unchecked, we'll try SMS first, then Email if SMS fails.
                   </div>
                 </div>
               </div>
@@ -549,6 +887,12 @@ export default function RecipientShareModal({
             </button>
           </div>
       </div>
+
+      <TemplateFolderPicker
+        open={builderPickerOpen}
+        onClose={() => setBuilderPickerOpen(false)}
+        onSelect={onBuilderTemplateSelected}
+      />
     </div>
   );
 }
