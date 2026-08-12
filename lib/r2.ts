@@ -20,9 +20,9 @@ export function getR2PublicBaseUrl() {
 }
 
 export function getR2SignedUrlTtlSeconds() {
-  const raw = process.env.R2_SIGNED_URL_TTL || "300";
+  const raw = process.env.R2_SIGNED_URL_TTL || "3600";
   const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : 300;
+  return Number.isFinite(n) && n > 0 ? n : 3600;
 }
 
 export const R2_BUCKET = mustGet("R2_BUCKET");

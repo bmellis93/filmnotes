@@ -1,11 +1,11 @@
 // app/api/owner/videos/upload/init/route.ts
 import { NextResponse } from "next/server";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { CreateMultipartUploadCommand } from "@aws-sdk/client-s3";
 
 import { prisma } from "@/lib/prisma";
-import { r2, getR2Bucket, getR2SignedUrlTtlSeconds } from "@/lib/r2";
+import { r2, getR2Bucket } from "@/lib/r2";
 import { makeOriginalVideoKey } from "@/lib/r2Keys";
+import { computeMultipartPlan } from "@/lib/r2Multipart";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
 import { STORAGE_LIMIT_BYTES, clampNonNegativeBigInt } from "@/lib/storageLimit";
 
@@ -149,24 +149,34 @@ export async function POST(req: Request) {
     });
 
     const bucket = getR2Bucket();
-    const expiresIn = getR2SignedUrlTtlSeconds();
 
-    const cmd = new PutObjectCommand({
-      Bucket: bucket,
-      Key: originalKey,
-      ContentType: contentType,
-      Metadata: { orgId, videoId: video.id },
-    });
+    // Large files can't complete as a single PUT (R2/S3 caps a non-multipart
+    // PUT at 5GiB), so every upload -- regardless of size -- goes through
+    // R2's multipart API. The client uploads each part separately and asks
+    // us to sign a fresh URL per part, so no single presigned URL has to
+    // stay valid for the whole (potentially many-hour) transfer.
+    const { partSize, totalParts } = computeMultipartPlan(sizeRaw);
 
-    const uploadUrl = await getSignedUrl(r2, cmd, { expiresIn });
+    const created = await r2.send(
+      new CreateMultipartUploadCommand({
+        Bucket: bucket,
+        Key: originalKey,
+        ContentType: contentType,
+        Metadata: { orgId, videoId: video.id },
+      })
+    );
+
+    if (!created.UploadId) {
+      throw new Error("R2 did not return an upload id");
+    }
 
     return NextResponse.json({
       ok: true,
       videoId: video.id,
       originalKey,
-      uploadUrl,
-      headers: { "content-type": contentType },
-      expiresIn,
+      uploadId: created.UploadId,
+      partSize,
+      totalParts,
       usedReservationBytes: incoming.toString(),
     });
   } catch (err: any) {

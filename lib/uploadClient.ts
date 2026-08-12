@@ -4,9 +4,9 @@ type UploadInit = {
   ok: boolean;
   videoId: string;
   originalKey: string;
-  uploadUrl: string;
-  headers: Record<string, string>;
-  expiresIn: number;
+  uploadId: string;
+  partSize: number;
+  totalParts: number;
 
   // only present on limit errors
   error?: string;
@@ -128,6 +128,158 @@ export async function initOwnerUpload(opts: {
   return data;
 }
 
+async function getPartUploadUrl(opts: {
+  videoId: string;
+  uploadId: string;
+  partNumber: number;
+}): Promise<string> {
+  const res = await fetch("/api/owner/videos/upload/part-url", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(opts),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Failed to sign part ${opts.partNumber} (${res.status}): ${text}`);
+  }
+
+  const data = (await res.json()) as { ok: boolean; url: string };
+  return data.url;
+}
+
+async function completeMultipartUpload(opts: { videoId: string; uploadId: string }) {
+  const res = await fetch("/api/owner/videos/upload/complete", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(opts),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Failed to complete upload (${res.status}): ${text}`);
+  }
+}
+
+async function abortMultipartUpload(opts: { videoId: string; uploadId: string }) {
+  try {
+    await fetch("/api/owner/videos/upload/abort", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(opts),
+    });
+  } catch {
+    // best-effort cleanup -- the original error is what matters to the caller
+  }
+}
+
+// One part, with a few retries. Each attempt gets a fresh presigned URL
+// (rather than reusing one across retries) so a part that failed because its
+// URL expired mid-transfer doesn't just fail the same way again.
+async function uploadPartWithRetry(opts: {
+  videoId: string;
+  uploadId: string;
+  partNumber: number;
+  blob: Blob;
+  onLoaded: (loaded: number) => void;
+  maxAttempts?: number;
+}) {
+  const { videoId, uploadId, partNumber, blob, onLoaded, maxAttempts = 3 } = opts;
+
+  let lastErr: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const url = await getPartUploadUrl({ videoId, uploadId, partNumber });
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", url, true);
+
+        xhr.upload.onprogress = (e) => {
+          if (!e.lengthComputable) return;
+          onLoaded(e.loaded);
+        };
+
+        xhr.onerror = () => reject(new Error("Part upload failed (network error)"));
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Part upload failed (${xhr.status})`));
+        };
+
+        xhr.send(blob);
+      });
+
+      onLoaded(blob.size);
+      return;
+    } catch (e) {
+      lastErr = e;
+      onLoaded(0); // this attempt's partial progress didn't count -- reset before retrying
+    }
+  }
+
+  throw lastErr instanceof Error ? lastErr : new Error(`Part ${partNumber} upload failed`);
+}
+
+// Uploads every part of the file with a small worker pool, reporting combined
+// progress across all parts (capped below 100 until the server confirms the
+// multipart upload actually completed).
+async function uploadPartsInPool(opts: {
+  videoId: string;
+  uploadId: string;
+  file: File;
+  partSize: number;
+  totalParts: number;
+  onProgress?: (pct: number) => void;
+  concurrency?: number;
+}) {
+  const { videoId, uploadId, file, partSize, totalParts, onProgress, concurrency = 4 } = opts;
+
+  const partLoaded = new Array<number>(totalParts).fill(0);
+
+  function reportProgress() {
+    if (!onProgress) return;
+    const loaded = partLoaded.reduce((a, b) => a + b, 0);
+    onProgress(Math.min(99, (loaded / file.size) * 100));
+  }
+
+  let nextIndex = 0;
+  let firstError: unknown = null;
+
+  async function worker() {
+    while (firstError == null) {
+      const idx = nextIndex++;
+      if (idx >= totalParts) return;
+
+      const partNumber = idx + 1;
+      const start = idx * partSize;
+      const end = Math.min(start + partSize, file.size);
+      const blob = file.slice(start, end);
+
+      try {
+        await uploadPartWithRetry({
+          videoId,
+          uploadId,
+          partNumber,
+          blob,
+          onLoaded: (loaded) => {
+            partLoaded[idx] = loaded;
+            reportProgress();
+          },
+        });
+      } catch (e) {
+        firstError = e;
+        return;
+      }
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, totalParts) }, () => worker());
+  await Promise.all(workers);
+
+  if (firstError) throw firstError;
+}
+
 export async function uploadThumbnail(videoId: string, thumbnailFile: File) {
   const initRes = await fetch(`/api/owner/videos/${videoId}/thumbnail/init`, {
     method: "POST",
@@ -187,12 +339,23 @@ export async function uploadVideoToR2(params: {
     description: description?.trim() || null,
   });
 
-  await putWithProgress({
-    url: init.uploadUrl,
-    headers: init.headers ?? {},
-    file,
-    onProgress,
-  });
+  const { videoId, uploadId, partSize, totalParts } = init;
+
+  try {
+    await uploadPartsInPool({
+      videoId,
+      uploadId,
+      file,
+      partSize,
+      totalParts,
+      onProgress,
+    });
+
+    await completeMultipartUpload({ videoId, uploadId });
+  } catch (e) {
+    await abortMultipartUpload({ videoId, uploadId });
+    throw e;
+  }
 
   onProgress?.(100);
 
