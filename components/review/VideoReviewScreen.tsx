@@ -49,7 +49,6 @@ type Props = {
     string,
     { name: string; description?: string; createdAt?: string; thumbnailUrl?: string | null }
   >;
-  sourcesById?: Record<string, { viewSrc: string; originalSrc: string }>;
 
   projectTitle?: string;
 };
@@ -65,7 +64,6 @@ export default function VideoReviewScreen(props: Props) {
     backHref,
     stacks: stacksProp,
     videoMetaById: videoMetaByIdProp,
-    sourcesById: sourcesByIdProp,
     projectTitle,
   } = props;
 
@@ -84,27 +82,32 @@ export default function VideoReviewScreen(props: Props) {
 
   const stacks = stacksProp ?? {};
   const videoMetaById = videoMetaByIdProp ?? {};
-  const sourcesById = sourcesByIdProp ?? {};
 
-  const sources = sourcesById[videoId];
-  const viewSrc = sources?.viewSrc ?? "";
+  // Share token (if any) used to authenticate client-side API calls -- same
+  // value for both the download and the signed-playback-token endpoints.
+  const shareAuthToken = mode === "token" ? token : mode === "client" ? shareId : null;
 
   const downloadHref = useMemo(() => {
     const base = `/api/owner/videos/${videoId}/download`;
-    const shareToken = mode === "token" ? token : mode === "client" ? shareId : null;
-    return shareToken ? `${base}?token=${encodeURIComponent(shareToken)}` : base;
-  }, [videoId, mode, token, shareId]);
+    return shareAuthToken ? `${base}?token=${encodeURIComponent(shareAuthToken)}` : base;
+  }, [videoId, shareAuthToken]);
 
-  const player = useVideoPlayer({ src: viewSrc });
+  const playbackTokenUrl = useMemo(() => {
+    const base = `/api/videos/${videoId}/playback-token`;
+    return shareAuthToken ? `${base}?token=${encodeURIComponent(shareAuthToken)}` : base;
+  }, [videoId, shareAuthToken]);
+
+  const player = useVideoPlayer({ playbackTokenUrl });
 
   // Versions in the stack (for dropdown + compare)
   const versions = useMemo(() => getStackIdsForVideo(videoId, stacks), [videoId, stacks]);
 
   const currentLabel = videoMetaById[videoId]?.name ?? `Video ${videoId}`;
 
-  // Preload next version in stack (single-view only)
+  // Next version in stack (for the version-switch dropdown/route prefetch;
+  // no longer preloaded as a hidden <video> since that would need its own
+  // signed playback token).
   const nextId = useMemo(() => getNextIdInStack(videoId, stacks), [videoId, stacks]);
-  const nextSrc = nextId ? sourcesById[nextId]?.viewSrc : undefined;
 
   const nextRoute = useMemo(() => {
     if (!nextId) return null;
@@ -381,14 +384,14 @@ export default function VideoReviewScreen(props: Props) {
     }
   }
 
-  // Build compare versions model (ordered stack)
+  // Build compare versions model (ordered stack). Each side fetches its own
+  // signed playback URL (see VideoCompareView) rather than being passed one.
   const compareVersions = useMemo(() => {
     return versions.map((id, idx) => ({
       id,
       label: `v${idx + 1}`,
-      viewSrc: sourcesById[id]?.viewSrc ?? "",
     }));
-  }, [versions, sourcesById]);
+  }, [versions]);
 
   const compareLeft = leftVersionId ?? videoId;
   const compareRight =
@@ -457,6 +460,7 @@ export default function VideoReviewScreen(props: Props) {
               <VideoCompareScreen
                 baseVideoId={videoId}
                 versions={compareVersions}
+                shareAuthToken={shareAuthToken}
                 defaultLeftId={compareLeft}
                 defaultRightId={compareRight}
               />
@@ -476,16 +480,6 @@ export default function VideoReviewScreen(props: Props) {
                   onPause={player.onPause}
                   onTimeUpdate={player.onTimeUpdate}
                 />
-
-                {nextSrc ? (
-                  <video
-                    src={nextSrc}
-                    preload="auto"
-                    style={{ display: "none" }}
-                    muted
-                    playsInline
-                  />
-                ) : null}
               </div>
 
               <div className="shrink-0 bg-neutral-950/90 backdrop-blur">

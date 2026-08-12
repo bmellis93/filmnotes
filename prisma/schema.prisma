@@ -65,7 +65,8 @@ model Video {
   thumbnailKey      String?
   thumbnailIsCustom Boolean @default(false)
   muxAssetId    String?
-  muxPlaybackId String?
+  muxPlaybackId String? // signed playback id -- used for actual video streaming (token required)
+  muxPublicPlaybackId String? // public playback id -- used only for thumbnails/gifs (no token)
   playbackUrl   String?
 
   createdAt DateTime @default(now())

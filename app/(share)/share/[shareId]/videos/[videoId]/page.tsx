@@ -44,7 +44,7 @@ export default async function ClientVideoPage({ params }: Props) {
     orderBy: { createdAt: "asc" },
   });
 
-  const { videoMetaById, sourcesById } = buildVideoMaps(videos);
+  const { videoMetaById } = buildVideoMaps(videos);
 
   return (
     <VideoReviewScreen
@@ -60,7 +60,6 @@ export default async function ClientVideoPage({ params }: Props) {
         allowDownload: Boolean(share.permissions?.allowDownload),
       }}
       videoMetaById={videoMetaById}
-      sourcesById={sourcesById}
     />
   );
 }

@@ -126,6 +126,7 @@ async function hardBlockIfOverLimit(videoId: string) {
         thumbnailIsCustom: false,
         playbackUrl: null,
         muxPlaybackId: null,
+        muxPublicPlaybackId: null,
         muxAssetId: null,
       },
     });
@@ -156,8 +157,15 @@ export async function POST(req: NextRequest) {
       (evt?.data?.id as string | undefined) ??
       (evt?.object?.id as string | undefined);
 
+    const playbackIds = (obj?.playback_ids as { id: string; policy: string }[] | undefined) ?? [];
+    // "signed" is used for the actual video stream (token required, short-lived);
+    // "public" is used only for thumbnails/gifs, which don't need protecting.
     const muxPlaybackId =
-      (obj?.playback_ids?.[0]?.id as string | undefined) ?? null;
+      playbackIds.find((p) => p.policy === "signed")?.id ??
+      playbackIds[0]?.id ??
+      null;
+    const muxPublicPlaybackId =
+      playbackIds.find((p) => p.policy === "public")?.id ?? null;
 
     if (!muxAssetId) {
       return NextResponse.json({ ok: true, ignored: "Missing muxAssetId" });
@@ -184,19 +192,21 @@ export async function POST(req: NextRequest) {
      */
     if (type === "video.asset.ready") {
       const playbackId = muxPlaybackId;
+      const thumbPlaybackId = muxPublicPlaybackId ?? playbackId;
 
       await prisma.video.updateMany({
         where: { muxAssetId },
         data: {
           status: "READY",
           muxPlaybackId: playbackId,
+          muxPublicPlaybackId,
           playbackUrl: playbackId ? hlsUrl(playbackId) : null,
           // Don't clobber a thumbnail the owner uploaded on purpose.
           ...(video.thumbnailIsCustom
             ? {}
             : {
-                thumbnailUrl: playbackId
-                  ? thumbUrl(playbackId, pickThumbTime(duration))
+                thumbnailUrl: thumbPlaybackId
+                  ? thumbUrl(thumbPlaybackId, pickThumbTime(duration))
                   : null,
               }),
           failureReason: null,
@@ -218,6 +228,9 @@ export async function POST(req: NextRequest) {
     if (muxPlaybackId) {
       dataToUpdate.muxPlaybackId = muxPlaybackId;
       dataToUpdate.playbackUrl = hlsUrl(muxPlaybackId);
+    }
+    if (muxPublicPlaybackId) {
+      dataToUpdate.muxPublicPlaybackId = muxPublicPlaybackId;
     }
 
     // If processing events arrive and we still don't have a thumb,

@@ -1,17 +1,12 @@
 // app/api/videos/transcode/route.ts
 import { NextResponse } from "next/server";
-import Mux from "@mux/mux-node";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
 import { signR2GetUrl } from "@/lib/r2Signed";
 import { getR2SignedUrlTtlSeconds } from "@/lib/r2";
+import { mux } from "@/lib/mux";
 
 export const runtime = "nodejs";
-
-const mux = new Mux({
-  tokenId: process.env.MUX_TOKEN_ID!,
-  tokenSecret: process.env.MUX_TOKEN_SECRET!,
-});
 
 type Body = {
   videoId: string;
@@ -49,10 +44,13 @@ export async function POST(req: Request) {
 
     const inputUrl = await signR2GetUrl(video.originalKey, expiresIn);
 
-    // 3) Create Mux asset (HLS playback)
+    // 3) Create Mux asset (HLS playback).
+    // Two playback IDs: "signed" is used for the actual video stream (token
+    // required, short-lived, refreshed silently by the player), "public" is
+    // used only for thumbnails/gifs, which don't need to be protected.
     const asset = await mux.video.assets.create({
       inputs: [{ url: inputUrl }],
-      playback_policy: ["public"],
+      playback_policy: ["signed", "public"],
     });
 
     // 4) Persist muxAssetId and mark processing

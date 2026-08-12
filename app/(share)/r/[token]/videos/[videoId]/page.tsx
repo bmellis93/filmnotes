@@ -51,7 +51,7 @@ export default async function TokenVideoPage({ params }: Props) {
     },
   });
 
-  const { videoMetaById, sourcesById } = buildVideoMaps(videos);
+  const { videoMetaById } = buildVideoMaps(videos);
 
   return (
     <VideoReviewScreen
@@ -67,7 +67,6 @@ export default async function TokenVideoPage({ params }: Props) {
         allowDownload: Boolean(share.allowDownload),
       }}
       videoMetaById={videoMetaById}
-      sourcesById={sourcesById}
     />
   );
 }

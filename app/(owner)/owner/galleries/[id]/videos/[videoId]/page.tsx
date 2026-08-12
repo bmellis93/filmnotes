@@ -73,7 +73,7 @@ export default async function OwnerGalleryVideoPage({ params }: Props) {
   // to the latest version — the version dropdown needs to be able to land
   // on (and stay on) any specific version in the stack.
 
-  const { videoMetaById, sourcesById } = buildVideoMaps(allVideos);
+  const { videoMetaById } = buildVideoMaps(allVideos);
 
   return (
     <VideoReviewScreen
@@ -82,7 +82,6 @@ export default async function OwnerGalleryVideoPage({ params }: Props) {
       projectTitle={gallery.title ?? `Gallery ${galleryId}`}
       stacks={stacks}
       videoMetaById={videoMetaById}
-      sourcesById={sourcesById}
       backHref={`/owner/galleries/${galleryId}`}
       view="REVIEW_DOWNLOAD"
     />

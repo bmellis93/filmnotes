@@ -14,7 +14,18 @@ export type QualityLevel = {
 type UseVideoPlayerOptions = {
   // HLS (.m3u8) source to attach for real ABR quality switching.
   // Omit for compare-view style callers that manage their own <video src>.
+  // Ignored when `playbackTokenUrl` is set.
   src?: string;
+
+  // Preferred for Mux signed playback: an endpoint returning
+  // { playbackId, token, expiresInSeconds }. The hook fetches an initial
+  // token, attaches hls.js against the *unsigned* manifest URL, and injects
+  // the current token onto every request via hls.js's xhrSetup -- so a
+  // background refresh (scheduled before the token expires) never tears
+  // down or restarts the hls.js session; playback just keeps using
+  // whatever token is currently valid.
+  playbackTokenUrl?: string;
+
   snapToZeroThreshold?: number; // default 0.02
   fsHintMs?: number; // default 2500
 };
@@ -73,9 +84,61 @@ function clamp(n: number, min: number, max: number) {
 }
 
 export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayerReturn {
-  const { src } = opts;
+  const { src: legacySrc, playbackTokenUrl } = opts;
   const snapToZeroThreshold = opts.snapToZeroThreshold ?? 0.02;
   const fsHintMs = opts.fsHintMs ?? 2500;
+
+  // Signed-playback state: resolvedSrc is the *unsigned* manifest URL (stable
+  // for the component's lifetime), currentTokenRef always holds the latest
+  // valid token, injected per-request via xhrSetup rather than by swapping
+  // the src (which would tear down and restart the hls.js session).
+  const [resolvedSrc, setResolvedSrc] = useState<string | undefined>(
+    playbackTokenUrl ? undefined : legacySrc
+  );
+  const currentTokenRef = useRef<string | null>(null);
+  const isSignedRef = useRef(Boolean(playbackTokenUrl));
+
+  useEffect(() => {
+    isSignedRef.current = Boolean(playbackTokenUrl);
+
+    if (!playbackTokenUrl) {
+      setResolvedSrc(legacySrc);
+      return;
+    }
+
+    let cancelled = false;
+    let refreshTimer: number | undefined;
+
+    async function fetchToken() {
+      try {
+        const res = await fetch(playbackTokenUrl!, { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Failed to get playback token");
+        if (cancelled) return;
+
+        currentTokenRef.current = data.token as string;
+        setResolvedSrc((prev) => {
+          const next = `https://stream.mux.com/${data.playbackId}.m3u8`;
+          return prev === next ? prev : next;
+        });
+
+        const ttlMs = Math.max(30, Number(data.expiresInSeconds) || 0) * 1000;
+        // Refresh at 80% of TTL, well before it actually expires.
+        refreshTimer = window.setTimeout(fetchToken, ttlMs * 0.8);
+      } catch (err) {
+        console.error("Failed to fetch/refresh Mux playback token:", err);
+        // Retry in a minute rather than leaving playback permanently stuck.
+        if (!cancelled) refreshTimer = window.setTimeout(fetchToken, 60_000);
+      }
+    }
+
+    fetchToken();
+
+    return () => {
+      cancelled = true;
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+    };
+  }, [playbackTokenUrl, legacySrc]);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const viewerRef = useRef<HTMLDivElement | null>(null);
@@ -243,6 +306,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
   // plain file before Mux has finished transcoding).
   useEffect(() => {
     const video = videoRef.current;
+    const src = resolvedSrc;
     if (!video || !src) return;
 
     if (hlsRef.current) {
@@ -255,6 +319,24 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
 
     const isHlsSource = src.includes(".m3u8");
 
+    // Inject the current token onto requests to Mux's main manifest domain.
+    // Sub-playlist/segment requests Mux hands back point at a *different*
+    // edge domain with their own baked-in signature (signature/expires/skid
+    // params) derived from that top-level token -- appending our token onto
+    // those breaks Mux's own signature check, so leave anything that
+    // already carries a "signature" param untouched.
+    const withCurrentToken = (url: string) => {
+      if (!isSignedRef.current || !currentTokenRef.current) return url;
+      try {
+        const u = new URL(url);
+        if (u.searchParams.has("signature")) return url;
+        u.searchParams.set("token", currentTokenRef.current);
+        return u.toString();
+      } catch {
+        return url;
+      }
+    };
+
     // Always prefer hls.js over native HLS (e.g. Safari) when MSE is
     // available, same approach YouTube's web player uses: native playback
     // gives the browser's built-in decoder no JS API for picking a quality
@@ -264,7 +346,19 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     if (isHlsSource && Hls.isSupported()) {
       setIsHlsActive(true);
 
-      const hls = new Hls();
+      const hls = new Hls(
+        isSignedRef.current
+          ? {
+              // Inject the *current* token on every request (manifest and
+              // segments alike) instead of baking one into the src -- this
+              // is what lets a background token refresh apply silently,
+              // without ever tearing down this hls.js session.
+              xhrSetup: (xhr, url) => {
+                xhr.open("GET", withCurrentToken(url), true);
+              },
+            }
+          : undefined
+      );
       hlsRef.current = hls;
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_evt, data) => {
@@ -296,7 +390,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
             hls.destroy();
             hlsRef.current = null;
             setIsHlsActive(false);
-            video.src = src;
+            video.src = withCurrentToken(src);
             break;
         }
       });
@@ -304,8 +398,12 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
       hls.loadSource(src);
       hls.attachMedia(video);
     } else {
+      // Native <video src> fallback (browsers without MSE support, now rare
+      // since hls.js is used everywhere else): background token refresh
+      // can't silently update an already-set src, so playback here is only
+      // guaranteed for one token TTL. Acceptable given how narrow this path is.
       setIsHlsActive(false);
-      video.src = src;
+      video.src = withCurrentToken(src);
     }
 
     return () => {
@@ -314,7 +412,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
         hlsRef.current = null;
       }
     };
-  }, [src]);
+  }, [resolvedSrc]);
 
   const setQualityLevel = useCallback((index: number) => {
     if (hlsRef.current) hlsRef.current.currentLevel = index;

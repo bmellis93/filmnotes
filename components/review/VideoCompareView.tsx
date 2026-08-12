@@ -8,7 +8,6 @@ import { useVideoPlayer } from "@/components/review/hooks/useVideoPlayer";
 type CompareVersion = {
   id: string;
   label: string;
-  viewSrc: string;
 };
 
 type Props = {
@@ -17,6 +16,10 @@ type Props = {
   versions: CompareVersion[];
   onChangeLeft: (id: string) => void;
   onChangeRight: (id: string) => void;
+
+  // Share token (token/shareId), if any -- used to authenticate the
+  // per-video signed-playback-token fetch for client-facing links.
+  shareAuthToken?: string | null;
 
   // optional if you want to control it from parent later
   defaultAudioSide?: "left" | "right";
@@ -29,12 +32,51 @@ function durMs(el: HTMLVideoElement | null) {
   return Math.floor(d * 1000);
 }
 
+// Compare sessions are short, so a one-time signed URL per selected video is
+// enough -- no silent background refresh needed here (unlike the main
+// single-video player).
+function useSignedVideoUrl(videoId: string | undefined, shareAuthToken?: string | null) {
+  const [url, setUrl] = useState("");
+
+  useEffect(() => {
+    if (!videoId) {
+      setUrl("");
+      return;
+    }
+
+    let cancelled = false;
+    const base = `/api/videos/${videoId}/playback-token`;
+    const endpoint = shareAuthToken ? `${base}?token=${encodeURIComponent(shareAuthToken)}` : base;
+
+    fetch(endpoint, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        setUrl(
+          data?.playbackId && data?.token
+            ? `https://stream.mux.com/${data.playbackId}.m3u8?token=${data.token}`
+            : ""
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setUrl("");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [videoId, shareAuthToken]);
+
+  return url;
+}
+
 export default function VideoCompareView({
   leftVersionId,
   rightVersionId,
   versions,
   onChangeLeft,
   onChangeRight,
+  shareAuthToken,
   defaultAudioSide = "right",
 }: Props) {
   const leftRef = useRef<HTMLVideoElement | null>(null);
@@ -53,14 +95,8 @@ export default function VideoCompareView({
   const [endedLeft, setEndedLeft] = useState(false);
   const [endedRight, setEndedRight] = useState(false);
 
-  const left = useMemo(
-    () => versions.find((v) => v.id === leftVersionId),
-    [versions, leftVersionId]
-  );
-  const right = useMemo(
-    () => versions.find((v) => v.id === rightVersionId),
-    [versions, rightVersionId]
-  );
+  const leftSrc = useSignedVideoUrl(leftVersionId, shareAuthToken);
+  const rightSrc = useSignedVideoUrl(rightVersionId, shareAuthToken);
 
   // In compare mode, tell the hook which <video> is "active"
   useEffect(() => {
@@ -224,7 +260,7 @@ export default function VideoCompareView({
           >
             <VideoStage
               ref={leftRef}
-              src={left?.viewSrc ?? ""}
+              src={leftSrc}
               className="h-full"
               onLoadedMetadata={syncDurationFromEither}
               onLoadedData={syncDurationFromEither}
@@ -276,7 +312,7 @@ export default function VideoCompareView({
           >
             <VideoStage
               ref={rightRef}
-              src={right?.viewSrc ?? ""}
+              src={rightSrc}
               className="h-full"
               onLoadedMetadata={syncDurationFromEither}
               onLoadedData={syncDurationFromEither}

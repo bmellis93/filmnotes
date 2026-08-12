@@ -6,8 +6,7 @@ import VideoCompareView from "./VideoCompareView";
 
 type CompareVersion = {
   id: string;
-  label: string;   // "v1", "v2", ...
-  viewSrc: string; // transcoded / viewing src
+  label: string; // "v1", "v2", ...
 };
 
 type Props = {
@@ -15,6 +14,7 @@ type Props = {
   versions: CompareVersion[]; // ordered versions
   defaultLeftId?: string;
   defaultRightId?: string;
+  shareAuthToken?: string | null;
 };
 
 export default function VideoCompareScreen({
@@ -22,6 +22,7 @@ export default function VideoCompareScreen({
   versions,
   defaultLeftId,
   defaultRightId,
+  shareAuthToken,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,6 +71,7 @@ export default function VideoCompareScreen({
       versions={versions}
       onChangeLeft={(id) => replaceParams(id, rightVersionId)}
       onChangeRight={(id) => replaceParams(leftVersionId, id)}
+      shareAuthToken={shareAuthToken}
     />
   );
 }
