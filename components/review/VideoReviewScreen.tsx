@@ -565,7 +565,7 @@ export default function VideoReviewScreen(props: Props) {
   const showCommentsPanel = !isComparing;
 
   return (
-    <div className="bg-neutral-950 text-neutral-100 flex flex-col h-[100dvh]">
+    <div className="bg-[var(--surface-0)] text-[var(--text-1)] flex flex-col h-[100dvh]">
       <TopBar
         onBack={() => {
           if (backHref) router.push(backHref);
@@ -675,7 +675,7 @@ export default function VideoReviewScreen(props: Props) {
                     />
 
                     <div className="absolute inset-x-0 bottom-3 flex justify-center px-4">
-                      <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-950/95 px-3 py-2 shadow-2xl backdrop-blur">
+                      <div className="flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-0)]/95 px-3 py-2 shadow-2xl backdrop-blur">
                         <button
                           type="button"
                           onClick={() =>
@@ -686,7 +686,7 @@ export default function VideoReviewScreen(props: Props) {
                             )
                           }
                           disabled={!draftAnnotation || draftAnnotation.strokes.length === 0}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-800 disabled:opacity-40"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)] disabled:opacity-40"
                         >
                           <Undo2 className="h-3.5 w-3.5" />
                           Undo
@@ -695,7 +695,7 @@ export default function VideoReviewScreen(props: Props) {
                           type="button"
                           onClick={() => setDraftAnnotation({ strokes: [] })}
                           disabled={!draftAnnotation || draftAnnotation.strokes.length === 0}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-800 disabled:opacity-40"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)] disabled:opacity-40"
                         >
                           <Eraser className="h-3.5 w-3.5" />
                           Clear
@@ -703,7 +703,7 @@ export default function VideoReviewScreen(props: Props) {
                         <button
                           type="button"
                           onClick={() => setIsDrawingActive(false)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-900 hover:bg-white"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-solid)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
                         >
                           <Check className="h-3.5 w-3.5" />
                           Done
@@ -722,7 +722,7 @@ export default function VideoReviewScreen(props: Props) {
                 )}
               </div>
 
-              <div className="shrink-0 bg-neutral-950/90 backdrop-blur">
+              <div className="shrink-0 bg-[var(--surface-0)]/90 backdrop-blur">
                 <PlaybackControls
                   isPlaying={player.isPlaying}
                   onTogglePlay={player.togglePlay}

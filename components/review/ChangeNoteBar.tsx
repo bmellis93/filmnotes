@@ -26,9 +26,9 @@ export default function ChangeNoteBar({ isOwner, note, onSave, isSaving }: Props
   if (!isOwner && !note.trim()) return null;
 
   return (
-    <div className="shrink-0 border-b border-neutral-800 bg-neutral-950/60 px-4 py-2">
+    <div className="shrink-0 border-b border-[var(--border-1)] bg-[var(--surface-0)]/60 px-4 py-2">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-3.5 w-3.5 shrink-0 text-neutral-500" aria-hidden="true" />
+        <Sparkles className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" aria-hidden="true" />
 
         {isOwner ? (
           <input
@@ -42,11 +42,11 @@ export default function ChangeNoteBar({ isOwner, note, onSave, isSaving }: Props
             }}
             disabled={isSaving}
             placeholder="What changed in this version? (shown to the client)"
-            className="w-full min-w-0 bg-transparent text-xs text-neutral-300 placeholder-neutral-600 outline-none disabled:opacity-60"
+            className="w-full min-w-0 bg-transparent text-xs text-[var(--text-2)] placeholder-[var(--text-muted)] outline-none disabled:opacity-60"
           />
         ) : (
-          <div className="min-w-0 truncate text-xs text-neutral-300">
-            <span className="font-semibold text-neutral-200">What changed: </span>
+          <div className="min-w-0 truncate text-xs text-[var(--text-2)]">
+            <span className="font-semibold text-[var(--text-1)]">What changed: </span>
             {note}
           </div>
         )}

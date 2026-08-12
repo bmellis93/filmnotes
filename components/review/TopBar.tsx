@@ -60,14 +60,14 @@ export default function TopBar({
   onToggleComments,
 }: Props) {
   return (
-    <header className="shrink-0 border-b border-neutral-800 bg-neutral-950/80 backdrop-blur">
+    <header className="shrink-0 border-b border-[var(--border-1)] bg-[var(--surface-0)]/80 backdrop-blur">
       <div className="flex h-14 items-center justify-between gap-2 px-2 sm:px-4">
         {/* LEFT */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="shrink-0 text-neutral-300 hover:text-white"
+            className="shrink-0 text-[var(--text-2)] hover:text-[var(--text-1)]"
             aria-label="Back"
             title="Back"
           >
@@ -79,10 +79,10 @@ export default function TopBar({
           </div>
 
           <div className="min-w-0">
-            <div className="truncate text-sm text-neutral-200">
+            <div className="truncate text-sm text-[var(--text-2)]">
               <span className="hidden font-semibold sm:inline">{projectTitle}</span>
-              <span className="hidden text-neutral-500 sm:inline"> / </span>
-              <span className="text-neutral-300">{videoTitle}</span>
+              <span className="hidden text-[var(--text-muted)] sm:inline"> / </span>
+              <span className="text-[var(--text-2)]">{videoTitle}</span>
             </div>
           </div>
 
@@ -98,7 +98,7 @@ export default function TopBar({
                 }
                 onVersionChange(next);
               }}
-              className="rounded-lg bg-neutral-900 px-2 py-1 text-xs text-neutral-200 outline-none ring-1 ring-neutral-800 hover:bg-neutral-800"
+              className="rounded-lg bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)] outline-none ring-1 ring-[var(--border-1)] hover:bg-[var(--surface-2)]"
               aria-label="Version"
               title="Version"
             >
@@ -123,8 +123,8 @@ export default function TopBar({
               className={[
                 "inline-flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold ring-1 sm:px-3",
                 isComparing
-                  ? "bg-emerald-950/30 text-emerald-200 ring-emerald-900/40 hover:bg-emerald-950/45"
-                  : "bg-neutral-900 text-neutral-200 ring-neutral-800 hover:bg-neutral-800",
+                  ? "bg-emerald-950/30 text-emerald-700 dark:text-emerald-200 ring-emerald-900/40 hover:bg-emerald-950/45"
+                  : "bg-[var(--surface-1)] text-[var(--text-2)] ring-[var(--border-1)] hover:bg-[var(--surface-2)]",
               ].join(" ")}
               title={isComparing ? "Exit compare" : "Compare versions"}
               aria-label={isComparing ? "Exit compare" : "Compare versions"}
@@ -138,7 +138,7 @@ export default function TopBar({
             <button
               type="button"
               onClick={onDownload}
-              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-2 py-2 text-xs font-semibold text-neutral-200 ring-1 ring-neutral-800 hover:bg-neutral-800 sm:px-3"
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--surface-1)] px-2 py-2 text-xs font-semibold text-[var(--text-2)] ring-1 ring-[var(--border-1)] hover:bg-[var(--surface-2)] sm:px-3"
               title="Download"
             >
               <Download className="h-4 w-4" />
@@ -150,7 +150,7 @@ export default function TopBar({
             <button
               type="button"
               onClick={onShare}
-              className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-2 py-2 text-xs font-semibold text-neutral-200 ring-1 ring-neutral-800 hover:bg-neutral-800 sm:px-3"
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--surface-1)] px-2 py-2 text-xs font-semibold text-[var(--text-2)] ring-1 ring-[var(--border-1)] hover:bg-[var(--surface-2)] sm:px-3"
               title="Share"
             >
               <Share2 className="h-4 w-4" />
@@ -163,7 +163,7 @@ export default function TopBar({
             type="button"
             onClick={onToggleComments}
             disabled={isComparing}
-            className="text-neutral-300 hover:text-white disabled:opacity-40 disabled:hover:text-neutral-300"
+            className="text-[var(--text-2)] hover:text-[var(--text-1)] disabled:opacity-40 disabled:hover:text-[var(--text-2)]"
             aria-label={commentsOpen ? "Hide comments" : "Show comments"}
             title={isComparing ? "Comments hidden during compare" : commentsOpen ? "Hide comments" : "Show comments"}
           >

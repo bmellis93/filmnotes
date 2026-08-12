@@ -16,11 +16,11 @@ import {
 
 const iconBtnBase =
   "inline-flex h-10 w-10 items-center justify-center rounded-lg transition " +
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 " +
+  "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)] " +
   "[&>svg]:stroke-[1.75]";
 
-const iconBtnMuted = `${iconBtnBase} text-neutral-300 hover:text-white hover:bg-neutral-900/60`;
-const iconBtnActive = `${iconBtnBase} text-neutral-100 hover:text-white hover:bg-neutral-900/60`;
+const iconBtnMuted = `${iconBtnBase} text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--surface-1)]/60`;
+const iconBtnActive = `${iconBtnBase} text-[var(--text-1)] hover:text-[var(--text-1)] hover:bg-[var(--surface-1)]/60`;
 
 export type PlaybackMarker = {
   id: string;
@@ -228,7 +228,7 @@ export default function PlaybackControls({
                 setSpeedOpen((v) => !v);
                 setSettingsOpen(false);
               }}
-              className="h-10 inline-flex items-center gap-1 rounded-lg px-2 text-neutral-300 hover:text-white hover:bg-neutral-900/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700"
+              className="h-10 inline-flex items-center gap-1 rounded-lg px-2 text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--surface-1)]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)]"
               title="Playback speed"
               aria-label="Playback speed"
               aria-expanded={speedOpen}
@@ -244,7 +244,7 @@ export default function PlaybackControls({
               role="menu"
               aria-label="Playback speed"
               className={[
-                "absolute bottom-full left-0 mb-2 w-44 rounded-xl border border-neutral-800 bg-neutral-950/95 p-2 shadow-xl backdrop-blur",
+                "absolute bottom-full left-0 mb-2 w-44 rounded-xl border border-[var(--border-1)] bg-[var(--surface-0)]/95 p-2 shadow-xl backdrop-blur",
                 "origin-bottom-left transform transition duration-150 ease-out",
                 speedOpen ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-95",
               ].join(" ")}
@@ -265,9 +265,9 @@ export default function PlaybackControls({
                       className={[
                         "rounded-lg px-2 py-1 text-xs tabular-nums transition",
                         active
-                          ? "bg-neutral-200 text-neutral-900"
-                          : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800",
-                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700",
+                          ? "bg-[var(--accent-solid)] text-[var(--accent-solid-fg)]"
+                          : "bg-[var(--surface-1)] text-[var(--text-2)] hover:bg-[var(--surface-2)]",
+                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)]",
                       ].join(" ")}
                     >
                       {s}x
@@ -304,7 +304,7 @@ export default function PlaybackControls({
             >
               {/* hover bridge */}
               <div className="absolute right-full top-1/2 h-10 w-3 -translate-y-1/2" />
-              <div className="relative rounded-lg bg-neutral-950/95 p-2 pr-4 shadow-xl backdrop-blur">
+              <div className="relative rounded-lg bg-[var(--surface-0)]/95 p-2 pr-4 shadow-xl backdrop-blur">
                 <input
                   type="range"
                   min={0}
@@ -335,7 +335,7 @@ export default function PlaybackControls({
                 "transition duration-150 ease-out",
               ].join(" ")}
             >
-              <div className="rounded-lg bg-neutral-950/95 p-2 shadow-xl backdrop-blur">
+              <div className="rounded-lg bg-[var(--surface-0)]/95 p-2 shadow-xl backdrop-blur">
                 <input
                   type="range"
                   min={0}
@@ -358,7 +358,7 @@ export default function PlaybackControls({
 
         {/* CENTER cluster */}
         <div className="flex items-center justify-center gap-4">
-          <div className="tabular-nums text-sm text-neutral-200" aria-label="Time">
+          <div className="tabular-nums text-sm text-[var(--text-2)]" aria-label="Time">
             {formatTime(safeCurrent)} / {durationMs ? formatTime(durationMs) : "—"}
           </div>
 
@@ -366,7 +366,7 @@ export default function PlaybackControls({
             <button
               type="button"
               onClick={onAddComment}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-neutral-800 bg-transparent px-4 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--border-1)] bg-transparent px-4 text-sm font-semibold text-[var(--text-2)] hover:bg-[var(--surface-1)] hover:text-[var(--text-1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)]"
             >
               Add a Comment
             </button>
@@ -396,12 +396,12 @@ export default function PlaybackControls({
               role="menu"
               aria-label="Viewer settings"
               className={[
-                "absolute bottom-full right-0 mb-2 w-56 rounded-xl border border-neutral-800 bg-neutral-950/95 p-3 shadow-xl backdrop-blur",
+                "absolute bottom-full right-0 mb-2 w-56 rounded-xl border border-[var(--border-1)] bg-[var(--surface-0)]/95 p-3 shadow-xl backdrop-blur",
                 "origin-bottom-right transform transition duration-150 ease-out",
                 settingsOpen ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-95",
               ].join(" ")}
             >
-              <div className="text-xs font-semibold text-neutral-300">Quality</div>
+              <div className="text-xs font-semibold text-[var(--text-2)]">Quality</div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <button
                   role="menuitemradio"
@@ -415,9 +415,9 @@ export default function PlaybackControls({
                   className={[
                     "rounded-lg px-2 py-1 text-xs transition",
                     isAutoQuality
-                      ? "bg-neutral-200 text-neutral-900"
-                      : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700",
+                      ? "bg-[var(--accent-solid)] text-[var(--accent-solid-fg)]"
+                      : "bg-[var(--surface-1)] text-[var(--text-2)] hover:bg-[var(--surface-2)]",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)]",
                     "disabled:opacity-60 disabled:cursor-default",
                   ].join(" ")}
                 >
@@ -444,9 +444,9 @@ export default function PlaybackControls({
                         className={[
                           "rounded-lg px-2 py-1 text-xs transition",
                           active
-                            ? "bg-neutral-200 text-neutral-900"
-                            : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800",
-                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700",
+                            ? "bg-[var(--accent-solid)] text-[var(--accent-solid-fg)]"
+                            : "bg-[var(--surface-1)] text-[var(--text-2)] hover:bg-[var(--surface-2)]",
+                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)]",
                         ].join(" ")}
                       >
                         {lvl.label}
@@ -455,7 +455,7 @@ export default function PlaybackControls({
                   })}
               </div>
               {qualityLevels.length === 0 && (
-                <div className="mt-3 text-[11px] text-neutral-500">
+                <div className="mt-3 text-[11px] text-[var(--text-muted)]">
                   {isHlsActive
                     ? "Detecting available qualities…"
                     : "This browser streams adaptive quality automatically; manual selection isn’t available here."}

@@ -55,11 +55,11 @@ export default function RequestChangesModal({
       />
 
       <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4">
-        <div className="relative w-full max-w-xl rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl">
+        <div className="relative w-full max-w-xl rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl">
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-200"
+            className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-2)]"
             aria-label="Close"
             title="Close"
           >
@@ -67,8 +67,8 @@ export default function RequestChangesModal({
           </button>
 
           <div className="p-4 pt-5">
-            <div className="text-sm font-semibold text-neutral-100">Request changes</div>
-            <div className="mt-1 text-xs text-neutral-500">
+            <div className="text-sm font-semibold text-[var(--text-1)]">Request changes</div>
+            <div className="mt-1 text-xs text-[var(--text-muted)]">
               Let your editor know what needs to change. This posts as a comment so they can
               follow up.
             </div>
@@ -81,7 +81,7 @@ export default function RequestChangesModal({
 
             <textarea
               ref={textareaRef}
-              className="mt-3 w-full resize-none rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-700"
+              className="mt-3 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] p-3 text-sm text-[var(--text-1)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--border-3)]"
               placeholder="What needs to change?"
               rows={4}
               value={note}
@@ -90,15 +90,15 @@ export default function RequestChangesModal({
             />
 
             <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="truncate text-xs text-neutral-500">
-                Tip: Press <span className="text-neutral-300">Ctrl/⌘ + Enter</span> to send.
+              <div className="truncate text-xs text-[var(--text-muted)]">
+                Tip: Press <span className="text-[var(--text-2)]">Ctrl/⌘ + Enter</span> to send.
               </div>
 
               <button
                 type="button"
                 onClick={onSubmit}
                 disabled={isSubmitting || note.trim().length === 0}
-                className="inline-flex items-center gap-2 rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-900 hover:bg-white disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-xs font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-50"
                 title="Send (Ctrl/⌘ + Enter)"
               >
                 <Send className="h-3.5 w-3.5" />

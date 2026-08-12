@@ -97,10 +97,10 @@ export default function TokenReviewClient(props: Props) {
 
   if (!props.videoId && !isGallery && !fallbackFirstId) {
     return (
-      <div className="min-h-[100dvh] bg-neutral-950 text-neutral-100 p-6">
+      <div className="min-h-[100dvh] bg-[var(--surface-0)] text-[var(--text-1)] p-6">
         <div className="max-w-xl">
           <div className="text-lg font-semibold">No videos available</div>
-          <div className="mt-2 text-neutral-400 text-sm">
+          <div className="mt-2 text-[var(--text-muted)] text-sm">
             This link doesn’t have any videos attached.
           </div>
         </div>

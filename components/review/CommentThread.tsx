@@ -99,8 +99,8 @@ function CommentNode({
         className={[
           "rounded-xl border p-3",
           isResolved
-            ? "border-neutral-900 bg-neutral-950/20"
-            : "border-neutral-800 bg-neutral-950/40",
+            ? "border-[var(--border-2)] bg-[var(--surface-0)]/20"
+            : "border-[var(--border-1)] bg-[var(--surface-0)]/40",
         ].join(" ")}
       >
         {/* Only show timestamp + red bubble for top-level comments */}
@@ -108,7 +108,7 @@ function CommentNode({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-1.5">
               {c.isApprovalNote ? (
-                <span className="rounded-full bg-amber-950/50 px-2.5 py-0.5 text-xs font-semibold text-amber-200 ring-1 ring-amber-900/50">
+                <span className="rounded-full bg-amber-950/50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-200 ring-1 ring-amber-900/50">
                   Changes requested
                 </span>
               ) : (
@@ -116,7 +116,7 @@ function CommentNode({
                   type="button"
                   onClick={() => onSeek(c.timecodeMs)}
                   title="Jump to timecode"
-                  className="rounded-full bg-red-950/60 px-2.5 py-0.5 text-xs font-semibold text-red-200 ring-1 ring-red-900/50 hover:bg-red-900/70 hover:text-red-100 transition"
+                  className="rounded-full bg-red-950/60 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:text-red-200 ring-1 ring-red-900/50 hover:bg-red-900/70 hover:text-red-600 dark:hover:text-red-100 transition"
                 >
                   {formatTime(c.timecodeMs)}
                 </button>
@@ -128,7 +128,7 @@ function CommentNode({
                   onClick={() => onViewAnnotation?.(c)}
                   title="Show drawing"
                   aria-label="Show drawing"
-                  className="rounded-full bg-neutral-900 p-1 text-neutral-300 ring-1 ring-neutral-800 hover:bg-neutral-800 hover:text-white transition"
+                  className="rounded-full bg-[var(--surface-1)] p-1 text-[var(--text-2)] ring-1 ring-[var(--border-1)] hover:bg-[var(--surface-2)] hover:text-[var(--text-1)] transition"
                 >
                   <Pencil className="h-3 w-3" />
                 </button>
@@ -137,11 +137,11 @@ function CommentNode({
 
             <div className="flex items-center gap-2">
               {isResolved && (
-                <span className="rounded-full border border-neutral-800 bg-neutral-900/40 px-2 py-0.5 text-[11px] font-semibold text-neutral-200">
+                <span className="rounded-full border border-[var(--border-1)] bg-[var(--surface-1)]/40 px-2 py-0.5 text-[11px] font-semibold text-[var(--text-2)]">
                   Resolved
                 </span>
               )}
-              <div className="text-xs text-neutral-500">{safeDateLabel(c.createdAt)}</div>
+              <div className="text-xs text-[var(--text-muted)]">{safeDateLabel(c.createdAt)}</div>
             </div>
           </div>
         )}
@@ -149,7 +149,7 @@ function CommentNode({
         <div
           className={[
             "mt-1 text-sm leading-relaxed",
-            isResolved ? "text-neutral-300" : "text-neutral-100",
+            isResolved ? "text-[var(--text-2)]" : "text-[var(--text-1)]",
           ].join(" ")}
         >
           {c.body}
@@ -163,7 +163,7 @@ function CommentNode({
               setReplyBody("");
             }}
             disabled={!canAddComment}
-            className="text-xs font-semibold text-neutral-300 hover:text-white disabled:opacity-50"
+            className="text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text-1)] disabled:opacity-50"
             aria-expanded={isOpen}
             aria-controls={replyPanelId}
           >
@@ -177,8 +177,8 @@ function CommentNode({
               className={[
                 "text-xs px-2 py-1 rounded-md border font-semibold transition",
                 isResolved
-                  ? "border-neutral-800 bg-neutral-900/40 text-neutral-200 hover:bg-neutral-900"
-                  : "border-emerald-900/40 bg-emerald-950/30 text-emerald-200 hover:bg-emerald-950/50",
+                  ? "border-[var(--border-1)] bg-[var(--surface-1)]/40 text-[var(--text-2)] hover:bg-[var(--surface-1)]"
+                  : "border-emerald-900/40 bg-emerald-950/30 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-950/50",
               ].join(" ")}
               title={isResolved ? "Mark as open" : "Mark as resolved"}
             >
@@ -190,7 +190,7 @@ function CommentNode({
         {isOpen && (
           <div className="mt-2" id={replyPanelId}>
             <textarea
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 p-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-700"
+              className="w-full rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] p-2 text-sm text-[var(--text-1)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--border-3)]"
               placeholder="Write a reply…"
               value={replyBody}
               onChange={(e) => setReplyBody(e.target.value)}
@@ -205,7 +205,7 @@ function CommentNode({
                   setReplyToId(null);
                   setReplyBody("");
                 }}
-                className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-200 hover:bg-neutral-800"
+                className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)]"
               >
                 Cancel
               </button>
@@ -219,7 +219,7 @@ function CommentNode({
                   })
                 }
                 disabled={!canSendReply}
-                className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-neutral-900 hover:bg-neutral-200 disabled:opacity-50"
+                className="rounded-lg bg-[var(--accent-solid)] px-3 py-2 text-xs font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-50"
                 aria-label="Send reply"
               >
                 {isReplying ? "Sending…" : "Reply"}

@@ -218,7 +218,7 @@ export default function VideoCompareView({
     "rounded-lg border px-2 py-2 transition cursor-pointer select-none";
 
   return (
-    <div className="flex h-full flex-col bg-neutral-950">
+    <div className="flex h-full flex-col bg-[var(--surface-0)]">
       {/* VIDEOS */}
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto p-4 sm:grid-cols-2 sm:overflow-hidden">
         {/* LEFT */}
@@ -229,19 +229,19 @@ export default function VideoCompareView({
               selectedClass +
               (audioSide === "left"
                 ? " border-emerald-500/60 bg-emerald-950/20"
-                : " border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900/60")
+                : " border-[var(--border-1)] bg-[var(--surface-1)]/40 hover:bg-[var(--surface-1)]/60")
             }
             title="Select left audio"
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="text-xs text-neutral-200">
+              <div className="text-xs text-[var(--text-2)]">
                 {audioSide === "left" ? "Audio: ON" : "Audio: off"}
               </div>
 
               <select
                 value={leftVersionId}
                 onChange={(e) => onChangeLeft(e.target.value)}
-                className="rounded bg-neutral-900 px-2 py-1 text-xs text-neutral-200 ring-1 ring-neutral-800"
+                className="rounded bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)] ring-1 ring-[var(--border-1)]"
                 onClick={(e) => e.stopPropagation()}
               >
                 {versions.map((v) => (
@@ -281,19 +281,19 @@ export default function VideoCompareView({
               selectedClass +
               (audioSide === "right"
                 ? " border-emerald-500/60 bg-emerald-950/20"
-                : " border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900/60")
+                : " border-[var(--border-1)] bg-[var(--surface-1)]/40 hover:bg-[var(--surface-1)]/60")
             }
             title="Select right audio"
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="text-xs text-neutral-200">
+              <div className="text-xs text-[var(--text-2)]">
                 {audioSide === "right" ? "Audio: ON" : "Audio: off"}
               </div>
 
               <select
                 value={rightVersionId}
                 onChange={(e) => onChangeRight(e.target.value)}
-                className="rounded bg-neutral-900 px-2 py-1 text-xs text-neutral-200 ring-1 ring-neutral-800"
+                className="rounded bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)] ring-1 ring-[var(--border-1)]"
                 onClick={(e) => e.stopPropagation()}
               >
                 {versions.map((v) => (
@@ -327,7 +327,7 @@ export default function VideoCompareView({
       </div>
 
       {/* UNIFIED CONTROLS */}
-      <div className="shrink-0 bg-neutral-950/90 backdrop-blur">
+      <div className="shrink-0 bg-[var(--surface-0)]/90 backdrop-blur">
         <PlaybackControls
           isPlaying={player.isPlaying}
           onTogglePlay={player.togglePlay}

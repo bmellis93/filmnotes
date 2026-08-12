@@ -70,12 +70,12 @@ export default function CommentComposerModal({
 
       {/* Composer (sits above controls) */}
       <div className="absolute inset-x-0 bottom-24 flex justify-center px-4">
-        <div className="relative w-full max-w-xl rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl">
+        <div className="relative w-full max-w-xl rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)] shadow-2xl">
           {/* Small X (no stroke, not overlapping content) */}
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-200"
+            className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-2)]"
             aria-label="Close"
             title="Close"
           >
@@ -100,7 +100,7 @@ export default function CommentComposerModal({
             <div className="min-w-0 flex-1">
               <textarea
                 ref={textareaRef}
-                className="w-full resize-none rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-700"
+                className="w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] p-3 text-sm text-[var(--text-1)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--border-3)]"
                 placeholder="Enter your comment"
                 rows={3}
                 value={body}
@@ -111,20 +111,20 @@ export default function CommentComposerModal({
               {onStartDrawing && (
                 <div className="mt-2">
                   {hasAnnotation ? (
-                    <div className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5">
-                      <Pencil className="h-3.5 w-3.5 shrink-0 text-red-300" />
-                      <span className="flex-1 text-xs text-neutral-300">Drawing attached</span>
+                    <div className="flex items-center gap-2 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2.5 py-1.5">
+                      <Pencil className="h-3.5 w-3.5 shrink-0 text-red-500 dark:text-red-300" />
+                      <span className="flex-1 text-xs text-[var(--text-2)]">Drawing attached</span>
                       <button
                         type="button"
                         onClick={onStartDrawing}
-                        className="text-xs font-semibold text-neutral-300 hover:text-white"
+                        className="text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text-1)]"
                       >
                         Redraw
                       </button>
                       <button
                         type="button"
                         onClick={onRemoveAnnotation}
-                        className="text-neutral-400 hover:text-red-300"
+                        className="text-[var(--text-muted)] hover:text-red-500 dark:hover:text-red-300"
                         aria-label="Remove drawing"
                         title="Remove drawing"
                       >
@@ -136,7 +136,7 @@ export default function CommentComposerModal({
                       type="button"
                       onClick={onStartDrawing}
                       disabled={isPosting}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-800 hover:text-white disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text-1)] disabled:opacity-50"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                       Point at something
@@ -148,13 +148,13 @@ export default function CommentComposerModal({
               {/* Bottom row: time + tip (left) + send icon (right) */}
               <div className="mt-3 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="rounded-full bg-red-950/60 px-3 py-1 text-xs font-semibold text-red-200 ring-1 ring-red-900/50">
+                  <div className="rounded-full bg-red-950/60 px-3 py-1 text-xs font-semibold text-red-700 dark:text-red-200 ring-1 ring-red-900/50">
                     {stampLabel}
                   </div>
 
-                  <div className="truncate text-xs text-neutral-500">
+                  <div className="truncate text-xs text-[var(--text-muted)]">
                     Tip: Press{" "}
-                    <span className="text-neutral-300">Ctrl/⌘ + Enter</span> to send.
+                    <span className="text-[var(--text-2)]">Ctrl/⌘ + Enter</span> to send.
                   </div>
                 </div>
 
@@ -162,7 +162,7 @@ export default function CommentComposerModal({
                   type="button"
                   onClick={onSubmit}
                   disabled={isPosting || body.trim().length === 0}
-                  className="grid h-10 w-10 place-items-center rounded-xl bg-neutral-100 text-neutral-900 hover:bg-white disabled:opacity-50"
+                  className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-solid)] text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-50"
                   title="Send (Ctrl/⌘ + Enter)"
                   aria-label="Send"
                 >

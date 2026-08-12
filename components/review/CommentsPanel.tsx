@@ -93,13 +93,13 @@ export default function CommentsPanel({
 
   return (
     <aside
-      className="absolute inset-0 z-30 min-h-0 overflow-hidden md:static md:z-auto md:border-l md:border-neutral-800"
+      className="absolute inset-0 z-30 min-h-0 overflow-hidden md:static md:z-auto md:border-l md:border-[var(--border-1)]"
       aria-label="Comments panel"
       aria-hidden={!commentsOpen}
     >
       <div
         className={[
-          "h-full bg-neutral-950",
+          "h-full bg-[var(--surface-0)]",
           "transition-transform duration-500",
           commentsOpen ? "translate-x-0 ease-out" : "translate-x-full ease-in",
           commentsOpen ? "pointer-events-auto" : "pointer-events-none",
@@ -114,7 +114,7 @@ export default function CommentsPanel({
               <button
                 type="button"
                 onClick={() => setFilterOpen((v) => !v)}
-                className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-neutral-200 hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700"
+                className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)]"
                 aria-label="Filter comments"
                 aria-haspopup="menu"
                 aria-expanded={filterOpen}
@@ -129,7 +129,7 @@ export default function CommentsPanel({
                 role="menu"
                 aria-label="Comment filters"
                 className={[
-                  "absolute right-0 mt-2 w-44 rounded-xl border border-neutral-800 bg-neutral-950 p-2 shadow-xl",
+                  "absolute right-0 mt-2 w-44 rounded-xl border border-[var(--border-1)] bg-[var(--surface-0)] p-2 shadow-xl",
                   "origin-top-right transition duration-150",
                   filterOpen ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-95",
                 ].join(" ")}
@@ -151,8 +151,8 @@ export default function CommentsPanel({
                       className={[
                         "w-full rounded-lg px-3 py-2 text-left text-xs",
                         active
-                          ? "bg-neutral-200 text-neutral-900"
-                          : "text-neutral-200 hover:bg-neutral-900",
+                          ? "bg-[var(--accent-solid)] text-[var(--accent-solid-fg)]"
+                          : "text-[var(--text-2)] hover:bg-[var(--surface-1)]",
                       ].join(" ")}
                     >
                       {f.label}
@@ -170,12 +170,12 @@ export default function CommentsPanel({
               </div>
             )}
 
-            <div className="rounded-xl border border-neutral-800 bg-neutral-900">
+            <div className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]">
               <div className="p-3">
                 {isLoadingComments ? (
-                  <div className="text-sm text-neutral-400">Loading comments…</div>
+                  <div className="text-sm text-[var(--text-muted)]">Loading comments…</div>
                 ) : visibleComments.length === 0 ? (
-                  <div className="text-sm text-neutral-400">No comments yet.</div>
+                  <div className="text-sm text-[var(--text-muted)]">No comments yet.</div>
                 ) : (
                   <CommentThread
                     comments={visibleComments}
