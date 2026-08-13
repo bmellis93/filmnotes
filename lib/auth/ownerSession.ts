@@ -1,6 +1,6 @@
 // lib/auth/ownerSession.ts
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { redirect } from "next/navigation";
 
@@ -60,7 +60,39 @@ export async function clearOwnerSession() {
   });
 }
 
+/**
+ * Custom Pages (the GHL-embedded dashboard) render in a cross-site iframe,
+ * where the owner-session cookie (SameSite=Lax) never arrives -- browsers
+ * don't send it on framed subresource requests. The embed client instead
+ * sends its short-lived SSO-derived token (see app/api/ghl/sso/route.ts) as
+ * a Bearer header, which we check here before falling back to the cookie.
+ * This only changes behavior when that header is present, so every existing
+ * call site (Server Component pages included, which never receive a custom
+ * Authorization header on a normal navigation) is unaffected.
+ */
+async function embedContextFromHeader(): Promise<OwnerContext | null> {
+  const h = await headers();
+  const auth = h.get("authorization");
+  if (!auth?.startsWith("Bearer ")) return null;
+
+  try {
+    const { payload } = await jwtVerify(auth.slice("Bearer ".length), SECRET_KEY);
+    if (payload.scope !== "embed" || typeof payload.orgId !== "string") return null;
+
+    return {
+      orgId: payload.orgId,
+      userId: typeof payload.userId === "string" ? payload.userId : "unknown",
+      role: "ADMIN",
+    };
+  } catch {
+    return null; // expired/invalid -- fall back to cookie auth
+  }
+}
+
 export async function requireOwnerContext(): Promise<OwnerContext> {
+  const embedCtx = await embedContextFromHeader();
+  if (embedCtx) return embedCtx;
+
   const c = await cookies();
   const token = c.get(COOKIE_NAME)?.value;
   if (!token) {

@@ -1,0 +1,84 @@
+// app/api/ghl/sso/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { SignJWT } from "jose";
+import { prisma } from "@/lib/prisma";
+import { decryptGhlSsoPayload } from "@/lib/ghl/ssoContext";
+
+export const runtime = "nodejs";
+
+function mustEnv(name: string) {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing ${name}`);
+  return v;
+}
+
+// Reuses the same signing secret as the owner-session cookie, but this token
+// carries a distinct shape (`scope: "embed"`, no `role`) so it can't be
+// replayed against requireOwnerContext()/assertOwnerContext.
+const EMBED_TOKEN_TTL = "15m";
+
+/**
+ * Called from the embedded Custom Page (app/embed/page.tsx) with the
+ * encrypted payload GHL posted to it via `window.parent.postMessage`.
+ *
+ * Custom Pages render in a cross-site iframe (your domain framed inside
+ * app.gohighlevel.com), so the existing owner-session cookie (SameSite=Lax)
+ * never reaches you there -- browsers won't send it on a framed subresource
+ * request. Instead we hand back a short-lived bearer token the client holds
+ * in memory/sessionStorage and attaches to API calls itself.
+ */
+export async function POST(req: NextRequest) {
+  // Config errors (missing env vars) are ours, not the caller's -- keep them
+  // out of the payload try/catch below so they don't get reported back as
+  // "Invalid SSO payload".
+  const sharedSecret = mustEnv("GHL_SSO_SHARED_SECRET");
+  const appJwtSecret = mustEnv("APP_JWT_SECRET");
+
+  try {
+    const body = await req.json().catch(() => null);
+    const key = body?.key;
+    if (!key || typeof key !== "string") {
+      return NextResponse.json({ error: "Missing key" }, { status: 400 });
+    }
+
+    const ctx = decryptGhlSsoPayload(key, sharedSecret);
+
+    // Only a location maps to an Org/Installation in our data model today.
+    // An agency-level mount (no activeLocation) has nothing to look up yet.
+    const orgId = ctx.activeLocation;
+    if (!orgId) {
+      return NextResponse.json({ connected: false, reason: "no-location" as const });
+    }
+
+    const installation = await prisma.installation.findUnique({
+      where: { orgId },
+      select: { orgId: true },
+    });
+
+    if (!installation) {
+      const authorizeUrl = new URL("/api/auth/oauth/start", req.url);
+      authorizeUrl.searchParams.set("next", "/embed/connected");
+      return NextResponse.json({
+        connected: false as const,
+        reason: "not-installed" as const,
+        connectUrl: authorizeUrl.toString(),
+      });
+    }
+
+    const secretKey = new TextEncoder().encode(appJwtSecret);
+    const embedToken = await new SignJWT({
+      orgId,
+      userId: ctx.userId ?? "unknown",
+      scope: "embed",
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime(EMBED_TOKEN_TTL)
+      .sign(secretKey);
+
+    return NextResponse.json({ connected: true as const, embedToken, orgId });
+  } catch (err: any) {
+    console.error("GHL SSO decrypt failed:", err);
+    return NextResponse.json({ error: "Invalid SSO payload" }, { status: 400 });
+  }
+}

@@ -38,9 +38,19 @@ type Props = {
   gallery: { id: string; name: string; description?: string };
   initialVideos: GalleryVideo[];
   initialStacks: StackMap;
+  // Lets the embed dashboard (app/embed/galleries/[id]) reuse this
+  // component unmodified while navigating within /embed/* instead of
+  // /owner/*. Doubles as both the galleries-list root (the "back" button)
+  // and the prefix for this gallery's own detail/video routes.
+  basePath?: string;
 };
 
-export default function GalleryDetailScreen({ gallery, initialVideos, initialStacks }: Props) {
+export default function GalleryDetailScreen({
+  gallery,
+  initialVideos,
+  initialStacks,
+  basePath = "/owner/galleries",
+}: Props) {
   const router = useRouter();
   const galleryId = gallery.id;
   const { toast } = useToast();
@@ -267,7 +277,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
         return;
       }
       
-      router.push(`/owner/galleries/${galleryId}/videos/${openId}`);
+      router.push(`${basePath}/${galleryId}/videos/${openId}`);
     },
     [router, galleryId, stacks, childToParent]
   );
@@ -522,7 +532,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
-                onClick={() => router.push("/owner/galleries")}
+                onClick={() => router.push(basePath)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 text-[var(--text-2)] hover:bg-[var(--surface-1)]"
                 aria-label="Back to galleries"
                 title="Back"

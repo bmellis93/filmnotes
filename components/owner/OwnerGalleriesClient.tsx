@@ -35,8 +35,12 @@ function safeTime(s?: string | null) {
 
 export default function OwnerGalleriesClient({
   initialGalleries,
+  basePath = "/owner/galleries",
 }: {
   initialGalleries: OwnerGalleryListItem[];
+  // Lets the embed dashboard (app/embed/galleries) reuse this component
+  // unmodified while navigating within /embed/* instead of /owner/*.
+  basePath?: string;
 }) {
   const router = useRouter();
 
@@ -141,7 +145,7 @@ export default function OwnerGalleriesClient({
       const created = data.gallery;
       setGalleries((prev) => prev.map((g) => (g.id === tempId ? created : g)));
 
-      if (openAfter) router.push(`/owner/galleries/${created.id}`);
+      if (openAfter) router.push(`${basePath}/${created.id}`);
     } catch (err) {
       console.error(err);
       setGalleries((prev) => prev.filter((g) => g.id !== tempId));
@@ -292,7 +296,7 @@ export default function OwnerGalleriesClient({
           {sorted.map((g) => (
             <Link
               key={g.id}
-              href={`/owner/galleries/${g.id}`}
+              href={`${basePath}/${g.id}`}
               className="group relative rounded-3xl border border-[var(--border-1)] bg-[var(--surface-0)]/40 p-4 hover:bg-[var(--surface-1)]/40 hover:border-[var(--border-3)] transition"
             >
               {/* Hover checkbox */}

@@ -1,45 +1,9 @@
 import { notFound } from "next/navigation";
 import VideoReviewScreen from "@/components/review/VideoReviewScreen";
-import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
-import { safeParseStacks, buildVideoMaps } from "@/lib/videoMaps";
 import { requireOwnerContext } from "@/lib/auth/ownerSession";
-import { getViewSummaryForVideo } from "@/lib/views/getViewSummary";
+import { getOwnerVideoReviewData } from "@/lib/owner/videoReviewData";
 
 export const runtime = "nodejs";
-
-const gallerySelect = Prisma.validator<Prisma.GalleryDefaultArgs>()({
-  select: {
-    id: true,
-    title: true,
-    stacksJson: true,
-    videos: {
-      // ✅ allow archived videos to be viewable if you want (only block deleted)
-      where: { video: { deletedAt: null, archivedAt: null } },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      select: {
-        video: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            createdAt: true,
-            thumbnailUrl: true,
-            sourceUrl: true,
-            playbackUrl: true, // ✅ include here so we don't need a second query
-            archivedAt: true,
-            deletedAt: true,
-            approvalStatus: true,
-            approvalUpdatedAt: true,
-            changeNote: true,
-          },
-        },
-      },
-    },
-  },
-});
-
-type GalleryPayload = Prisma.GalleryGetPayload<typeof gallerySelect>;
 
 type Props = {
   params: Promise<{ id: string; videoId: string }>;
@@ -54,47 +18,22 @@ export default async function OwnerGalleryVideoPage({ params }: Props) {
   const vId = String(videoId || "").trim();
   if (!galleryId || !vId) notFound();
 
-  const gallery: GalleryPayload | null = await prisma.gallery.findFirst({
-    where: {
-      id: galleryId,
-      orgId: owner.orgId,
-      deletedAt: null,
-      // ✅ up to you:
-      // archivedAt: null, // (uncomment if you want archived galleries NOT viewable)
-    },
-    ...gallerySelect,
-  });
-
-  if (!gallery) notFound();
-
-  const stacks = safeParseStacks(gallery.stacksJson);
-
-  const allVideos = gallery.videos.map((gv) => gv.video);
-  const allowedIds = allVideos.map((v) => v.id);
-  if (!allowedIds.includes(vId)) notFound();
-
-  // Note: unlike share/client links, the owner view does NOT force-redirect
-  // to the latest version — the version dropdown needs to be able to land
-  // on (and stay on) any specific version in the stack.
-
-  const { videoMetaById } = buildVideoMaps(allVideos);
-
-  const currentVideo = allVideos.find((v) => v.id === vId);
-  const viewInfo = await getViewSummaryForVideo(vId);
+  const data = await getOwnerVideoReviewData(owner.orgId, galleryId, vId);
+  if (!data) notFound();
 
   return (
     <VideoReviewScreen
       mode="owner"
-      videoId={videoId}
-      projectTitle={gallery.title ?? `Gallery ${galleryId}`}
-      stacks={stacks}
-      videoMetaById={videoMetaById}
+      videoId={data.videoId}
+      projectTitle={data.projectTitle}
+      stacks={data.stacks}
+      videoMetaById={data.videoMetaById}
       backHref={`/owner/galleries/${galleryId}`}
       view="REVIEW_DOWNLOAD"
-      initialApprovalStatus={currentVideo?.approvalStatus}
-      initialApprovalUpdatedAt={currentVideo?.approvalUpdatedAt?.toISOString() ?? null}
-      initialChangeNote={currentVideo?.changeNote ?? null}
-      viewInfo={viewInfo}
+      initialApprovalStatus={data.initialApprovalStatus}
+      initialApprovalUpdatedAt={data.initialApprovalUpdatedAt}
+      initialChangeNote={data.initialChangeNote}
+      viewInfo={data.viewInfo}
     />
   );
 }
