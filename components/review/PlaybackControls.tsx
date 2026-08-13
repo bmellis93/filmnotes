@@ -21,6 +21,11 @@ const iconBtnBase =
 
 const iconBtnMuted = `${iconBtnBase} text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--surface-1)]/60`;
 const iconBtnActive = `${iconBtnBase} text-[var(--text-1)] hover:text-[var(--text-1)] hover:bg-[var(--surface-1)]/60`;
+// Distinct from iconBtnActive (which is just "prominent," used for e.g.
+// Play/Pause regardless of state) -- this is specifically for a toggle
+// that's currently ON, so it needs a visibly different fill, not just a
+// slightly different text shade.
+const iconBtnToggledOn = `${iconBtnBase} bg-[var(--accent-solid)] text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]`;
 
 export type PlaybackMarker = {
   id: string;
@@ -211,7 +216,7 @@ export default function PlaybackControls({
             onClick={onToggleLoop}
             className={[
               "hidden sm:inline-flex",
-              loop ? iconBtnActive : iconBtnMuted,
+              loop ? iconBtnToggledOn : iconBtnMuted,
             ].join(" ")}
             title={loop ? "Loop on" : "Loop off"}
             aria-label="Toggle loop"

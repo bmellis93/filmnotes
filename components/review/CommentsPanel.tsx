@@ -93,7 +93,13 @@ export default function CommentsPanel({
 
   return (
     <aside
-      className="absolute inset-0 z-30 min-h-0 overflow-hidden md:static md:z-auto md:border-l md:border-[var(--border-1)]"
+      className={[
+        "absolute inset-0 z-30 min-h-0 overflow-hidden md:static md:z-auto md:border-l md:border-[var(--border-1)]",
+        // Below md, this wrapper spans the whole video area even while the
+        // panel is "closed" (only its child is translated off-screen), so
+        // without this it silently ate every tap on the video underneath.
+        commentsOpen ? "" : "pointer-events-none md:pointer-events-auto",
+      ].join(" ")}
       aria-label="Comments panel"
       aria-hidden={!commentsOpen}
     >
@@ -165,7 +171,7 @@ export default function CommentsPanel({
 
           <div className="mt-3 space-y-3">
             {commentError && (
-              <div className="rounded-xl border border-red-900/40 bg-red-950/30 p-3 text-sm text-red-200">
+              <div className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
                 {commentError}
               </div>
             )}

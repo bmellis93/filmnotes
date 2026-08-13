@@ -301,6 +301,27 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     return () => window.clearTimeout(t);
   }, [isFullscreen, fsHintMs]);
 
+  // Try to start playback as soon as the source is ready to go, so the
+  // viewer lands on a playing video instead of a static first frame.
+  // Unmuted autoplay is blocked by most mobile browsers without a user
+  // gesture; when that happens, fall back to muted autoplay so playback at
+  // least visibly starts (the volume control lets them unmute afterward).
+  const attemptAutoplay = useCallback((video: HTMLVideoElement) => {
+    video
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(() => {
+        video.muted = true;
+        setMuted(true);
+        video
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            // Autoplay fully blocked (e.g. data-saver mode) -- leave it paused.
+          });
+      });
+  }, []);
+
   // Attach the source: real hls.js (with quality-level control) where
   // supported, native playback otherwise (Safari's native HLS, or a
   // plain file before Mux has finished transcoding).
@@ -369,6 +390,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
           label: lvl.height ? `${lvl.height}p` : `${Math.round(lvl.bitrate / 1000)} kbps`,
         }));
         setQualityLevels(levels);
+        attemptAutoplay(video);
       });
 
       hls.on(Hls.Events.LEVEL_SWITCHED, (_evt, data) => {
@@ -404,6 +426,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
       // guaranteed for one token TTL. Acceptable given how narrow this path is.
       setIsHlsActive(false);
       video.src = withCurrentToken(src);
+      attemptAutoplay(video);
     }
 
     return () => {
@@ -412,7 +435,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
         hlsRef.current = null;
       }
     };
-  }, [resolvedSrc]);
+  }, [resolvedSrc, attemptAutoplay]);
 
   const setQualityLevel = useCallback((index: number) => {
     if (hlsRef.current) hlsRef.current.currentLevel = index;

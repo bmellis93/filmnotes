@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
         allowComments,
         allowDownload,
         contactId: body.contactId ? safeString(body.contactId) : null,
+        contactName: body.contactName ? safeString(body.contactName) : null,
         conversationId: body.conversationId ? safeString(body.conversationId) : null,
       },
       select: { token: true },

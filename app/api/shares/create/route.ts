@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
         allowDownload,
         view: "REVIEW_DOWNLOAD", // single-video shares default to review+download; tweak if you want
         contactId: body.contactId ? String(body.contactId) : null,
+        contactName: body.contactName ? String(body.contactName) : null,
         conversationId: body.conversationId ? String(body.conversationId) : null,
       },
       select: { token: true, videoId: true },

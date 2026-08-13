@@ -83,7 +83,7 @@ export default function CommentComposerModal({
           </button>
 
           {error && (
-            <div className="mx-4 mt-4 rounded-xl border border-red-900/40 bg-red-950/30 p-3 text-sm text-red-200">
+            <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
               {error}
             </div>
           )}
@@ -148,7 +148,7 @@ export default function CommentComposerModal({
               {/* Bottom row: time + tip (left) + send icon (right) */}
               <div className="mt-3 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="rounded-full bg-red-950/60 px-3 py-1 text-xs font-semibold text-red-700 dark:text-red-200 ring-1 ring-red-900/50">
+                  <div className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 ring-1 ring-red-200 dark:bg-red-950/60 dark:text-red-200 dark:ring-red-900/50">
                     {stampLabel}
                   </div>
 

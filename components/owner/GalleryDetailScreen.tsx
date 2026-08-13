@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Share2, Upload, ArrowLeft, Layers } from "lucide-react";
+import { Plus, Share2, Upload, ArrowLeft, Layers, Link2 } from "lucide-react";
 
 import UploadDropzone from "@/components/owner/UploadDropzone";
 import VideoGrid, { GalleryVideo } from "@/components/owner/VideoGrid";
@@ -11,6 +11,7 @@ import VideoGrid, { GalleryVideo } from "@/components/owner/VideoGrid";
 import UploadVideoModal from "@/components/owner/UploadVideoModal";
 import ShareGalleryModal from "@/components/owner/ShareGalleryModal";
 import ShareModal from "@/components/share-modal";
+import ManageSharesModal from "@/components/owner/ManageSharesModal";
 import ManageVersionsModal from "@/components/owner/ManageVersionsModal";
 import EditThumbnailModal from "@/components/owner/EditThumbnailModal";
 
@@ -51,6 +52,7 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
   const [uploadOpen, setUploadOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareVideoId, setShareVideoId] = useState<string | null>(null);
+  const [manageSharesOpen, setManageSharesOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [retryForVideoId, setRetryForVideoId] = useState<string | null>(null);
   const [editThumbnailVideoId, setEditThumbnailVideoId] = useState<string | null>(null);
@@ -672,6 +674,15 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
                 Share
               </button>
 
+              <button
+                type="button"
+                onClick={() => setManageSharesOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
+              >
+                <Link2 className="h-4 w-4" />
+                Manage Links
+              </button>
+
               <UploadDropzone.Button
                 onFiles={handleFiles}
                 className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
@@ -783,6 +794,13 @@ export default function GalleryDetailScreen({ gallery, initialVideos, initialSta
         open={Boolean(shareVideoId)}
         onClose={() => setShareVideoId(null)}
         videoId={shareVideoId ?? ""}
+      />
+
+      <ManageSharesModal
+        open={manageSharesOpen}
+        onClose={() => setManageSharesOpen(false)}
+        galleryId={galleryId}
+        galleryTitle={gallery.name}
       />
 
       <ManageVersionsModal

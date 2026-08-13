@@ -21,12 +21,15 @@ model ShareLink {
   createdAt           DateTime  @default(now())
   expiresAt           DateTime?
   contactId           String?
+  contactName         String?
   conversationId      String?
   nudgedAt            DateTime?
   video               Video?    @relation(fields: [videoId], references: [id])
 
   @@index([token])
   @@index([orgId])
+  @@index([galleryId])
+  @@index([videoId])
 }
 
 model Comment {

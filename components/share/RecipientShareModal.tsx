@@ -78,6 +78,7 @@ export type RecipientShareModalProps = {
    */
   createShare: (args: {
     contactId: string;
+    contactName?: string;
     allowComments: boolean;
     allowDownload: boolean;
   }) => Promise<CreateShareResult>;
@@ -397,6 +398,7 @@ export default function RecipientShareModal({
         // 1) Create tokenized share link for this contact
         const created = await createShare({
           contactId: c.id,
+          contactName: c.name,
           allowComments,
           allowDownload: allowDownloads,
         });
