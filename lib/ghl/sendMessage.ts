@@ -9,6 +9,23 @@ function mustEnv(name: string) {
   return v;
 }
 
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// GHL's conversations/messages endpoint rejects Email sends that have no
+// `html` body with a 422 ("no message or attachments") -- unlike SMS, it
+// doesn't fall back to the plain `message` field. Every Email send needs an
+// html body, so plain-text-only callers get one derived from their message.
+function plainTextToHtml(message: string) {
+  return `<p>${escapeHtml(message).replace(/\n/g, "<br/>")}</p>`;
+}
+
 export async function sendMessageToGhl(args: {
   accessToken: string;
   contactId: string;
@@ -27,7 +44,7 @@ export async function sendMessageToGhl(args: {
 
   if (args.type === "Email") {
     if (args.subject) body.subject = args.subject;
-    if (args.html) body.html = args.html;
+    body.html = args.html || plainTextToHtml(args.message);
   }
 
   const res = await fetch(`${baseUrl}/conversations/messages`, {

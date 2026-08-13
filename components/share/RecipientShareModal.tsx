@@ -21,6 +21,14 @@ type GhlTemplate =
 
 type ChannelResult = { channel: "SMS" | "Email"; ok: boolean; data?: any };
 
+function channelErrorText(cr: ChannelResult): string | null {
+  if (cr.ok) return null;
+  // Route returns { error, results: [{ channel, error }] } on a failed send,
+  // or { error: "Server error", detail } on an unhandled exception.
+  const fromResults = cr.data?.results?.[0]?.error;
+  return fromResults || cr.data?.detail || cr.data?.error || null;
+}
+
 type SendResultRow = {
   contactId: string;
   contactName: string;
@@ -409,7 +417,7 @@ export default function RecipientShareModal({
         const smsBody = smsTemplateId
           ? resolveTemplateText(smsTemplateText, { link: tokenUrl })
           : (() => {
-              const base = (customMessage || `${defaultMessage}\n${tokenUrl}`).trim();
+              const base = resolveTemplateText((customMessage || defaultMessage).trim(), { link: tokenUrl });
               return (
                 base +
                 `\n\nPermissions:\n- Comments: ${allowComments ? "Allowed" : "Disabled"}\n- Downloads: ${
@@ -431,7 +439,10 @@ export default function RecipientShareModal({
               subject: emailSubject || "Your video is ready",
               html: undefined as string | undefined,
               message: (() => {
-                const base = (emailCustomMessage || customMessage || `${defaultMessage}\n${tokenUrl}`).trim();
+                const base = resolveTemplateText(
+                  (emailCustomMessage || customMessage || defaultMessage).trim(),
+                  { link: tokenUrl }
+                );
                 return (
                   base +
                   `\n\nPermissions:\n- Comments: ${allowComments ? "Allowed" : "Disabled"}\n- Downloads: ${
@@ -649,6 +660,19 @@ export default function RecipientShareModal({
                               {r.channelResults.map((cr) => `${cr.channel}: ${cr.ok ? "sent" : "failed"}`).join(" · ")}
                             </div>
                           )}
+                          {r.channelResults.filter((cr) => !cr.ok).map((cr, i) => {
+                            const msg = channelErrorText(cr);
+                            if (!msg) return null;
+                            return (
+                              <div
+                                key={i}
+                                className="mt-0.5 truncate text-red-600 dark:text-red-300"
+                                title={msg}
+                              >
+                                {cr.channel}: {msg}
+                              </div>
+                            );
+                          })}
                         </div>
                         <div className={r.ok ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}>
                           {r.ok ? "Sent" : "Failed"}
