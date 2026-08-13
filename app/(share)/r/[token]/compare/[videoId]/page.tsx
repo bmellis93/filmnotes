@@ -1,6 +1,5 @@
 // app/(share)/r/[token]/compare/[videoId]/page.tsx
 import { notFound, redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { parseAllowedIds, parseStacks } from "@/lib/share/shareLinkUtils";
 import { getLatestIdForVideo, getStackIdsForVideo } from "@/lib/share/stackView";
@@ -11,10 +10,6 @@ export const runtime = "nodejs";
 type Props = {
   params: Promise<{ token: string; videoId: string }>;
 };
-
-function safeId(x: any) {
-  return String(x || "").trim();
-}
 
 export default async function TokenVideoPage({ params }: Props) {
   const { token: rawToken, videoId: rawVideoId } = await params;
@@ -45,25 +40,11 @@ export default async function TokenVideoPage({ params }: Props) {
   // Only fetch ids in this stack, AND still within allowed set
   const idsToFetch = stackIds.filter((id) => allowed.includes(id));
 
-  const rows = await prisma.video.findMany({
-    where: { id: { in: idsToFetch } },
-    select: {
-      id: true,
-      playbackUrl: true,
-      sourceUrl: true,
-    },
-  });
-
-  // Prefer HLS playbackUrl; fallback to sourceUrl
-  const viewSrcById = new Map(
-    rows.map((r) => [r.id, r.playbackUrl ?? r.sourceUrl] as const)
-  );
-
-  // labels: v1/v2/v3… by stack order
+  // labels: v1/v2/v3… by stack order (VideoCompareView fetches its own
+  // signed playback URL per side, so no need to resolve one here)
   const versions = idsToFetch.map((id, idx) => ({
     id,
     label: `v${idx + 1}`,
-    viewSrc: viewSrcById.get(id) ?? "",
   }));
 
   // default right = previous version if exists
@@ -76,6 +57,7 @@ export default async function TokenVideoPage({ params }: Props) {
       versions={versions}
       defaultLeftId={leftDefault}
       defaultRightId={rightDefault}
+      shareAuthToken={token}
     />
   );
 }

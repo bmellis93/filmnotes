@@ -1,9 +1,10 @@
 import VideoReviewClient from "@/components/review/VideoReviewScreen";
 
-export default function VideoPage({
+export default async function VideoPage({
   params,
 }: {
-  params: { videoId: string };
+  params: Promise<{ videoId: string }>;
 }) {
-  return <VideoReviewClient videoId={params.videoId} />;
+  const { videoId } = await params;
+  return <VideoReviewClient videoId={videoId} />;
 }

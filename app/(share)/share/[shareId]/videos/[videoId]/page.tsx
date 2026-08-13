@@ -8,12 +8,13 @@ import { buildVideoMaps } from "@/lib/videoMaps";
 export const runtime = "nodejs";
 
 type Props = {
-  params: { shareId: string; videoId: string };
+  params: Promise<{ shareId: string; videoId: string }>;
 };
 
 export default async function ClientVideoPage({ params }: Props) {
-  const shareId = String(params.shareId || "").trim();
-  const videoId = String(params.videoId || "").trim();
+  const { shareId: rawShareId, videoId: rawVideoId } = await params;
+  const shareId = String(rawShareId || "").trim();
+  const videoId = String(rawVideoId || "").trim();
   if (!shareId || !videoId) notFound();
 
   const share = await fetchShare(shareId);
