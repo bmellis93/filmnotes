@@ -7,7 +7,7 @@ import { requireOwnerContext } from "@/lib/auth/ownerSession";
 export const runtime = "nodejs";
 
 type Props = {
-  params: { id: string; videoId: string };
+  params: Promise<{ id: string; videoId: string }>;
 };
 
 function safeParseStacks(stacksJson: string | null | undefined): Record<string, string[]> {
@@ -22,8 +22,9 @@ function safeParseStacks(stacksJson: string | null | undefined): Record<string, 
 
 export default async function OwnerComparePage({ params }: Props) {
   const owner = await requireOwnerContext();
-  const galleryId = String(params.id || "").trim();
-  const videoId = String(params.videoId || "").trim();
+  const { id, videoId: rawVideoId } = await params;
+  const galleryId = String(id || "").trim();
+  const videoId = String(rawVideoId || "").trim();
   if (!galleryId || !videoId) notFound();
 
   const gallery = await prisma.gallery.findFirst({
@@ -34,7 +35,7 @@ export default async function OwnerComparePage({ params }: Props) {
       stacksJson: true,
       videos: {
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-        select: { video: { select: { id: true, playbackUrl: true, sourceUrl: true } } }
+        select: { video: { select: { id: true } } }
       },
     },
   });
@@ -56,14 +57,11 @@ export default async function OwnerComparePage({ params }: Props) {
   const stackIds = versionIds.length ? versionIds : [videoId];
   const idsToUse = stackIds.filter((id) => allowed.has(id));
 
-  const viewSrcById = new Map(
-    all.map((v) => [v.id, v.playbackUrl ?? v.sourceUrl])
-  );
-
+  // VideoCompareView fetches its own signed playback URL per side (owner
+  // session cookie authenticates it), so no need to resolve one here.
   const versions = idsToUse.map((id) => ({
     id,
     label: `v${stackIds.indexOf(id) + 1}`,
-    viewSrc: viewSrcById.get(id) ?? "",
   }));
 
   // Left = previous, Right = newest

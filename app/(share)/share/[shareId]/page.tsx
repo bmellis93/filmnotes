@@ -6,11 +6,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Props = {
-  params: { shareId: string };
+  params: Promise<{ shareId: string }>;
 };
 
 export default async function ShareGalleryPage({ params }: Props) {
-  const share = await fetchShare(params.shareId);
+  const { shareId } = await params;
+  const share = await fetchShare(shareId);
   if (!share) notFound();
 
   return (

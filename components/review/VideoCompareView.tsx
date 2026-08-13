@@ -36,11 +36,11 @@ function durMs(el: HTMLVideoElement | null) {
 // enough -- no silent background refresh needed here (unlike the main
 // single-video player).
 function useSignedVideoUrl(videoId: string | undefined, shareAuthToken?: string | null) {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!videoId) {
-      setUrl("");
+      setUrl(undefined);
       return;
     }
 
@@ -55,11 +55,11 @@ function useSignedVideoUrl(videoId: string | undefined, shareAuthToken?: string 
         setUrl(
           data?.playbackId && data?.token
             ? `https://stream.mux.com/${data.playbackId}.m3u8?token=${data.token}`
-            : ""
+            : undefined
         );
       })
       .catch(() => {
-        if (!cancelled) setUrl("");
+        if (!cancelled) setUrl(undefined);
       });
 
     return () => {
