@@ -94,11 +94,14 @@ export default function CommentsPanel({
   return (
     <aside
       className={[
-        "absolute inset-0 z-30 min-h-0 overflow-hidden md:static md:z-auto md:border-l md:border-[var(--border-1)]",
-        // Below md, this wrapper spans the whole video area even while the
+        // lg, not md -- see the comment on the layout grid in
+        // VideoReviewScreen.tsx for why (avoids squeezing a fixed sidebar
+        // next to the video on portrait tablets).
+        "absolute inset-0 z-30 min-h-0 overflow-hidden lg:static lg:z-auto lg:border-l lg:border-[var(--border-1)]",
+        // Below lg, this wrapper spans the whole video area even while the
         // panel is "closed" (only its child is translated off-screen), so
         // without this it silently ate every tap on the video underneath.
-        commentsOpen ? "" : "pointer-events-none md:pointer-events-auto",
+        commentsOpen ? "" : "pointer-events-none lg:pointer-events-auto",
       ].join(" ")}
       aria-label="Comments panel"
       aria-hidden={!commentsOpen}

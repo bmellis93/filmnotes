@@ -235,11 +235,12 @@ export default function VideoReviewScreen(props: Props) {
     }
   }
 
-  // On mobile, comments render as a full-screen overlay, so default to
-  // closed there (otherwise the video is hidden behind comments on load).
+  // Below lg (see the layout grid below for why), comments render as a
+  // full-screen overlay, so default to closed there (otherwise the video is
+  // hidden behind comments on load).
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.matchMedia("(max-width: 767px)").matches) {
+    if (window.matchMedia("(max-width: 1023px)").matches) {
       setCommentsOpen(false);
     }
   }, []);
@@ -626,15 +627,19 @@ export default function VideoReviewScreen(props: Props) {
       )}
 
       {/* LAYOUT: hide comments column during compare.
-          Below md, comments render as a full-screen overlay (see CommentsPanel)
-          instead of a side column, so the grid only ever has one real track. */}
+          Below lg, comments render as a full-screen overlay (see CommentsPanel)
+          instead of a side column, so the grid only ever has one real track.
+          This is deliberately lg (1024px), not md (768px): a fixed 380px
+          sidebar at md would eat most of the width on a portrait tablet
+          (e.g. iPad at 768x1024), squeezing the video into a narrow column
+          with huge unused letterbox bars above/below it. */}
       <div
         className={[
           "flex-1 min-h-0 overflow-hidden relative grid grid-cols-1",
-          "md:transition-[grid-template-columns] md:duration-300 md:ease-in-out",
+          "lg:transition-[grid-template-columns] lg:duration-300 lg:ease-in-out",
           showCommentsPanel && commentsOpen
-            ? "md:grid-cols-[1fr_380px]"
-            : "md:grid-cols-[1fr_0px]",
+            ? "lg:grid-cols-[1fr_380px]"
+            : "lg:grid-cols-[1fr_0px]",
         ].join(" ")}
       >
         <section ref={player.viewerRef} className="relative min-h-0 flex flex-col overflow-hidden">
