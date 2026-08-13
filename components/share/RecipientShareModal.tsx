@@ -416,15 +416,7 @@ export default function RecipientShareModal({
         // 2) Build per-channel content
         const smsBody = smsTemplateId
           ? resolveTemplateText(smsTemplateText, { link: tokenUrl })
-          : (() => {
-              const base = resolveTemplateText((customMessage || defaultMessage).trim(), { link: tokenUrl });
-              return (
-                base +
-                `\n\nPermissions:\n- Comments: ${allowComments ? "Allowed" : "Disabled"}\n- Downloads: ${
-                  allowDownloads ? "Allowed" : "Disabled"
-                }`
-              );
-            })();
+          : resolveTemplateText((customMessage || defaultMessage).trim(), { link: tokenUrl });
 
         const emailPayload = effectiveEmailHtml
           ? {
@@ -438,18 +430,10 @@ export default function RecipientShareModal({
           : {
               subject: emailSubject || "Your video is ready",
               html: undefined as string | undefined,
-              message: (() => {
-                const base = resolveTemplateText(
-                  (emailCustomMessage || customMessage || defaultMessage).trim(),
-                  { link: tokenUrl }
-                );
-                return (
-                  base +
-                  `\n\nPermissions:\n- Comments: ${allowComments ? "Allowed" : "Disabled"}\n- Downloads: ${
-                    allowDownloads ? "Allowed" : "Disabled"
-                  }`
-                );
-              })(),
+              message: resolveTemplateText(
+                (emailCustomMessage || customMessage || defaultMessage).trim(),
+                { link: tokenUrl }
+              ),
             };
 
         // 3) Decide which channels to attempt for this contact
