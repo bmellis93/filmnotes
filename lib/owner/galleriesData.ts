@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import type { OwnerGalleryListItem } from "@/components/owner/OwnerGalleriesClient";
 
 function muxThumbUrl(playbackId: string, timeSeconds: number) {
-  return `https://images.mux.com/${playbackId}/thumbnail.jpg?time=${timeSeconds}`;
+  return `https://image.mux.com/${playbackId}/thumbnail.jpg?time=${timeSeconds}`;
 }
 
 // Shared by the standalone Server Component page (app/(owner)/owner/galleries)
@@ -31,7 +31,7 @@ export async function getOwnerGalleriesList(orgId: string): Promise<OwnerGallery
               id: true,
               title: true,
               thumbnailUrl: true,
-              muxPlaybackId: true,
+              muxPublicPlaybackId: true,
               playbackUrl: true,
             },
           },
@@ -44,7 +44,7 @@ export async function getOwnerGalleriesList(orgId: string): Promise<OwnerGallery
     const thumbs = g.videos
       .map(({ video }) => {
         if (video.thumbnailUrl) return { url: video.thumbnailUrl, alt: video.title };
-        if (video.muxPlaybackId) return { url: muxThumbUrl(video.muxPlaybackId, 5), alt: video.title };
+        if (video.muxPublicPlaybackId) return { url: muxThumbUrl(video.muxPublicPlaybackId, 5), alt: video.title };
         return null;
       })
       .filter(Boolean)

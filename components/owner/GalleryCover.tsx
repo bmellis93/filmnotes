@@ -35,17 +35,17 @@ export default function GalleryCover({ thumbs, className }: Props) {
 
       {t.length === 2 && (
         <div className="absolute inset-0 grid grid-cols-2 gap-[2px] bg-[var(--surface-0)]">
-          <Tile url={t[0].url} alt={t[0].alt} />
-          <Tile url={t[1].url} alt={t[1].alt} />
+          <Tile url={t[0].url} alt={t[0].alt} className="relative" />
+          <Tile url={t[1].url} alt={t[1].alt} className="relative" />
         </div>
       )}
 
       {t.length >= 3 && (
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px] bg-[var(--surface-0)]">
-          <Tile url={t[0].url} alt={t[0].alt} />
-          <Tile url={t[1].url} alt={t[1].alt} />
-          <Tile url={t[2].url} alt={t[2].alt} />
-          {t[3] ? <Tile url={t[3].url} alt={t[3].alt} /> : <div className="bg-[var(--surface-1)]" />}
+          <Tile url={t[0].url} alt={t[0].alt} className="relative" />
+          <Tile url={t[1].url} alt={t[1].alt} className="relative" />
+          <Tile url={t[2].url} alt={t[2].alt} className="relative" />
+          {t[3] ? <Tile url={t[3].url} alt={t[3].alt} className="relative" /> : <div className="bg-[var(--surface-1)]" />}
         </div>
       )}
 
@@ -64,7 +64,7 @@ export default function GalleryCover({ thumbs, className }: Props) {
 
 function Tile({ url, alt, className }: { url: string; alt?: string; className?: string }) {
   return (
-    <div className={["relative overflow-hidden bg-[var(--surface-1)]", className ?? ""].join(" ")}>
+    <div className={["overflow-hidden bg-[var(--surface-1)]", className ?? ""].join(" ")}>
       <img
         src={url}
         alt={alt ?? "Video thumbnail"}
