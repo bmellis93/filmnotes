@@ -39,6 +39,7 @@ async function exchangeCodeForToken(code: string) {
     expires_in?: number;
     locationId?: string;
     userId?: string;
+    companyId?: string;
   };
 }
 
@@ -121,12 +122,16 @@ export async function GET(req: NextRequest) {
     }
 
     const ctx = { orgId, userId };
+    const companyId = token.companyId ? String(token.companyId) : null;
 
-    // Org row must exist before Installation can reference it.
+    // Org row must exist before Installation can reference it. companyId is
+    // required by the Wallet Charge API (lib/ghl/billing.ts) -- write it
+    // whenever GHL gives it to us, including on repeat logins, so this
+    // self-heals for orgs that connected before this was captured.
     await prisma.org.upsert({
       where: { id: ctx.orgId },
-      create: { id: ctx.orgId },
-      update: {},
+      create: { id: ctx.orgId, ...(companyId ? { companyId } : {}) },
+      update: { ...(companyId ? { companyId } : {}) },
     });
 
     const expiresAt =

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
-import { STORAGE_LIMIT_BYTES } from "@/lib/storageLimit";
 import { mux } from "@/lib/mux";
 import { deleteFromR2, deleteFromR2Public } from "@/lib/r2Delete";
 
@@ -88,12 +87,13 @@ async function hardBlockIfOverLimit(videoId: string) {
   
   const org = await prisma.org.findUnique({
     where: { id: video.orgId },
-    select: { storageUsedBytes: true },
+    select: { storageUsedBytes: true, storageLimitBytes: true },
   });
 
   const used = org?.storageUsedBytes ?? BigInt(0);
+  const limit = org?.storageLimitBytes ?? BigInt(0);
 
-  if (used <= STORAGE_LIMIT_BYTES) return { blocked: false };
+  if (used <= limit) return { blocked: false };
 
   // We are over limit: delete this upload externally + tombstone it
   if (video.muxAssetId) {

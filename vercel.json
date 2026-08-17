@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/nudge-unopened",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/bill-storage-overage",
+      "schedule": "0 16 * * *"
     }
   ]
 }

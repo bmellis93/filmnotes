@@ -32,6 +32,40 @@ export default function SettingsScreen({ orgId }: Props) {
   const [webhookDraft, setWebhookDraft] = useState("");
   const [savingWebhook, setSavingWebhook] = useState(false);
 
+  const [loadingPlan, setLoadingPlan] = useState(true);
+  const [plan, setPlan] = useState<string | null>(null);
+  const [storageLimitBytes, setStorageLimitBytes] = useState<number | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/owner/storage/usage", { cache: "no-store" });
+        const json = await res.json().catch(() => null);
+        if (res.ok && json?.ok) {
+          setPlan(json.plan ?? null);
+          setStorageLimitBytes(Number(json.limitBytes ?? 0));
+        }
+      } finally {
+        setLoadingPlan(false);
+      }
+    })();
+  }, []);
+
+  function fmtPlanStorage(bytes: number | null) {
+    if (bytes == null) return "—";
+    const gb = bytes / (1024 * 1024 * 1024);
+    if (gb >= 1024) return `${(gb / 1024).toFixed(gb % 1024 === 0 ? 0 : 1)} TB`;
+    return `${gb >= 10 ? gb.toFixed(0) : gb.toFixed(1)} GB`;
+  }
+
+  const PLAN_LABELS: Record<string, string> = {
+    STARTER: "Starter",
+    STUDIO: "Studio",
+    PRO: "Pro",
+    CUSTOM: "Custom",
+    OWNER: "Owner (unlimited)",
+  };
+
   async function loadTemplates() {
     setLoadingTemplates(true);
     setTemplatesError(null);
@@ -200,6 +234,18 @@ export default function SettingsScreen({ orgId }: Props) {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-xl font-semibold text-[var(--text-1)]">Settings</h1>
       <p className="mt-1 text-sm text-[var(--text-muted)]">Org: {orgId}</p>
+
+      <div className="mt-6 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)]/40 p-4">
+        <div className="text-sm font-semibold text-[var(--text-1)]">Plan</div>
+        <div className="mt-3 flex items-center justify-between">
+          <div className="text-sm text-[var(--text-3)]">Current plan</div>
+          <div className="text-sm font-semibold text-[var(--text-1)]">
+            {loadingPlan
+              ? "Loading…"
+              : `${plan ? (PLAN_LABELS[plan] ?? plan) : "—"} · ${fmtPlanStorage(storageLimitBytes)} storage`}
+          </div>
+        </div>
+      </div>
 
       <div className="mt-6 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)]/40 p-4">
         <div className="text-sm font-semibold text-[var(--text-1)]">Appearance</div>

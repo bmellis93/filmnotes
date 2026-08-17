@@ -7,7 +7,7 @@ import { r2, getR2Bucket } from "@/lib/r2";
 import { makeOriginalVideoKey } from "@/lib/r2Keys";
 import { computeMultipartPlan } from "@/lib/r2Multipart";
 import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
-import { STORAGE_LIMIT_BYTES, clampNonNegativeBigInt } from "@/lib/storageLimit";
+import { clampNonNegativeBigInt } from "@/lib/storageLimit";
 
 export const runtime = "nodejs";
 
@@ -62,8 +62,14 @@ export async function POST(req: Request) {
     const sortOrder = gallery._count.videos;
 
     // --- STORAGE RESERVE (race-proof) ---
-    // Need: storageUsedBytes + incoming <= LIMIT
-    const maxAllowed = STORAGE_LIMIT_BYTES - incoming;
+    // Need: storageUsedBytes + incoming <= org's plan limit
+    const orgForLimit = await prisma.org.findUnique({
+      where: { id: orgId },
+      select: { storageLimitBytes: true },
+    });
+    const limitBytes = BigInt(orgForLimit?.storageLimitBytes ?? BigInt(0));
+
+    const maxAllowed = limitBytes - incoming;
 
     if (maxAllowed < BigInt(0)) {
       // incoming is bigger than limit
@@ -73,8 +79,8 @@ export async function POST(req: Request) {
           error: "Storage limit exceeded",
           usedBytes: "0",
           incomingBytes: incoming.toString(),
-          remainingBytes: STORAGE_LIMIT_BYTES.toString(),
-          limitBytes: STORAGE_LIMIT_BYTES.toString(),
+          remainingBytes: limitBytes.toString(),
+          limitBytes: limitBytes.toString(),
         },
         { status: 402 }
       );
@@ -98,7 +104,7 @@ export async function POST(req: Request) {
       });
 
       const used = BigInt(org?.storageUsedBytes ?? BigInt(0));
-      const remaining = clampNonNegativeBigInt(STORAGE_LIMIT_BYTES - used);
+      const remaining = clampNonNegativeBigInt(limitBytes - used);
 
       return NextResponse.json(
         {
@@ -107,7 +113,7 @@ export async function POST(req: Request) {
           usedBytes: used.toString(),
           incomingBytes: incoming.toString(),
           remainingBytes: remaining.toString(),
-          limitBytes: STORAGE_LIMIT_BYTES.toString(),
+          limitBytes: limitBytes.toString(),
         },
         { status: 402 } // or 413
       );

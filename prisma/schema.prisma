@@ -175,6 +175,26 @@ model Org {
 
   storageUsedBytes  BigInt @default(0)
 
+  // Pricing plan -- see lib/storageLimit.ts for the per-plan default byte
+  // limits. storageLimitBytes is the actual enforced value; it's seeded
+  // from the plan's default at creation but independently overridable
+  // (CUSTOM deals, promos, the OWNER plan's very large limit).
+  plan              OrgPlan @default(STARTER)
+  storageLimitBytes BigInt  @default(107374182400) // 100 GiB, matches PLAN_STORAGE_DEFAULTS.STARTER
+
+  // GHL agency/company this location belongs to -- required by the Wallet
+  // Charge API (companyId is a required field on every charge). Captured
+  // at OAuth login going forward; nullable because it wasn't captured
+  // historically and gets lazily backfilled via GET /locations/{id} the
+  // first time a charge needs to go out for an org that's missing it.
+  companyId String?
+
+  // Storage-overage metered billing (see lib/ghl/billing.ts). Bytes of
+  // overage already charged in the current monthly window, so the cron
+  // only ever bills newly-crossed bytes, not the same overage repeatedly.
+  overageBilledBytes        BigInt    @default(0)
+  overageBillingPeriodStart DateTime?
+
   defaultSmsTemplateId   String?
   defaultEmailTemplateId String?
   defaultEmailTemplateSource String? // "classic" | "builder"
@@ -238,6 +258,14 @@ enum ShareView {
 enum CommentRole {
   OWNER
   CLIENT
+}
+
+enum OrgPlan {
+  STARTER
+  STUDIO
+  PRO
+  CUSTOM
+  OWNER // the app developer's own account -- unlimited, never billed
 }
 
 enum CommentStatus {

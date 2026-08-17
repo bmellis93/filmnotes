@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
-import { STORAGE_LIMIT_BYTES } from "@/lib/storageLimit";
 
 export const runtime = "nodejs";
 
@@ -23,10 +22,11 @@ export async function GET() {
     // Fast counter (what your pill uses)
     const org = await prisma.org.findUnique({
       where: { id: orgId },
-      select: { storageUsedBytes: true },
+      select: { storageUsedBytes: true, storageLimitBytes: true },
     });
 
     const counterUsed = BigInt((org as any)?.storageUsedBytes ?? 0);
+    const limitBytes = BigInt((org as any)?.storageLimitBytes ?? 0);
 
     // Pull videos + their gallery association(s)
     const videos = await prisma.video.findMany({
@@ -124,7 +124,7 @@ export async function GET() {
     return NextResponse.json({
       ok: true,
 
-      limitBytes: STORAGE_LIMIT_BYTES.toString(),
+      limitBytes: limitBytes.toString(),
 
       // “truth” from summing videos
       usedBytes: usedBytes.toString(),
