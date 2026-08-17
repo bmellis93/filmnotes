@@ -22,6 +22,7 @@ export async function POST(req: Request) {
 
   let reserved = false;
   let incoming = BigInt(0);
+  let createdVideoId: string | null = null;
 
   try {
     const body = await req.json().catch(() => ({} as any));
@@ -135,6 +136,7 @@ export async function POST(req: Request) {
       },
       select: { id: true, orgId: true },
     });
+    createdVideoId = video.id;
 
     await prisma.galleryVideo.create({
       data: {
@@ -187,12 +189,24 @@ export async function POST(req: Request) {
       usedReservationBytes: incoming.toString(),
     });
   } catch (err: any) {
-    // rollback reservation if we already reserved but failed later
+    // Rollback: release the reservation, and if a video row was already
+    // created, mark it FAILED with no originalSize -- no file was ever
+    // written to R2, so it shouldn't count toward storage truth (which
+    // sums originalSize) once the counter's been released. Also clears
+    // the stuck "Uploading..." card in favor of a retryable "Failed" one.
     if (reserved && incoming > BigInt(0)) {
       try {
-        await prisma.org.update({
-          where: { id: owner.orgId },
-          data: { storageUsedBytes: { decrement: incoming } },
+        await prisma.$transaction(async (tx) => {
+          await tx.org.update({
+            where: { id: owner.orgId },
+            data: { storageUsedBytes: { decrement: incoming } },
+          });
+          if (createdVideoId) {
+            await tx.video.update({
+              where: { id: createdVideoId },
+              data: { status: "FAILED", originalSize: null, failureReason: err?.message || "Upload init failed" },
+            });
+          }
         });
       } catch {}
     }

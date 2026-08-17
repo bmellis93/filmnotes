@@ -39,20 +39,24 @@ export async function POST(req: Request) {
     }
   }
 
-  // Release the storage quota reserved at init time.
-  if (video?.originalSize) {
-    try {
-      await prisma.org.update({
-        where: { id: owner.orgId },
-        data: { storageUsedBytes: { decrement: video.originalSize } },
+  // Release the storage quota reserved at init time, and clear
+  // originalSize together with it -- no file was ever written to R2 (the
+  // multipart upload was aborted), so it shouldn't count toward storage
+  // truth (which sums originalSize) once the counter's been released.
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (video?.originalSize) {
+        await tx.org.update({
+          where: { id: owner.orgId },
+          data: { storageUsedBytes: { decrement: video.originalSize } },
+        });
+      }
+      await tx.video.updateMany({
+        where: { id: videoId, orgId: owner.orgId },
+        data: { status: "FAILED", originalSize: null, failureReason: "Upload failed or was cancelled" },
       });
-    } catch {}
-  }
-
-  await prisma.video.updateMany({
-    where: { id: videoId, orgId: owner.orgId },
-    data: { status: "FAILED", failureReason: "Upload failed or was cancelled" },
-  });
+    });
+  } catch {}
 
   return NextResponse.json({ ok: true });
 }
