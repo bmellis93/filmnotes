@@ -153,7 +153,12 @@ export default function StorageBreakdownScreen() {
             />
           </div>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div
+            className={[
+              "mt-3 grid grid-cols-1 gap-3",
+              computed.driftPct > 0.02 ? "sm:grid-cols-3" : "sm:grid-cols-2",
+            ].join(" ")}
+          >
             <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
               <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">Active</div>
               <div className="mt-1 text-sm font-semibold">{fmtGB(computed.active)} GB</div>
@@ -164,14 +169,15 @@ export default function StorageBreakdownScreen() {
               <div className="mt-1 text-sm font-semibold">{fmtGB(computed.archived)} GB</div>
             </div>
 
-            <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
-                Counter drift
-              </div>
-              <div className="mt-1 text-sm font-semibold">
-                {computed.drift < 1_000_000 ? "OK" : `${fmtGB(computed.drift)} GB`}
-              </div>
-              {computed.driftPct > 0.02 ? (
+            {/* Only surface this tile when there's actually something to reconcile --
+                no need to clutter the normal case with a permanent "OK" tile. */}
+            {computed.driftPct > 0.02 ? (
+              <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
+                <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+                  Counter drift
+                </div>
+                <div className="mt-1 text-sm font-semibold">{fmtGB(computed.drift)} GB</div>
+
                 <div className="mt-2 flex items-center gap-2">
                   <div className="text-xs text-[var(--text-muted)]">Counter drift detected.</div>
 
@@ -195,8 +201,8 @@ export default function StorageBreakdownScreen() {
                     Run reconcile
                   </button>
                 </div>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-3">
