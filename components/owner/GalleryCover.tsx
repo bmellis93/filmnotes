@@ -24,7 +24,7 @@ export default function GalleryCover({ thumbs, className }: Props) {
       style={{ aspectRatio: "16 / 9" }}
     >
       {t.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center text-neutral-500 text-sm">
+        <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)] text-sm">
           No videos yet
         </div>
       )}

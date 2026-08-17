@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FilmNotes
+
+FilmNotes is a video review and approval app: owners create galleries, share review links with clients, and collect timestamped comments and approvals on video cuts. Built with Next.js (App Router), Prisma/Postgres, Mux for video playback, Cloudflare R2 for file storage, and GoHighLevel for owner auth and client messaging.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and run the dev server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The app needs a `.env.local` with (at minimum):
 
-## Learn More
+- `DATABASE_URL`, `DIRECT_URL` — Postgres connection strings (Prisma)
+- `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET`, `GHL_REDIRECT_URI`, `GHL_AUTHORIZE_URL`, `GHL_API_BASE_URL`, `GHL_SCOPES` — GoHighLevel OAuth app credentials for owner sign-in
+- `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`, `MUX_SIGNING_KEY`, `MUX_PRIVATE_KEY`, `MUX_WEBHOOK_SECRET`, `MUX_WEBHOOK_SIGNING_SECRET` — Mux video API + webhook verification
+- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_BUCKET`, `R2_PUBLIC_BUCKET`, `R2_PUBLIC_BASE_URL`, `R2_SIGNED_URL_TTL` — Cloudflare R2 storage
+- `APP_JWT_SECRET` — signs owner session cookies/embed tokens
+- `CRON_SECRET` — authenticates the scheduled `nudge-unopened` job (see `vercel.json`)
+- `DEV_OWNER_ORG_ID`, `DEV_OWNER_USER_ID`, `DEV_OWNER_ROLE` — local-only bypass for the owner session during development
 
-To learn more about Next.js, take a look at the following resources:
+### Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run prisma:generate   # generate the Prisma client
+npm run prisma:migrate    # run/create migrations locally
+npm run prisma:studio     # inspect data
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Production builds run `prisma migrate deploy` automatically (see the `build` script), so pending migrations apply on every Vercel deploy.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on Vercel at [filmnotes.app](https://filmnotes.app). The GoHighLevel Marketplace app's OAuth redirect URI must match `GHL_REDIRECT_URI` exactly, and Mux webhooks must point at `/api/mux/webhook` on the deployed domain.

@@ -11,6 +11,7 @@ import GallerySortMenu, { GallerySort } from "@/components/owner/GallerySortMenu
 import { usePersistedState } from "@/components/owner/hooks/usePersistedState";
 import GalleryCover from "@/components/owner/GalleryCover";
 import StorageUsagePill from "@/components/owner/StorageUsagePill";
+import Button from "@/components/ui/Button";
 
 export type OwnerGalleryListItem = {
   id: string;
@@ -243,22 +244,17 @@ export default function OwnerGalleriesClient({
           <div className="flex flex-wrap items-center justify-end gap-2">
             {showSelectionUI ? (
               <>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
                   title="Archived videos still count toward storage."
                   onClick={bulkArchive}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-2.5 text-xs font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
                 >
                   Archive
-                </button>
+                </Button>
 
-                <button
-                  type="button"
-                  onClick={bulkDelete}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-red-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-red-500"
-                >
+                <Button variant="destructive" onClick={bulkDelete}>
                   Delete
-                </button>
+                </Button>
               </>
             ) : null}
 
@@ -269,7 +265,7 @@ export default function OwnerGalleriesClient({
               className={[
                 "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-semibold transition",
                 showArchived
-                  ? "bg-red-600/20 text-red-600 dark:text-red-300 border border-red-500/40 hover:bg-red-600/30"
+                  ? "bg-[var(--accent-solid)]/15 text-[var(--accent-solid)] border border-[var(--accent-solid)]/40 hover:bg-[var(--accent-solid)]/25"
                   : "border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-1)] hover:bg-[var(--surface-2)]",
               ].join(" ")}
             >
@@ -279,16 +275,11 @@ export default function OwnerGalleriesClient({
             <GallerySortMenu value={sort} onChange={setSort} />
 
             <StorageUsagePill />
-            
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              disabled={creating}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[var(--accent-solid)] px-4 py-2.5 text-xs font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-60"
-            >
+
+            <Button onClick={() => setCreateOpen(true)} disabled={creating}>
               <Plus className="h-4 w-4" />
               Gallery
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -319,7 +310,7 @@ export default function OwnerGalleriesClient({
                 <div
                   className={[
                     "h-4 w-4 rounded border",
-                    selectedIds.includes(g.id) ? "bg-[var(--accent-solid)] border-[var(--accent-solid)]" : "border-neutral-300",
+                    selectedIds.includes(g.id) ? "bg-[var(--accent-solid)] border-[var(--accent-solid)]" : "border-[var(--border-3)]",
                   ].join(" ")}
                 />
               </button>
@@ -331,11 +322,11 @@ export default function OwnerGalleriesClient({
                 {g.description ? (
                   <div className="mt-1 line-clamp-2 text-xs text-[var(--text-muted)]">{g.description}</div>
                 ) : (
-                  <div className="mt-1 text-xs text-neutral-500">No description</div>
+                  <div className="mt-1 text-xs text-[var(--text-muted)]">No description</div>
                 )}
               </div>
 
-              <div className="mt-4 text-[11px] text-neutral-500">
+              <div className="mt-4 text-[11px] text-[var(--text-muted)]">
                 Created {new Date(g.createdAt).toLocaleDateString()}
               </div>
             </Link>

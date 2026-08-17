@@ -2,6 +2,7 @@
 
 import { Send, X } from "lucide-react";
 import { useEffect, useRef } from "react";
+import Button from "@/components/ui/Button";
 
 type Props = {
   open: boolean;
@@ -74,7 +75,7 @@ export default function RequestChangesModal({
             </div>
 
             {error && (
-              <div className="mt-3 rounded-xl border border-red-900/40 bg-red-950/30 p-3 text-sm text-red-200">
+              <div className="mt-3 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">
                 {error}
               </div>
             )}
@@ -94,16 +95,14 @@ export default function RequestChangesModal({
                 Tip: Press <span className="text-[var(--text-2)]">Ctrl/⌘ + Enter</span> to send.
               </div>
 
-              <button
-                type="button"
+              <Button
                 onClick={onSubmit}
                 disabled={isSubmitting || note.trim().length === 0}
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-xs font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-50"
                 title="Send (Ctrl/⌘ + Enter)"
               >
                 <Send className="h-3.5 w-3.5" />
                 {isSubmitting ? "Sending…" : "Send request"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

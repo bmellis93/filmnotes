@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
+import Button from "@/components/ui/Button";
 
 type ThemeChoice = "system" | "dark" | "light";
 type ResolvedTheme = "dark" | "light";
@@ -70,7 +71,7 @@ export default function ThemeToggle() {
 
       // Tell parent what we just set so the wrapper can sync (when you build it).
       postToParent({
-        type: "RENOWNED_THEME_CHANGE",
+        type: "FILMNOTES_THEME_CHANGE",
         payload: { theme: next, effective },
         source,
       });
@@ -85,7 +86,7 @@ export default function ThemeToggle() {
       if (!data || typeof data !== "object") return;
 
       // You’ll implement this in your wrapper later.
-      if (data.type === "RENOWNED_SET_THEME") {
+      if (data.type === "FILMNOTES_SET_THEME") {
         const next = data?.payload?.theme;
         if (!isThemeChoice(next)) return;
 
@@ -97,9 +98,9 @@ export default function ThemeToggle() {
       }
 
       // Optional: parent asks “what theme are you using?”
-      if (data.type === "RENOWNED_GET_THEME") {
+      if (data.type === "FILMNOTES_GET_THEME") {
         postToParent({
-          type: "RENOWNED_THEME_STATE",
+          type: "FILMNOTES_THEME_STATE",
           payload: { theme, effective, resolvedTheme, systemTheme },
         });
       }
@@ -114,7 +115,7 @@ export default function ThemeToggle() {
     if (!mounted) return;
 
     postToParent({
-      type: "RENOWNED_THEME_READY",
+      type: "FILMNOTES_THEME_READY",
       payload: {
         theme,
         effective,
@@ -133,53 +134,36 @@ export default function ThemeToggle() {
     <div className="flex items-center justify-between gap-4">
       <div>
         <div className="text-sm font-semibold">Theme</div>
-        <div className="text-xs text-neutral-600 dark:text-neutral-400">
-          Current: {effective}
-        </div>
+        <div className="text-xs text-[var(--text-muted)]">Current: {effective}</div>
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
+        <Button
+          variant={pressed("system") ? "primary" : "secondary"}
+          size="sm"
           onClick={() => setThemeSafe("system", "ui")}
           aria-pressed={pressed("system")}
-          className={[
-            "rounded-lg border px-3 py-2 text-xs font-semibold",
-            pressed("system")
-              ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
-              : "border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900",
-          ].join(" ")}
         >
           System
-        </button>
+        </Button>
 
-        <button
-          type="button"
+        <Button
+          variant={pressed("dark") ? "primary" : "secondary"}
+          size="sm"
           onClick={() => setThemeSafe("dark", "ui")}
           aria-pressed={pressed("dark")}
-          className={[
-            "rounded-lg border px-3 py-2 text-xs font-semibold",
-            pressed("dark")
-              ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
-              : "border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900",
-          ].join(" ")}
         >
           Dark
-        </button>
+        </Button>
 
-        <button
-          type="button"
+        <Button
+          variant={pressed("light") ? "primary" : "secondary"}
+          size="sm"
           onClick={() => setThemeSafe("light", "ui")}
           aria-pressed={pressed("light")}
-          className={[
-            "rounded-lg border px-3 py-2 text-xs font-semibold",
-            pressed("light")
-              ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
-              : "border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900",
-          ].join(" ")}
         >
           Light
-        </button>
+        </Button>
       </div>
     </div>
   );

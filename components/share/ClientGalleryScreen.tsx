@@ -144,7 +144,7 @@ export default function ClientGalleryScreen({
                     <div className="mt-1 truncate text-sm text-[var(--text-muted)]">
                       {v.description || "—"}
                     </div>
-                    <div className="mt-3 text-xs text-neutral-500">
+                    <div className="mt-3 text-xs text-[var(--text-muted)]">
                       Created {new Date(v.createdAt).toLocaleDateString()}
                     </div>
                   </div>

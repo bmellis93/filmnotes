@@ -5,9 +5,8 @@ import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 
 // Compact two-state toggle for client-facing pages that don't have a
-// settings screen. Defaults to following the system preference (via
-// next-themes' defaultTheme="system"); tapping it sets an explicit
-// light/dark override.
+// settings screen. Defaults dark (the product is dark-first, see
+// app/providers.tsx defaultTheme); tapping it sets an explicit override.
 export default function ThemeToggleSimple() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);

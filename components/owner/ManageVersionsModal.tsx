@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { X, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import type { GalleryVideo } from "@/components/owner/VideoGrid";
+import Button from "@/components/ui/Button";
 
 type Props = {
   open: boolean;
@@ -236,26 +237,20 @@ export default function ManageVersionsModal({ open, onClose, videos, onConfirm }
           </div>
 
           <div className="flex items-center justify-end gap-2 border-t border-[var(--border-2)] p-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
-            >
+            <Button variant="secondary" onClick={onClose}>
               Cancel
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <Button
               onClick={() => {
                 if (!canSave) return;
                 onConfirm?.(order);
                 onClose();
               }}
               disabled={!canSave}
-              className="rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-50"
             >
               Save versions
-            </button>
+            </Button>
           </div>
         </div>
       </div>

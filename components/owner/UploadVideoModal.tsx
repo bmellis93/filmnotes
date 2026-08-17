@@ -8,6 +8,7 @@ import { uploadVideoToR2, fmtGB, type StorageLimitError } from "@/lib/uploadClie
 import { useRouter } from "next/navigation";
 import { logUploadFailure } from "@/lib/telemetry";
 import FilePickerButton from "@/components/owner/FilePickerButton";
+import Button from "@/components/ui/Button";
 
 type Props = {
   open: boolean;
@@ -260,7 +261,7 @@ export default function UploadVideoModal({
                 {file.name} • {(file.size / 1024 / 1024).toFixed(2)} MB
               </div>
             ) : (
-              <div className="mt-2 text-xs text-neutral-500">
+              <div className="mt-2 text-xs text-[var(--text-muted)]">
                 Pick a file to upload to R2.
               </div>
             )}
@@ -270,8 +271,8 @@ export default function UploadVideoModal({
                 className={[
                   "mt-2 rounded-xl border px-3 py-2 text-xs",
                   usageLevel === "high"
-                    ? "border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-200"
-                    : "border-yellow-500/40 bg-yellow-500/10 text-yellow-800 dark:text-yellow-200",
+                    ? "border-[var(--danger)]/40 bg-[var(--danger)]/10 text-[var(--danger)]"
+                    : "border-[var(--warning)]/40 bg-[var(--warning)]/10 text-[var(--warning)]",
                 ].join(" ")}
               >
                 {usageLevel === "high" ? (
@@ -286,13 +287,11 @@ export default function UploadVideoModal({
               <div
                 className={[
                   "mt-2 rounded-xl border px-3 py-2 text-xs",
-                  willFit === false
-                    ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200"
-                    : projectedPct != null && projectedPct >= 0.9
-                      ? "border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-200"
-                      : projectedPct != null && projectedPct >= 0.8
-                        ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-800 dark:text-yellow-200"
-                        : "border-[var(--border-1)] bg-[var(--surface-1)]/20 text-[var(--text-3)]",
+                  willFit === false || (projectedPct != null && projectedPct >= 0.9)
+                    ? "border-[var(--danger)]/40 bg-[var(--danger)]/10 text-[var(--danger)]"
+                    : projectedPct != null && projectedPct >= 0.8
+                      ? "border-[var(--warning)]/40 bg-[var(--warning)]/10 text-[var(--warning)]"
+                      : "border-[var(--border-1)] bg-[var(--surface-1)]/20 text-[var(--text-3)]",
                 ].join(" ")}
               >
                 {willFit === false ? (
@@ -316,7 +315,7 @@ export default function UploadVideoModal({
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder-neutral-500 focus:outline-none"
+                className="mt-1 w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder-[var(--text-muted)] focus:outline-none"
                 placeholder="Trailer v1"
               />
             </div>
@@ -327,7 +326,7 @@ export default function UploadVideoModal({
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
                 rows={3}
-                className="mt-1 w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder-neutral-500 focus:outline-none"
+                className="mt-1 w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] placeholder-[var(--text-muted)] focus:outline-none"
                 placeholder="Optional notes…"
               />
             </div>
@@ -350,7 +349,7 @@ export default function UploadVideoModal({
                     label={thumbFile ? "Change Thumbnail" : "Choose Thumbnail"}
                     onFile={setThumbFile}
                   />
-                  <div className="mt-1 text-xs text-neutral-500">
+                  <div className="mt-1 text-xs text-[var(--text-muted)]">
                     {thumbFile
                       ? thumbFile.name
                       : "Defaults to an auto-generated frame if you skip this."}
@@ -360,10 +359,10 @@ export default function UploadVideoModal({
             </div>
 
             {errorMsg && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-200">
+              <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-3 py-2 text-xs text-[var(--danger)]">
                 {errorMsg}
 
-                <div className="mt-1 text-[11px] text-red-600/80 dark:text-red-300/80">
+                <div className="mt-1 text-[11px] text-[var(--danger)]/80">
                   Archived videos still count toward storage.
                 </div>
 
@@ -410,35 +409,27 @@ export default function UploadVideoModal({
           </div>
 
           <div className="flex items-center justify-end gap-2 border-t border-[var(--border-2)] p-4">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={() => {
                 if (busy) return;
                 setFile(null);
                 onClose();
               }}
-              className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
               disabled={busy}
             >
               Cancel
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant={willFit === false ? "destructive" : "primary"}
               onClick={() => {
                 if (busy || !canCreate) return;
                 handleCreate();
               }}
               disabled={busy || !canCreate}
-              className={[
-                "rounded-xl px-3 py-2 text-sm font-semibold transition",
-                willFit === false
-                  ? "bg-red-500/30 text-red-700 dark:text-red-200 cursor-not-allowed"
-                  : "bg-[var(--accent-solid)] text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]",
-                "disabled:opacity-60",
-              ].join(" ")}
             >
               {createLabel}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -185,7 +185,7 @@ export default function PlaybackControls({
                     type="button"
                     title={label}
                     onClick={() => onSeek(m.timecodeMs)}
-                    className="pointer-events-auto absolute top-1/2 h-4 w-1 -translate-y-1/2 -translate-x-1/2 rounded-full bg-red-500 hover:bg-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                    className="pointer-events-auto absolute top-1/2 h-4 w-1 -translate-y-1/2 -translate-x-1/2 rounded-full bg-[var(--cue)] hover:bg-[var(--cue-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cue)]/50"
                     style={{ left: `${pct}%` }}
                     aria-label={label}
                   />

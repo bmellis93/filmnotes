@@ -74,7 +74,7 @@ export default function TopBar({
             <ChevronLeft className="h-5 w-5" />
           </button>
 
-          <div className="hidden h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-600 text-xs font-semibold text-white sm:grid">
+          <div className="hidden h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--accent-solid)] text-xs font-semibold text-[var(--accent-solid-fg)] sm:grid">
             {initials}
           </div>
 
@@ -123,7 +123,7 @@ export default function TopBar({
               className={[
                 "inline-flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold ring-1 sm:px-3",
                 isComparing
-                  ? "bg-emerald-950/30 text-emerald-700 dark:text-emerald-200 ring-emerald-900/40 hover:bg-emerald-950/45"
+                  ? "bg-[var(--accent-solid)]/15 text-[var(--accent-solid)] ring-[var(--accent-solid)]/30 hover:bg-[var(--accent-solid)]/25"
                   : "bg-[var(--surface-1)] text-[var(--text-2)] ring-[var(--border-1)] hover:bg-[var(--surface-2)]",
               ].join(" ")}
               title={isComparing ? "Exit compare" : "Compare versions"}

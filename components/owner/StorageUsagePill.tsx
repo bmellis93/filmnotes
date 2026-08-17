@@ -56,16 +56,16 @@ export default function StorageUsagePill() {
 
   const shellClass =
     level === "high"
-      ? "border-orange-500/40 bg-orange-500/10"
+      ? "border-[var(--danger)]/40 bg-[var(--danger)]/10"
       : level === "mid"
-        ? "border-yellow-500/40 bg-yellow-500/10"
+        ? "border-[var(--warning)]/40 bg-[var(--warning)]/10"
         : "border-[var(--border-1)] bg-[var(--surface-1)]/40";
 
   const textClass =
     level === "high"
-      ? "text-orange-600 dark:text-orange-300"
+      ? "text-[var(--danger)]"
       : level === "mid"
-        ? "text-yellow-700 dark:text-yellow-300"
+        ? "text-[var(--warning)]"
         : "";
 
   return (

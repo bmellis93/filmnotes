@@ -94,7 +94,7 @@ export default function EditThumbnailModal({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={displayUrl} alt="Thumbnail preview" className="h-full w-full object-cover" />
               ) : (
-                <div className="grid h-full place-items-center text-sm text-neutral-500">
+                <div className="grid h-full place-items-center text-sm text-[var(--text-muted)]">
                   No thumbnail yet
                 </div>
               )}
@@ -111,7 +111,7 @@ export default function EditThumbnailModal({
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-200">
+              <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-3 py-2 text-xs text-[var(--danger)]">
                 {error}
               </div>
             )}

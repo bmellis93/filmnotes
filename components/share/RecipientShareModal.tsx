@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveTemplateText, resolveTemplateHtml } from "@/lib/ghl/templateMerge";
 import TemplateFolderPicker, { type PickedTemplate } from "@/components/owner/TemplateFolderPicker";
+import Button from "@/components/ui/Button";
 
 type Contact = {
   id: string;
@@ -514,13 +515,9 @@ export default function RecipientShareModal({
               <div className="text-xs text-[var(--text-muted)]">Share</div>
               <div className="text-base font-semibold">{subtitle}</div>
             </div>
-            <button
-              className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-              onClick={onClose}
-              type="button"
-            >
+            <Button variant="secondary" onClick={onClose}>
               Close
-            </button>
+            </Button>
           </div>
 
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-y-auto md:grid-cols-[1fr_420px]">
@@ -532,7 +529,7 @@ export default function RecipientShareModal({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search contacts by name, email, or phone…"
-                  className="w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-neutral-500 focus:border-neutral-600"
+                  className="w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
                 />
               </div>
 
@@ -548,7 +545,7 @@ export default function RecipientShareModal({
                       title="Remove"
                     >
                       <span className="max-w-[220px] truncate">{c.name}</span>
-                      <span className="text-neutral-500">×</span>
+                      <span className="text-[var(--text-muted)]">×</span>
                     </button>
                   ))}
                 </div>
@@ -560,14 +557,14 @@ export default function RecipientShareModal({
                   <div className="text-xs text-[var(--text-muted)]">
                     {isSearching ? "Searching…" : "Results"}
                   </div>
-                  <div className="text-xs text-neutral-500">
+                  <div className="text-xs text-[var(--text-muted)]">
                     {debouncedQuery.trim().length < 2 ? "Type 2+ characters" : ""}
                   </div>
                 </div>
 
                 <div className="max-h-[320px] overflow-auto p-2">
                   {contacts.length === 0 ? (
-                    <div className="px-3 py-6 text-center text-sm text-neutral-500">
+                    <div className="px-3 py-6 text-center text-sm text-[var(--text-muted)]">
                       {debouncedQuery.trim().length < 2
                         ? "Start typing to search your GHL contacts."
                         : "No contacts found."}
@@ -601,7 +598,7 @@ export default function RecipientShareModal({
                                     "rounded-md border px-2 py-1 text-[10px]",
                                     c.phone
                                       ? "border-[var(--border-3)] text-[var(--text-3)]"
-                                      : "border-[var(--border-2)] text-neutral-600",
+                                      : "border-[var(--border-2)] text-[var(--text-muted)]",
                                   ].join(" ")}
                                 >
                                   SMS
@@ -611,7 +608,7 @@ export default function RecipientShareModal({
                                     "rounded-md border px-2 py-1 text-[10px]",
                                     c.email
                                       ? "border-[var(--border-3)] text-[var(--text-3)]"
-                                      : "border-[var(--border-2)] text-neutral-600",
+                                      : "border-[var(--border-2)] text-[var(--text-muted)]",
                                   ].join(" ")}
                                 >
                                   Email
@@ -628,7 +625,7 @@ export default function RecipientShareModal({
 
               {/* Error / status */}
               {error && (
-                <div className="mt-3 rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-200">
+                <div className="mt-3 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-4 py-3 text-sm text-[var(--danger)]">
                   {error}
                 </div>
               )}
@@ -642,7 +639,7 @@ export default function RecipientShareModal({
                         <div className="min-w-0">
                           <div className="truncate">{r.contactName}</div>
                           {r.channelResults.length > 0 && (
-                            <div className="truncate text-neutral-500">
+                            <div className="truncate text-[var(--text-muted)]">
                               {r.channelResults.map((cr) => `${cr.channel}: ${cr.ok ? "sent" : "failed"}`).join(" · ")}
                             </div>
                           )}
@@ -652,7 +649,7 @@ export default function RecipientShareModal({
                             return (
                               <div
                                 key={i}
-                                className="mt-0.5 truncate text-red-600 dark:text-red-300"
+                                className="mt-0.5 truncate text-[var(--danger)]"
                                 title={msg}
                               >
                                 {cr.channel}: {msg}
@@ -660,7 +657,7 @@ export default function RecipientShareModal({
                             );
                           })}
                         </div>
-                        <div className={r.ok ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}>
+                        <div className={r.ok ? "text-[var(--success)]" : "text-[var(--danger)]"}>
                           {r.ok ? "Sent" : "Failed"}
                         </div>
                       </div>
@@ -673,7 +670,7 @@ export default function RecipientShareModal({
             {/* Right: message + options */}
             <div className="border-t border-[var(--border-1)] p-5 md:border-l md:border-t-0">
               {templatesError && (
-                <div className="mb-4 rounded-xl border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-200">
+                <div className="mb-4 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-3 py-2 text-xs text-[var(--danger)]">
                   {templatesError}
                 </div>
               )}
@@ -704,9 +701,9 @@ export default function RecipientShareModal({
                       smsTemplateId ? setSmsTemplateText(e.target.value) : setCustomMessage(e.target.value)
                     }
                     placeholder={defaultMessage}
-                    className="h-24 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+                    className="h-24 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
                   />
-                  <div className="mt-1 text-xs text-neutral-500">
+                  <div className="mt-1 text-xs text-[var(--text-muted)]">
                     {smsTemplateId
                       ? "The review link fills in automatically wherever {{review_link}} appears (or gets appended)."
                       : "Leave blank to use default message."}
@@ -751,7 +748,7 @@ export default function RecipientShareModal({
                     <button
                       type="button"
                       onClick={clearBuilderTemplate}
-                      className="shrink-0 text-xs text-neutral-400 underline hover:text-neutral-200"
+                      className="shrink-0 text-xs text-[var(--text-muted)] underline hover:text-[var(--text-1)]"
                     >
                       Clear
                     </button>
@@ -763,7 +760,7 @@ export default function RecipientShareModal({
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
                     placeholder="Subject"
-                    className="w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-2.5 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+                    className="w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-2.5 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
                   />
                 </div>
 
@@ -773,7 +770,7 @@ export default function RecipientShareModal({
                       Loading template…
                     </div>
                   ) : builderContentError ? (
-                    <div className="rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-200">
+                    <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-4 py-3 text-sm text-[var(--danger)]">
                       {builderContentError}
                     </div>
                   ) : effectiveEmailHtml ? (
@@ -792,10 +789,10 @@ export default function RecipientShareModal({
                       value={emailCustomMessage}
                       onChange={(e) => setEmailCustomMessage(e.target.value)}
                       placeholder={customMessage || defaultMessage}
-                      className="h-24 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+                      className="h-24 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
                     />
                   )}
-                  <div className="mt-1 text-xs text-neutral-500">
+                  <div className="mt-1 text-xs text-[var(--text-muted)]">
                     {effectiveEmailHtml
                       ? "Preview only — the review link fills in automatically wherever {{review_link}} appears (or gets appended)."
                       : "Leave blank to reuse the SMS message text."}
@@ -812,7 +809,7 @@ export default function RecipientShareModal({
                       type="checkbox"
                       checked={allowComments}
                       onChange={(e) => setAllowComments(e.target.checked)}
-                      className="h-4 w-4"
+                      className="h-4 w-4 accent-[var(--accent-solid)]"
                     />
                   </label>
 
@@ -822,7 +819,7 @@ export default function RecipientShareModal({
                       type="checkbox"
                       checked={allowDownloads}
                       onChange={(e) => setAllowDownloads(e.target.checked)}
-                      className="h-4 w-4"
+                      className="h-4 w-4 accent-[var(--accent-solid)]"
                     />
                   </label>
                 </div>
@@ -837,7 +834,7 @@ export default function RecipientShareModal({
                       type="checkbox"
                       checked={sendSms}
                       onChange={(e) => setSendSms(e.target.checked)}
-                      className="h-4 w-4"
+                      className="h-4 w-4 accent-[var(--accent-solid)]"
                     />
                   </label>
                   <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
@@ -846,32 +843,30 @@ export default function RecipientShareModal({
                       type="checkbox"
                       checked={sendEmail}
                       onChange={(e) => setSendEmail(e.target.checked)}
-                      className="h-4 w-4"
+                      className="h-4 w-4 accent-[var(--accent-solid)]"
                     />
                   </label>
-                  <div className="text-xs text-neutral-500">
+                  <div className="text-xs text-[var(--text-muted)]">
                     If you leave both unchecked, we'll try SMS first, then Email if SMS fails.
                   </div>
                 </div>
               </div>
 
               <div className="mt-6 flex items-center justify-between gap-3">
-                <div className="text-xs text-neutral-500">
+                <div className="text-xs text-[var(--text-muted)]">
                   {subjectLabel}: <span className="text-[var(--text-3)]">{subjectValue}</span>
                 </div>
 
-                <button
-                  type="button"
+                <Button
                   disabled={isSending || selected.length === 0 || Boolean(sendDisabledReason)}
                   onClick={handleSend}
-                  className="rounded-xl bg-[var(--accent-solid)] px-4 py-3 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)] disabled:opacity-60"
                   title={
                     sendDisabledReason ??
                     (selected.length === 0 ? "Select at least one recipient" : "Send")
                   }
                 >
                   {isSending ? "Sending…" : "Send"}
-                </button>
+                </Button>
               </div>
 
               <div className="mt-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3">
@@ -879,7 +874,7 @@ export default function RecipientShareModal({
                 <div className="mt-1 text-sm text-[var(--text-2)]">
                   A unique review link will be generated for each recipient when you send.
                 </div>
-                <div className="mt-2 text-xs text-neutral-500">
+                <div className="mt-2 text-xs text-[var(--text-muted)]">
                   Links are permissioned and can be disabled later.
                 </div>
               </div>
@@ -888,13 +883,9 @@ export default function RecipientShareModal({
 
           {/* Footer */}
           <div className="flex shrink-0 items-center justify-end border-t border-[var(--border-1)] px-5 py-4">
-            <button
-              className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-              onClick={onClose}
-              type="button"
-            >
+            <Button variant="secondary" size="sm" onClick={onClose}>
               Done
-            </button>
+            </Button>
           </div>
       </div>
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Clock, MessageSquare, Layers } from "lucide-react";
+import StatusPill, { type PillTone } from "@/components/ui/StatusPill";
 
 export type OwnerVideoStatus = "READY" | "UPLOADING" | "PROCESSING" | "FAILED";
 
@@ -38,19 +39,16 @@ function statusLabel(status: OwnerVideoStatus) {
   }
 }
 
-function statusPillClasses(status: OwnerVideoStatus) {
-  // keep it neutral, but give subtle semantic hints
+function statusTone(status: OwnerVideoStatus): PillTone {
   switch (status) {
     case "READY":
-      return "border-emerald-900/50 bg-emerald-950/40 text-emerald-700 dark:text-emerald-200";
+      return "success";
     case "FAILED":
-      return "border-red-900/50 bg-red-950/40 text-red-700 dark:text-red-200";
+      return "danger";
     case "PROCESSING":
-      return "border-sky-900/50 bg-sky-950/40 text-sky-700 dark:text-sky-200";
     case "UPLOADING":
-      return "border-amber-900/50 bg-amber-950/40 text-amber-700 dark:text-amber-200";
     default:
-      return "border-[var(--border-1)] bg-[var(--surface-0)]/70 text-[var(--text-2)]";
+      return "neutral";
   }
 }
 
@@ -115,15 +113,9 @@ export default function VideoCard({ galleryId, video }: Props) {
 
         {/* status pill */}
         <div className="absolute left-3 top-3">
-          <span
-            className={[
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-xs",
-              "backdrop-blur",
-              statusPillClasses(video.status),
-            ].join(" ")}
-          >
+          <StatusPill tone={statusTone(video.status)} className="px-2 py-0.5 backdrop-blur">
             {label}
-          </span>
+          </StatusPill>
         </div>
       </div>
 
@@ -140,7 +132,7 @@ export default function VideoCard({ galleryId, video }: Props) {
                 {video.description}
               </div>
             ) : (
-              <div className="mt-1 text-xs text-neutral-500">No description</div>
+              <div className="mt-1 text-xs text-[var(--text-muted)]">No description</div>
             )}
           </div>
         </div>

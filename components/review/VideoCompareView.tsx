@@ -228,7 +228,7 @@ export default function VideoCompareView({
             className={
               selectedClass +
               (audioSide === "left"
-                ? " border-emerald-500/60 bg-emerald-950/20"
+                ? " border-[var(--accent-solid)]/60 bg-[var(--accent-solid)]/15"
                 : " border-[var(--border-1)] bg-[var(--surface-1)]/40 hover:bg-[var(--surface-1)]/60")
             }
             title="Select left audio"
@@ -280,7 +280,7 @@ export default function VideoCompareView({
             className={
               selectedClass +
               (audioSide === "right"
-                ? " border-emerald-500/60 bg-emerald-950/20"
+                ? " border-[var(--accent-solid)]/60 bg-[var(--accent-solid)]/15"
                 : " border-[var(--border-1)] bg-[var(--surface-1)]/40 hover:bg-[var(--surface-1)]/60")
             }
             title="Select right audio"

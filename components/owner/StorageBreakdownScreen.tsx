@@ -141,7 +141,7 @@ export default function StorageBreakdownScreen() {
               <div className="text-sm font-semibold">Usage</div>
             </div>
 
-            <div className={computed.warn ? "text-red-600 dark:text-red-300 text-sm" : "text-[var(--text-3)] text-sm"}>
+            <div className={computed.warn ? "text-[var(--danger)] text-sm" : "text-[var(--text-3)] text-sm"}>
               {fmtGB(computed.used)} / {fmtGB(computed.limit)} GB
             </div>
           </div>
@@ -155,17 +155,17 @@ export default function StorageBreakdownScreen() {
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-neutral-500">Active</div>
+              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">Active</div>
               <div className="mt-1 text-sm font-semibold">{fmtGB(computed.active)} GB</div>
             </div>
 
             <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-neutral-500">Archived</div>
+              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">Archived</div>
               <div className="mt-1 text-sm font-semibold">{fmtGB(computed.archived)} GB</div>
             </div>
 
             <div className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
-              <div className="text-[11px] uppercase tracking-wide text-neutral-500">
+              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
                 Counter drift
               </div>
               <div className="mt-1 text-sm font-semibold">
@@ -202,7 +202,7 @@ export default function StorageBreakdownScreen() {
           <div className="mt-3">
             <Link
               href="/owner/galleries"
-              className="text-xs text-[var(--text-3)] underline decoration-neutral-700 hover:text-[var(--text-1)]"
+              className="text-xs text-[var(--text-3)] underline decoration-[var(--border-3)] hover:text-[var(--text-1)]"
             >
               Go manage galleries →
             </Link>
@@ -226,7 +226,7 @@ export default function StorageBreakdownScreen() {
                   >
                     <div className="min-w-0">
                       <div className="truncate text-sm text-[var(--text-1)]">{g.galleryName}</div>
-                      <div className="text-xs text-neutral-500">{g.videoCount} videos</div>
+                      <div className="text-xs text-[var(--text-muted)]">{g.videoCount} videos</div>
                     </div>
                     <div className="shrink-0 text-sm text-[var(--text-2)]">
                       {fmtGB(bytes)} GB
@@ -243,8 +243,8 @@ export default function StorageBreakdownScreen() {
             className={[
               "mt-4 rounded-2xl border px-4 py-3 text-sm",
               critical
-                ? "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-200"
-                : "border-yellow-500/40 bg-yellow-500/10 text-yellow-800 dark:text-yellow-200",
+                ? "border-[var(--danger)]/40 bg-[var(--danger)]/10 text-[var(--danger)]"
+                : "border-[var(--warning)]/40 bg-[var(--warning)]/10 text-[var(--warning)]",
             ].join(" ")}
           >
             <div className="font-semibold">
@@ -300,12 +300,12 @@ export default function StorageBreakdownScreen() {
                     {v.galleryId ? (
                       <Link
                         href={`/owner/galleries/${v.galleryId}`}
-                        className="text-xs text-neutral-500 underline decoration-neutral-800 hover:text-[var(--text-3)]"
+                        className="text-xs text-[var(--text-muted)] underline decoration-[var(--border-3)] hover:text-[var(--text-3)]"
                       >
                         {v.galleryName ?? "View gallery"}
                       </Link>
                     ) : (
-                      <div className="text-xs text-neutral-500">No gallery</div>
+                      <div className="text-xs text-[var(--text-muted)]">No gallery</div>
                     )}
                   </div>
 

@@ -146,7 +146,7 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
             {loading && <div className="text-sm text-[var(--text-muted)]">Loading…</div>}
 
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+              <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">
                 {error}
               </div>
             )}
@@ -193,7 +193,7 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                       disabled={busyId === s.id}
                       title="Delete link"
                       aria-label="Delete link"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-2)] hover:bg-red-100 hover:text-red-700 disabled:opacity-50 dark:hover:bg-red-950/40 dark:hover:text-red-200"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-2)] hover:bg-[var(--danger)]/15 hover:text-[var(--danger)] disabled:opacity-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

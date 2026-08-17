@@ -10,7 +10,7 @@ type Props = {
   onChange?: (next: Annotation) => void;
 };
 
-const STROKE_COLOR = "#ef4444"; // red-500, matches the app's timecode-chip red
+const STROKE_COLOR = "#F3A83E"; // Cue — matches the app's timecode-chip/cue-mark accent
 const STROKE_WIDTH = 0.006; // fraction of the video content width
 const DOT_RADIUS = 0.009;
 

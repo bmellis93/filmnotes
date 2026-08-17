@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MoreHorizontal, Share2, Eye } from "lucide-react";
+import Button from "@/components/ui/Button";
+import StatusPill, { type PillTone } from "@/components/ui/StatusPill";
 
 export type GalleryVideo = {
   id: string;
@@ -61,20 +63,16 @@ function statusLabel(status: GalleryVideo["status"]) {
   return "No thumbnail";
 }
 
-function approvalPill(status: GalleryVideo["approvalStatus"]) {
-  if (status === "APPROVED") {
-    return { label: "Approved", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200" };
-  }
-  if (status === "CHANGES_REQUESTED") {
-    return { label: "Changes requested", cls: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200" };
-  }
-  return { label: "Pending review", cls: "border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-muted)]" };
+function approvalPill(status: GalleryVideo["approvalStatus"]): { label: string; tone: PillTone } {
+  if (status === "APPROVED") return { label: "Approved", tone: "success" };
+  if (status === "CHANGES_REQUESTED") return { label: "Changes requested", tone: "warning" };
+  return { label: "Pending review", tone: "neutral" };
 }
 
-function statusPill(status: GalleryVideo["status"]) {
-  if (status === "UPLOADING") return { label: "Uploading…", cls: "bg-[var(--accent-solid)]/10 text-[var(--text-2)] border-[var(--accent-solid)]/15" };
-  if (status === "UPLOADED" || status === "PROCESSING") return { label: "Processing…", cls: "bg-yellow-500/10 text-yellow-800 dark:text-yellow-200 border-yellow-500/30" };
-  if (status === "FAILED") return { label: "Failed", cls: "bg-red-500/10 text-red-700 dark:text-red-200 border-red-500/30" };
+function statusPill(status: GalleryVideo["status"]): { label: string; tone: PillTone } | null {
+  if (status === "UPLOADING") return { label: "Uploading…", tone: "neutral" };
+  if (status === "UPLOADED" || status === "PROCESSING") return { label: "Processing…", tone: "neutral" };
+  if (status === "FAILED") return { label: "Failed", tone: "danger" };
   return null;
 }
 
@@ -196,7 +194,7 @@ export default function VideoGrid({
                   <div
                     className={[
                       "h-4 w-4 rounded border transition",
-                      isSelected ? "bg-[var(--accent-solid)] border-[var(--accent-solid)]" : "border-neutral-400",
+                      isSelected ? "bg-[var(--accent-solid)] border-[var(--accent-solid)]" : "border-[var(--border-3)]",
                     ].join(" ")}
                   />
                 </button>
@@ -327,9 +325,9 @@ export default function VideoGrid({
               <div className="aspect-video w-full bg-[var(--surface-1)]/60 relative">
                 {pill ? (
                   <div className="absolute left-3 top-3 z-10">
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${pill.cls}`}>
+                    <StatusPill tone={pill.tone} className="px-2 py-0.5 text-[10px]">
                       {pill.label}
-                    </span>
+                    </StatusPill>
                   </div>
                 ) : null}
 
@@ -346,7 +344,7 @@ export default function VideoGrid({
                   />
                 ) : v.status === "UPLOADING" || v.status === "UPLOADED" || v.status === "PROCESSING" ? (
                   <div className="absolute inset-0">
-                    <div className="h-full w-full animate-pulse bg-gradient-to-br from-neutral-900/60 via-neutral-800/30 to-neutral-900/60" />
+                    <div className="h-full w-full animate-pulse bg-gradient-to-br from-[var(--surface-2)]/60 via-[var(--surface-1)]/30 to-[var(--surface-2)]/60" />
                     <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-3)]">
                       {statusLabel(v.status)}
                     </div>
@@ -382,9 +380,9 @@ export default function VideoGrid({
                     {(() => {
                       const ap = approvalPill(v.approvalStatus);
                       return (
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${ap.cls}`}>
+                        <StatusPill tone={ap.tone} className="px-2 py-0.5 text-[11px]">
                           {ap.label}
-                        </span>
+                        </StatusPill>
                       );
                     })()}
 
@@ -405,20 +403,21 @@ export default function VideoGrid({
                 )}
 
                 {v.status === "FAILED" && !isArchived && onRetryFailed ? (
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mt-3"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRetryFailed(v.id);
                     }}
-                    className="mt-3 inline-flex items-center rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
                   >
                     Retry upload
-                  </button>
+                  </Button>
                 ) : null}
-                
+
                 {v.status === "FAILED" && v.failureReason ? (
-                  <div className="mt-2 text-xs text-red-700/90 dark:text-red-200/90 line-clamp-2">
+                  <div className="mt-2 text-xs text-[var(--danger)]/90 line-clamp-2">
                     {v.failureReason}
                   </div>
                 ) : null}

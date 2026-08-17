@@ -43,7 +43,7 @@ export default function DevOwnerLoginPage() {
         </button>
 
         {msg ? <div className="mt-3 text-xs text-[var(--text-3)]">{msg}</div> : null}
-        <div className="mt-3 text-xs text-neutral-500">
+        <div className="mt-3 text-xs text-[var(--text-muted)]">
           Make sure DEV_OWNER_ORG_ID + APP_JWT_SECRET are set in .env.local.
         </div>
       </div>

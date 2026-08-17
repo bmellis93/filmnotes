@@ -3,6 +3,8 @@
 import React, { useId } from "react";
 import { Pencil } from "lucide-react";
 import type { Annotation } from "@/lib/annotations/types";
+import Button from "@/components/ui/Button";
+import StatusPill from "@/components/ui/StatusPill";
 
 export type ThreadedComment = {
   id: string;
@@ -108,15 +110,13 @@ function CommentNode({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-1.5">
               {c.isApprovalNote ? (
-                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-900/50">
-                  Changes requested
-                </span>
+                <StatusPill tone="warning">Changes requested</StatusPill>
               ) : (
                 <button
                   type="button"
                   onClick={() => onSeek(c.timecodeMs)}
                   title="Jump to timecode"
-                  className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 ring-1 ring-red-200 hover:bg-red-200 dark:bg-red-950/60 dark:text-red-200 dark:ring-red-900/50 dark:hover:bg-red-900/70 dark:hover:text-red-100 transition"
+                  className="font-timecode rounded-full border border-[var(--warning)]/30 bg-[var(--warning)]/15 px-2.5 py-0.5 text-xs font-semibold text-[var(--warning)] hover:bg-[var(--warning)]/25 transition"
                 >
                   {formatTime(c.timecodeMs)}
                 </button>
@@ -137,9 +137,9 @@ function CommentNode({
 
             <div className="flex items-center gap-2">
               {isResolved && (
-                <span className="rounded-full border border-[var(--border-1)] bg-[var(--surface-1)]/40 px-2 py-0.5 text-[11px] font-semibold text-[var(--text-2)]">
+                <StatusPill tone="success" className="px-2 py-0.5 text-[11px]">
                   Resolved
-                </span>
+                </StatusPill>
               )}
               <div className="text-xs text-[var(--text-muted)]">{safeDateLabel(c.createdAt)}</div>
             </div>
@@ -156,34 +156,29 @@ function CommentNode({
         </div>
 
         <div className="mt-2 flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setReplyToId((prev) => (prev === c.id ? null : c.id));
               setReplyBody("");
             }}
             disabled={!canAddComment}
-            className="text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text-1)] disabled:opacity-50"
             aria-expanded={isOpen}
             aria-controls={replyPanelId}
           >
             Reply
-          </button>
+          </Button>
 
           {showOwnerControls ? (
-            <button
-              type="button"
+            <Button
+              variant={isResolved ? "secondary" : "success"}
+              size="sm"
               onClick={() => onToggleResolved?.(c.id, !isResolved)}
-              className={[
-                "text-xs px-2 py-1 rounded-md border font-semibold transition",
-                isResolved
-                  ? "border-[var(--border-1)] bg-[var(--surface-1)]/40 text-[var(--text-2)] hover:bg-[var(--surface-1)]"
-                  : "border-emerald-200 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:bg-emerald-950/50",
-              ].join(" ")}
               title={isResolved ? "Mark as open" : "Mark as resolved"}
             >
               {isResolved ? "Reopen" : "Resolve"}
-            </button>
+            </Button>
           ) : null}
         </div>
 

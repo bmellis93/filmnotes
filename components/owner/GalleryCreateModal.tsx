@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 export type GalleryDraft = {
   name: string;
@@ -55,7 +56,7 @@ export default function GalleryCreateModal({
           <div className="space-y-1">
             <label className="text-xs font-semibold text-[var(--text-3)]">Gallery name</label>
             <input
-              className="w-full rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm text-[var(--text-1)] placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--border-3)]"
+              className="w-full rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm text-[var(--text-1)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--border-3)]"
               placeholder="e.g. Chrissy + Stephen"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -66,7 +67,7 @@ export default function GalleryCreateModal({
           <div className="space-y-1">
             <label className="text-xs font-semibold text-[var(--text-3)]">Description</label>
             <textarea
-              className="w-full rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm text-[var(--text-1)] placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--border-3)]"
+              className="w-full rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm text-[var(--text-1)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--border-3)]"
               placeholder="Optional…"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -75,23 +76,20 @@ export default function GalleryCreateModal({
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={() => onCreate({ name: name.trim(), description: description.trim() })}
               disabled={!canSubmit}
-              className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-2.5 text-xs font-semibold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[var(--surface-1)]"
             >
               Create
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <Button
               onClick={() => onCreateAndOpen({ name: name.trim(), description: description.trim() })}
               disabled={!canSubmit}
-              className="rounded-2xl bg-[var(--accent-solid)] px-4 py-2.5 text-xs font-semibold text-[var(--accent-solid-fg)] transition hover:bg-[var(--accent-solid-hover)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[var(--accent-solid)]"
             >
               Create &amp; open
-            </button>
+            </Button>
           </div>
         </div>
       </div>

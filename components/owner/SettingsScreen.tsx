@@ -247,7 +247,7 @@ export default function SettingsScreen({ orgId }: Props) {
           {loadingTemplates ? (
             <div className="text-sm text-[var(--text-muted)]">Loading…</div>
           ) : templatesError ? (
-            <div className="rounded-xl border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-sm text-amber-700 dark:text-amber-200">
+            <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]">
               {templatesError}
             </div>
           ) : (
@@ -329,7 +329,7 @@ export default function SettingsScreen({ orgId }: Props) {
               </div>
 
               {smsTemplates.length === 0 && emailTemplates.length === 0 && (
-                <div className="text-xs text-neutral-500">
+                <div className="text-xs text-[var(--text-muted)]">
                   No templates found in GHL yet. Create some in HighLevel under Marketing → SMS/Email
                   templates, then refresh this page. To have the review link inserted automatically,
                   include <code className="rounded bg-[var(--surface-1)] px-1">{"{{review_link}}"}</code>{" "}
@@ -360,7 +360,7 @@ export default function SettingsScreen({ orgId }: Props) {
               value={webhookDraft}
               onChange={(e) => setWebhookDraft(e.target.value)}
               placeholder="https://services.leadconnectorhq.com/hooks/..."
-              className="min-w-0 flex-1 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+              className="min-w-0 flex-1 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
             />
             <button
               type="button"

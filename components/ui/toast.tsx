@@ -51,9 +51,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => {
           const cls =
             t.kind === "error"
-              ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-100"
+              ? "border-[var(--danger)]/30 bg-[var(--danger)]/10 text-[var(--danger)]"
               : t.kind === "success"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-100"
+              ? "border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]"
               : "border-[var(--border-3)] bg-[var(--surface-0)] text-[var(--text-1)]";
 
           return (

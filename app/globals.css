@@ -4,52 +4,88 @@
    (set by next-themes) instead of the OS prefers-color-scheme media query. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Base variables (light) */
+/* FilmNotes brand primitives — see public/brand/brand-guide.md */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0e0e11;
+  --paper: #f5f5f2;
+  --cue: #f3a83e;
+  --cue-hover: #db9432;
+  --scope: #2fa8a0;
+  --scope-hover: #26948d;
+  --slate: #8a8b93;
+  --danger: #c4483c;
+  --danger-hover: #ae3d33;
+}
+
+/* Base variables (light — the secondary surface; the product is dark-first) */
+:root {
+  --background: var(--paper);
+  --foreground: var(--ink);
 
   /* Owner/share app-shell tokens (also used by the review UI chrome; the
      video canvas itself stays black in both themes, like most video players) */
-  --surface-0: #ffffff; /* page background */
-  --surface-1: #f5f5f5; /* panel / card / input background */
-  --surface-2: #e5e5e5; /* hover / elevated background */
+  --surface-0: var(--paper); /* page background */
+  --surface-1: #ededE8; /* panel / card / input background */
+  --surface-2: #e3e3dd; /* hover / elevated background */
 
-  --border-1: #e5e5e5; /* standard border */
-  --border-2: #f5f5f5; /* subtle divider */
-  --border-3: #d4d4d4; /* input / focus ring border */
+  --border-1: #dcdcd5; /* standard border */
+  --border-2: #e8e8e3; /* subtle divider */
+  --border-3: #c7c7bf; /* input / focus ring border */
 
-  --text-1: #171717; /* primary text */
-  --text-2: #262626; /* secondary text */
-  --text-3: #404040; /* tertiary text */
-  --text-muted: #737373; /* muted / label text */
+  --text-1: var(--ink); /* primary text */
+  --text-2: #26262b; /* secondary text */
+  --text-3: #46464c; /* tertiary text */
+  --text-muted: var(--slate); /* muted / label text */
 
-  --accent-solid: #171717; /* primary CTA background */
-  --accent-solid-fg: #ffffff; /* primary CTA text */
-  --accent-solid-hover: #404040; /* primary CTA hover */
+  /* Primary CTA — the "Cue" accent, dark text reads best on it */
+  --accent-solid: var(--cue);
+  --accent-solid-fg: var(--ink);
+  --accent-solid-hover: var(--cue-hover);
+
+  /* Semantic status colors, mapped onto the brand palette rather than
+     generic red/green/amber so they don't fight Cue/Scope. */
+  --success: var(--scope);
+  --success-fg: var(--ink);
+  --success-hover: var(--scope-hover);
+
+  --warning: var(--cue);
+  --warning-fg: var(--ink);
+  --warning-hover: var(--cue-hover);
+
+  --danger-fg: var(--paper);
 }
 
-/* Dark variables (next-themes will add .dark to <html>) */
+/* Dark variables (next-themes will add .dark to <html>) — the primary surface */
 html.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: var(--ink);
+  --foreground: var(--paper);
 
-  --surface-0: #0a0a0a;
-  --surface-1: #171717;
-  --surface-2: #262626;
+  --surface-0: var(--ink);
+  --surface-1: #1a1b20;
+  --surface-2: #26272e;
 
-  --border-1: #262626;
-  --border-2: #171717;
-  --border-3: #404040;
+  --border-1: #2a2b32;
+  --border-2: #1e1f25;
+  --border-3: #3a3b44;
 
-  --text-1: #f5f5f5;
-  --text-2: #e5e5e5;
-  --text-3: #d4d4d4;
-  --text-muted: #a3a3a3;
+  --text-1: var(--paper);
+  --text-2: #d8d8d3;
+  --text-3: #b4b4af;
+  --text-muted: var(--slate);
 
-  --accent-solid: #ffffff;
-  --accent-solid-fg: #171717;
-  --accent-solid-hover: #e5e5e5;
+  --accent-solid: var(--cue);
+  --accent-solid-fg: var(--ink);
+  --accent-solid-hover: var(--cue-hover);
+
+  --success: var(--scope);
+  --success-fg: var(--ink);
+  --success-hover: var(--scope-hover);
+
+  --warning: var(--cue);
+  --warning-fg: var(--ink);
+  --warning-hover: var(--cue-hover);
+
+  --danger-fg: var(--paper);
 }
 
 /* Optional but nice: makes native UI match */
@@ -64,5 +100,36 @@ html.dark {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Type scale — one sans family (Geist) at varying weights, no serif pairing.
+   Elements only; any explicit Tailwind classes on a heading still win. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text-1);
+  }
+
+  h1 { font-size: 1.875rem; line-height: 2.25rem; }
+  h2 { font-size: 1.5rem; line-height: 2rem; }
+  h3 { font-size: 1.25rem; line-height: 1.75rem; }
+  h4 { font-size: 1.125rem; line-height: 1.5rem; }
+  h5 { font-size: 1rem; line-height: 1.5rem; }
+  h6 {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  p { color: var(--text-2); line-height: 1.6; }
+
+  /* Timecodes and other numeric readouts, e.g. 00:04:12:07 */
+  .font-timecode {
+    font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+    font-variant-numeric: tabular-nums;
+  }
 }

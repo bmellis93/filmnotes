@@ -83,7 +83,7 @@ export default function CommentComposerModal({
           </button>
 
           {error && (
-            <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+            <div className="mx-4 mt-4 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">
               {error}
             </div>
           )}
@@ -91,7 +91,7 @@ export default function CommentComposerModal({
           <div className="flex gap-3 p-4 pt-5">
             {/* Avatar */}
             <div className="shrink-0">
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--accent-solid)] text-sm font-semibold text-[var(--accent-solid-fg)]">
                 {initials}
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function CommentComposerModal({
                 <div className="mt-2">
                   {hasAnnotation ? (
                     <div className="flex items-center gap-2 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2.5 py-1.5">
-                      <Pencil className="h-3.5 w-3.5 shrink-0 text-red-500 dark:text-red-300" />
+                      <Pencil className="h-3.5 w-3.5 shrink-0 text-[var(--cue)]" />
                       <span className="flex-1 text-xs text-[var(--text-2)]">Drawing attached</span>
                       <button
                         type="button"
@@ -124,7 +124,7 @@ export default function CommentComposerModal({
                       <button
                         type="button"
                         onClick={onRemoveAnnotation}
-                        className="text-[var(--text-muted)] hover:text-red-500 dark:hover:text-red-300"
+                        className="text-[var(--text-muted)] hover:text-[var(--danger)]"
                         aria-label="Remove drawing"
                         title="Remove drawing"
                       >
@@ -148,7 +148,7 @@ export default function CommentComposerModal({
               {/* Bottom row: time + tip (left) + send icon (right) */}
               <div className="mt-3 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 ring-1 ring-red-200 dark:bg-red-950/60 dark:text-red-200 dark:ring-red-900/50">
+                  <div className="font-timecode rounded-full border border-[var(--warning)]/30 bg-[var(--warning)]/15 px-3 py-1 text-xs font-semibold text-[var(--warning)]">
                     {stampLabel}
                   </div>
 

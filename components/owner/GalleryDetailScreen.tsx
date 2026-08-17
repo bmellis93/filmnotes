@@ -14,6 +14,7 @@ import ShareModal from "@/components/share-modal";
 import ManageSharesModal from "@/components/owner/ManageSharesModal";
 import ManageVersionsModal from "@/components/owner/ManageVersionsModal";
 import EditThumbnailModal from "@/components/owner/EditThumbnailModal";
+import Button from "@/components/ui/Button";
 
 import type { StackMap } from "@/components/domain/stacks";
 
@@ -545,7 +546,7 @@ export default function GalleryDetailScreen({
                 {gallery.description ? (
                   <div className="truncate text-sm text-[var(--text-muted)]">{gallery.description}</div>
                 ) : (
-                  <div className="text-sm text-neutral-500">No description</div>
+                  <div className="text-sm text-[var(--text-muted)]">No description</div>
                 )}
               </div>
             </div>
@@ -553,34 +554,27 @@ export default function GalleryDetailScreen({
             <div className="flex items-center gap-2">
               {showSelectionUI && (
                 <>
-                  <button
-                    type="button"
+                  <Button
                     onClick={() => {
                       setManageParentId(null);
                       setManageOpen(true);
                     }}
                     disabled={!canCreateStack}
-                    className={[
-                      "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition",
-                      canCreateStack
-                        ? "bg-[var(--accent-solid)] text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
-                        : "border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-muted)] opacity-70 cursor-not-allowed",
-                    ].join(" ")}
                     title={canCreateStack ? "Create a version stack" : "Select at least 2 videos"}
                   >
                     <Layers className="h-4 w-4" />
                     Create Version Stack
-                  </button>
+                  </Button>
 
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
                     title="Archived videos still count toward storage."
                     onClick={async () => {
                       if (!confirm(`Archive ${selectedIds.length} video(s)?`)) return;
 
                       const realIds = selectedIds.filter((id) => !id.startsWith("temp_"));
                       if (realIds.length === 0) return;
-                      
+
                       await fetch("/api/owner/videos/bulk", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -593,13 +587,12 @@ export default function GalleryDetailScreen({
                       );
                       setSelectedIds([]);
                     }}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
                   >
                     Archive
-                  </button>
+                  </Button>
 
-                  <button
-                    type="button"
+                  <Button
+                    variant="destructive"
                     onClick={async () => {
                       const bytes = selectedVideos
                         .filter((v) => selectedIds.includes(v.id))
@@ -612,7 +605,7 @@ export default function GalleryDetailScreen({
 
                       const realIds = selectedIds.filter((id) => !id.startsWith("temp_"));
                       if (realIds.length === 0) return;
-                      
+
                       await fetch("/api/owner/videos/bulk", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -622,10 +615,9 @@ export default function GalleryDetailScreen({
                       setVideos((prev) => prev.filter((v) => !realIds.includes(v.id)));
                       setSelectedIds([]);
                     }}
-                    className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </>
               )}
 
@@ -636,7 +628,7 @@ export default function GalleryDetailScreen({
                 className={[
                   "inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-semibold transition",
                   showArchived
-                    ? "bg-red-600/20 text-red-600 dark:text-red-300 border border-red-500/40 hover:bg-red-600/30"
+                    ? "bg-[var(--accent-solid)]/15 text-[var(--accent-solid)] border border-[var(--accent-solid)]/40 hover:bg-[var(--accent-solid)]/25"
                     : "border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-1)] hover:bg-[var(--surface-2)]",
                 ].join(" ")}
               >
@@ -649,7 +641,7 @@ export default function GalleryDetailScreen({
                     <button
                       type="button"
                       onClick={() => pollForceRef.current?.()}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/40 bg-orange-500/10 px-3 py-2 text-xs font-semibold text-orange-700 dark:text-orange-200 hover:bg-orange-500/15"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-3 py-2 text-xs font-semibold text-[var(--warning)] hover:bg-[var(--warning)]/15"
                       title="Force refresh processing status"
                     >
                       Refresh status
@@ -660,7 +652,7 @@ export default function GalleryDetailScreen({
                     className={[
                       "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold",
                       inflightStuck
-                        ? "border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-200"
+                        ? "border-[var(--warning)]/40 bg-[var(--warning)]/10 text-[var(--warning)]"
                         : "border-[var(--border-1)] bg-[var(--surface-1)]/40 text-[var(--text-2)]",
                     ].join(" ")}
                     title={

@@ -164,7 +164,7 @@ export default function TemplateFolderPicker({ open, onClose, onSelect }: Props)
           {loading ? (
             <div className="px-3 py-6 text-center text-sm text-[var(--text-muted)]">Loading…</div>
           ) : error ? (
-            <div className="mx-2 rounded-xl border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-sm text-amber-700 dark:text-amber-200">
+            <div className="mx-2 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]">
               {error}
             </div>
           ) : items.length === 0 ? (

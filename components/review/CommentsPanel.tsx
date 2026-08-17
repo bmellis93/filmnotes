@@ -174,7 +174,7 @@ export default function CommentsPanel({
 
           <div className="mt-3 space-y-3">
             {commentError && (
-              <div className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+              <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">
                 {commentError}
               </div>
             )}

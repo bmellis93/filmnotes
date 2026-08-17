@@ -5,14 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, Search, Settings, PanelLeft } from "lucide-react";
 import { usePersistedState } from "@/components/owner/hooks/usePersistedState";
+import { LogoMark } from "@/components/brand/Logo";
 
 type Props = {
   children: ReactNode;
   title?: string;
 };
 
-const APP_NAME = "Video Share"; // rename later
-const APP_BADGE = "VS";
+const APP_NAME = "FilmNotes";
 
 const navItemBase =
   "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition " +
@@ -61,7 +61,7 @@ export default function OwnerShell({ children }: Props) {
               title={collapsedUI ? APP_NAME : undefined}
             >
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--surface-1)] ring-1 ring-[var(--border-1)]">
-                <span className="text-sm font-bold tracking-tight">{APP_BADGE}</span>
+                <LogoMark className="h-6 w-6 text-[var(--text-1)]" />
               </div>
 
               {!collapsedUI && (

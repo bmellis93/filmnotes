@@ -147,7 +147,7 @@ export default function GallerySortMenu({
           open ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-95",
         ].join(" ")}
       >
-        <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+        <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
           Sort by
         </div>
 
