@@ -11,6 +11,11 @@ import { useOwnerRole } from "@/components/owner/OwnerRoleContext";
 type Props = {
   children: ReactNode;
   title?: string;
+  // Overridden to "/embed" when rendered inside the GHL embed (see
+  // components/embed/EmbedShell.tsx), same basePath convention used
+  // elsewhere -- keeps every nav link inside /embed/* instead of the
+  // standalone app's cookie-authenticated /owner/* routes.
+  basePath?: string;
 };
 
 const APP_NAME = "FilmNotes";
@@ -21,7 +26,7 @@ const navItemBase =
 const navItemActive = "bg-[var(--surface-1)] text-[var(--text-1)] ring-1 ring-[var(--border-1)]";
 const navItemInactive = "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-1)]/60";
 
-export default function OwnerShell({ children }: Props) {
+export default function OwnerShell({ children, basePath = "/owner" }: Props) {
   const pathname = usePathname();
   const { hasRole } = useOwnerRole();
 
@@ -30,10 +35,10 @@ export default function OwnerShell({ children }: Props) {
 
   const nav = useMemo(
     () => [
-      { href: "/owner/galleries", label: "Galleries", icon: LayoutGrid },
-      { href: "/owner/search", label: "Search", icon: Search },
+      { href: `${basePath}/galleries`, label: "Galleries", icon: LayoutGrid },
+      { href: `${basePath}/search`, label: "Search", icon: Search },
     ],
-    []
+    [basePath]
   );
 
   function isActive(href: string) {
@@ -57,7 +62,7 @@ export default function OwnerShell({ children }: Props) {
           {/* top brand + collapse */}
           <div className="flex items-center justify-between px-3 py-3">
             <Link
-              href="/owner/galleries"
+              href={`${basePath}/galleries`}
               className="flex items-center gap-3 overflow-hidden rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-3)]"
               aria-label={`${APP_NAME} owner home`}
               title={collapsedUI ? APP_NAME : undefined}
@@ -118,14 +123,14 @@ export default function OwnerShell({ children }: Props) {
           {hasRole("ADMIN") && (
             <div className="px-2 pb-3">
               <Link
-                href="/owner/settings"
+                href={`${basePath}/settings`}
                 title={collapsedUI ? "Settings" : undefined}
                 className={[
                   navItemBase,
-                  isActive("/owner/settings") ? navItemActive : navItemInactive,
+                  isActive(`${basePath}/settings`) ? navItemActive : navItemInactive,
                   collapsedUI ? "justify-center" : "",
                 ].join(" ")}
-                aria-current={isActive("/owner/settings") ? "page" : undefined}
+                aria-current={isActive(`${basePath}/settings`) ? "page" : undefined}
               >
                 <Settings className="h-5 w-5 shrink-0" />
                 {!collapsedUI && <span className="truncate">Settings</span>}

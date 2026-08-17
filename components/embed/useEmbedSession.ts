@@ -19,10 +19,11 @@ import type { OrgRole } from "@/lib/auth/roles";
  * dashboard component in OwnerRoleProvider, same as the standalone app's
  * layout does.
  */
-export function useEmbedSession(): { ready: boolean; role: OrgRole | null } {
+export function useEmbedSession(): { ready: boolean; role: OrgRole | null; orgId: string | null } {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [role, setRole] = useState<OrgRole | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
 
   useEffect(() => {
     const token = sessionStorage.getItem(EMBED_TOKEN_STORAGE_KEY);
@@ -38,7 +39,10 @@ export function useEmbedSession(): { ready: boolean; role: OrgRole | null } {
       try {
         const res = await fetch("/api/owner/me", { cache: "no-store" });
         const data = await res.json().catch(() => null);
-        if (!cancelled && res.ok && data?.role) setRole(data.role);
+        if (!cancelled && res.ok && data?.role) {
+          setRole(data.role);
+          if (typeof data.orgId === "string") setOrgId(data.orgId);
+        }
       } finally {
         if (!cancelled) setReady(true);
       }
@@ -50,5 +54,5 @@ export function useEmbedSession(): { ready: boolean; role: OrgRole | null } {
     };
   }, [router]);
 
-  return { ready, role };
+  return { ready, role, orgId };
 }

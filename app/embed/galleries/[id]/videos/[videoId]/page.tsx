@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react";
 import VideoReviewScreen from "@/components/review/VideoReviewScreen";
 import type { OwnerVideoReviewData } from "@/lib/owner/videoReviewData";
 import { useEmbedSession } from "@/components/embed/useEmbedSession";
-import { OwnerRoleProvider } from "@/components/owner/OwnerRoleContext";
+import { EmbedShell } from "@/components/embed/EmbedShell";
 
 export default function EmbedVideoReviewPage({
   params,
@@ -55,7 +55,7 @@ export default function EmbedVideoReviewPage({
   }
 
   return (
-    <OwnerRoleProvider role={role}>
+    <EmbedShell role={role}>
       <VideoReviewScreen
         mode="owner"
         videoId={data!.videoId}
@@ -69,6 +69,6 @@ export default function EmbedVideoReviewPage({
         initialChangeNote={data!.initialChangeNote}
         viewInfo={data!.viewInfo}
       />
-    </OwnerRoleProvider>
+    </EmbedShell>
   );
 }

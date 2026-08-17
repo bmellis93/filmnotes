@@ -38,11 +38,13 @@ function safeTime(s?: string | null) {
 export default function OwnerGalleriesClient({
   initialGalleries,
   basePath = "/owner/galleries",
+  storagePath = "/owner/storage",
 }: {
   initialGalleries: OwnerGalleryListItem[];
   // Lets the embed dashboard (app/embed/galleries) reuse this component
   // unmodified while navigating within /embed/* instead of /owner/*.
   basePath?: string;
+  storagePath?: string;
 }) {
   const router = useRouter();
   const { hasRole } = useOwnerRole();
@@ -277,7 +279,7 @@ export default function OwnerGalleriesClient({
 
             <GallerySortMenu value={sort} onChange={setSort} />
 
-            <StorageUsagePill />
+            <StorageUsagePill href={storagePath} />
 
             {canManageGalleries && (
               <Button onClick={() => setCreateOpen(true)} disabled={creating}>

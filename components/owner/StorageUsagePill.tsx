@@ -9,7 +9,13 @@ function fmtGB(bytes: bigint) {
   return gb.toFixed(gb >= 10 ? 0 : 1);
 }
 
-export default function StorageUsagePill() {
+type Props = {
+  // Overridden to "/embed/storage" inside the GHL embed -- same convention
+  // as OwnerGalleriesClient's basePath.
+  href?: string;
+};
+
+export default function StorageUsagePill({ href = "/owner/storage" }: Props) {
   const [used, setUsed] = useState<bigint | null>(null);
   const [limit, setLimit] = useState<bigint | null>(null);
 
@@ -69,7 +75,7 @@ export default function StorageUsagePill() {
         : "";
 
   return (
-    <Link href="/owner/storage" className="hidden sm:block">
+    <Link href={href} className="hidden sm:block">
       <div
         className={[
           "hidden sm:flex items-center gap-2 rounded-xl border px-3 py-2",

@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react";
 import GalleryDetailScreen from "@/components/owner/GalleryDetailScreen";
 import type { OwnerGalleryDetail } from "@/lib/owner/galleryDetailData";
 import { useEmbedSession } from "@/components/embed/useEmbedSession";
-import { OwnerRoleProvider } from "@/components/owner/OwnerRoleContext";
+import { EmbedShell } from "@/components/embed/EmbedShell";
 
 export default function EmbedGalleryDetailPage({
   params,
@@ -55,13 +55,13 @@ export default function EmbedGalleryDetailPage({
   }
 
   return (
-    <OwnerRoleProvider role={role}>
+    <EmbedShell role={role}>
       <GalleryDetailScreen
         gallery={detail!.gallery}
         initialVideos={detail!.initialVideos}
         initialStacks={detail!.initialStacks}
         basePath="/embed/galleries"
       />
-    </OwnerRoleProvider>
+    </EmbedShell>
   );
 }

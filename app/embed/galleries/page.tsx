@@ -5,7 +5,7 @@ import OwnerGalleriesClient, {
   type OwnerGalleryListItem,
 } from "@/components/owner/OwnerGalleriesClient";
 import { useEmbedSession } from "@/components/embed/useEmbedSession";
-import { OwnerRoleProvider } from "@/components/owner/OwnerRoleContext";
+import { EmbedShell } from "@/components/embed/EmbedShell";
 
 export default function EmbedGalleriesPage() {
   const { ready, role } = useEmbedSession();
@@ -51,8 +51,12 @@ export default function EmbedGalleriesPage() {
   }
 
   return (
-    <OwnerRoleProvider role={role}>
-      <OwnerGalleriesClient initialGalleries={galleries!} basePath="/embed/galleries" />
-    </OwnerRoleProvider>
+    <EmbedShell role={role}>
+      <OwnerGalleriesClient
+        initialGalleries={galleries!}
+        basePath="/embed/galleries"
+        storagePath="/embed/storage"
+      />
+    </EmbedShell>
   );
 }

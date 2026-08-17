@@ -40,7 +40,16 @@ function fmtGB(bytes: number) {
   return gb >= 10 ? gb.toFixed(0) : gb.toFixed(1);
 }
 
-export default function StorageBreakdownScreen() {
+type Props = {
+  // Overridden to "/embed/galleries" when rendered inside the GHL embed
+  // (see app/embed/storage/page.tsx), same convention as
+  // OwnerGalleriesClient's basePath -- keeps every link on this screen
+  // inside the embed's own route tree instead of the standalone app's
+  // cookie-authenticated one, which can't work in a cross-site iframe.
+  basePath?: string;
+};
+
+export default function StorageBreakdownScreen({ basePath = "/owner/galleries" }: Props) {
   const [data, setData] = useState<Breakdown | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,7 +126,7 @@ export default function StorageBreakdownScreen() {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
-              href="/owner/galleries"
+              href={basePath}
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-2)]"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -207,7 +216,7 @@ export default function StorageBreakdownScreen() {
 
           <div className="mt-3">
             <Link
-              href="/owner/galleries"
+              href={basePath}
               className="text-xs text-[var(--text-3)] underline decoration-[var(--border-3)] hover:text-[var(--text-1)]"
             >
               Go manage galleries →
@@ -227,7 +236,7 @@ export default function StorageBreakdownScreen() {
                 return (
                   <Link
                     key={g.galleryId}
-                    href={`/owner/galleries/${g.galleryId}`}
+                    href={`${basePath}/${g.galleryId}`}
                     className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/20 px-3 py-2 hover:bg-[var(--surface-1)]/40"
                   >
                     <div className="min-w-0">
@@ -263,19 +272,19 @@ export default function StorageBreakdownScreen() {
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <a
-                href="/owner/galleries?archived=1"
+              <Link
+                href={`${basePath}?archived=1`}
                 className="inline-flex rounded-lg bg-[var(--accent-solid)]/10 px-3 py-1.5 text-xs text-[var(--text-1)] hover:bg-[var(--accent-solid)]/15"
               >
                 Review archived videos
-              </a>
+              </Link>
 
-              <a
-                href="/owner/galleries"
+              <Link
+                href={basePath}
                 className="inline-flex rounded-lg border border-[var(--accent-solid)]/20 px-3 py-1.5 text-xs text-[var(--text-1)] hover:bg-[var(--accent-solid)]/10"
               >
                 Manage galleries
-              </a>
+              </Link>
             </div>
           </div>
         )}
@@ -305,7 +314,7 @@ export default function StorageBreakdownScreen() {
 
                     {v.galleryId ? (
                       <Link
-                        href={`/owner/galleries/${v.galleryId}`}
+                        href={`${basePath}/${v.galleryId}`}
                         className="text-xs text-[var(--text-muted)] underline decoration-[var(--border-3)] hover:text-[var(--text-3)]"
                       >
                         {v.galleryName ?? "View gallery"}

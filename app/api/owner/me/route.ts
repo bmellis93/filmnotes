@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     const ctx = await requireOwnerContext();
-    return NextResponse.json({ ok: true, role: ctx.role });
+    return NextResponse.json({ ok: true, role: ctx.role, orgId: ctx.orgId });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 });
   }
