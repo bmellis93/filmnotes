@@ -182,6 +182,11 @@ model Org {
   plan              OrgPlan @default(STARTER)
   storageLimitBytes BigInt  @default(107374182400) // 100 GiB, matches PLAN_STORAGE_DEFAULTS.STARTER
 
+  // The raw GHL Marketplace plan ID from the INSTALL/PLAN_CHANGE webhook
+  // (see app/api/webhooks/ghl/route.ts) that `plan` above was last derived
+  // from -- kept for audit/debugging, since GHL's ID is opaque on its own.
+  ghlPlanId String?
+
   // GHL agency/company this location belongs to -- required by the Wallet
   // Charge API (companyId is a required field on every charge). Captured
   // at OAuth login going forward; nullable because it wasn't captured
