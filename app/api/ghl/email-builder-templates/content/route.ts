@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
@@ -11,7 +11,8 @@ const ALLOWED_HOST = "firebasestorage.googleapis.com";
 
 export async function GET(req: NextRequest) {
   try {
-    await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "VIEWER");
 
     const raw = req.nextUrl.searchParams.get("url");
     if (!raw) {
@@ -37,6 +38,6 @@ export async function GET(req: NextRequest) {
     const html = await res.text();
     return NextResponse.json({ ok: true, html });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 });
+    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: err?.message === "Forbidden" ? 403 : 500 });
   }
 }

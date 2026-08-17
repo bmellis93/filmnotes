@@ -1,6 +1,6 @@
 // app/api/owner/galleries/[id]/videos/[videoId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { getOwnerVideoReviewData } from "@/lib/owner/videoReviewData";
 
 export const runtime = "nodejs";
@@ -13,6 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string; videoId: string }> }
 ) {
   const owner = await requireOwnerContext();
+  requireRole(owner, "VIEWER");
   const { id, videoId } = await params;
   const galleryId = String(id || "").trim();
   const vId = String(videoId || "").trim();

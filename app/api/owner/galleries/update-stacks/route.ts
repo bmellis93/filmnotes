@@ -1,7 +1,7 @@
 // app/api/owner/galleries/update-stacks/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import type { StackMap } from "@/components/domain/stacks";
 
 export const runtime = "nodejs";
@@ -23,6 +23,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 export async function POST(req: NextRequest) {
   try {
     const ctx = await requireOwnerContext(); // { orgId, userId, role }
+    requireRole(ctx, "CONTRIBUTOR");
 
     const json = (await req.json()) as Partial<Body>;
 
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
     console.error("update-stacks error:", err);
     return NextResponse.json(
       { error: err?.message ?? "Server error" },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

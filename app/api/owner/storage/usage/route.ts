@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
@@ -8,6 +8,7 @@ const STORAGE_LIMIT_BYTES = 100 * 1024 * 1024 * 1024; // 100GB (number, no bigin
 
 export async function GET() {
   const owner = await requireOwnerContext();
+  requireRole(owner, "VIEWER");
 
   // Option A (recommended): compute from videos (source of truth)
   const agg = await prisma.video.aggregate({

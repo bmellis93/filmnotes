@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "CONTRIBUTOR");
+    const { orgId } = ctx;
     const { id } = await params;
 
     const existing = await prisma.shareLink.findFirst({
@@ -39,14 +41,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     console.error("Update share error:", err?.message || err);
     return NextResponse.json(
       { error: "Server error", detail: err?.message || String(err) },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "CONTRIBUTOR");
+    const { orgId } = ctx;
     const { id } = await params;
 
     const existing = await prisma.shareLink.findFirst({
@@ -65,7 +69,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     console.error("Delete share error:", err?.message || err);
     return NextResponse.json(
       { error: "Server error", detail: err?.message || String(err) },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { getGhlAccessToken, ghlHeaders } from "@/lib/ghl/client";
 
 export const runtime = "nodejs";
@@ -12,7 +12,9 @@ export type GhlTemplate =
 
 export async function GET() {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "VIEWER");
+    const { orgId } = ctx;
     const accessToken = await getGhlAccessToken(orgId);
 
     // Note: GHL's `originId` param filters by the id of whichever user created
@@ -69,6 +71,6 @@ export async function GET() {
 
     return NextResponse.json({ ok: true, sms, email });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 });
+    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: err?.message === "Forbidden" ? 403 : 500 });
   }
 }

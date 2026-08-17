@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export async function GET() {
   const owner = await requireOwnerContext();
+  requireRole(owner, "VIEWER");
 
   const videos = await prisma.video.findMany({
     where: {

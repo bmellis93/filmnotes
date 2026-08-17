@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "VIEWER");
+    const { orgId } = ctx;
     const galleryId = req.nextUrl.searchParams.get("galleryId");
 
     if (!galleryId) {
@@ -78,7 +80,7 @@ export async function GET(req: NextRequest) {
     console.error("List shares error:", err?.message || err);
     return NextResponse.json(
       { error: "Server error", detail: err?.message || String(err) },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

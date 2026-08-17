@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { STORAGE_LIMIT_BYTES } from "@/lib/storageLimit";
 
 export const runtime = "nodejs";
@@ -17,6 +17,7 @@ type GalleryBucket = {
 export async function GET() {
   try {
     const owner = await requireOwnerContext();
+    requireRole(owner, "VIEWER");
     const orgId = owner.orgId;
 
     // Fast counter (what your pill uses)
@@ -139,7 +140,7 @@ export async function GET() {
   } catch (err: any) {
     return NextResponse.json(
       { ok: false, error: err?.message ?? "Server error" },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

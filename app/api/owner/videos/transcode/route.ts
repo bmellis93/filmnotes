@@ -1,7 +1,7 @@
 // app/api/videos/transcode/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { signR2GetUrl } from "@/lib/r2Signed";
 import { getR2SignedUrlTtlSeconds } from "@/lib/r2";
 import { mux } from "@/lib/mux";
@@ -15,6 +15,7 @@ type Body = {
 export async function POST(req: Request) {
   try {
     const owner = await requireOwnerContext();
+    requireRole(owner, "UPLOADER");
     const body = (await req.json().catch(() => ({}))) as Partial<Body>;
     const videoId = String(body.videoId || "").trim();
     if (!videoId) {
@@ -65,6 +66,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, muxAssetId: asset.id });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ ok: false, error: err?.message ?? "Transcode failed" }, { status: 500 });
+    return NextResponse.json({ ok: false, error: err?.message ?? "Transcode failed" }, { status: err?.message === "Forbidden" ? 403 : 500 });
   }
 }

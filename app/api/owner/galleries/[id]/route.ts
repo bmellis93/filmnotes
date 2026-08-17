@@ -1,6 +1,6 @@
 // app/api/owner/galleries/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { getOwnerGalleryDetail } from "@/lib/owner/galleryDetailData";
 
 export const runtime = "nodejs";
@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 // fetches the same data directly via getOwnerGalleryDetail().
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const owner = await requireOwnerContext();
+  requireRole(owner, "VIEWER");
   const { id } = await params;
   const galleryId = String(id || "").trim();
   if (!galleryId) {

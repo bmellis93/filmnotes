@@ -212,7 +212,7 @@ model OrgMember {
   id        String   @id @default(cuid())
   orgId     String
   userId    String
-  role      String
+  role      OrgRole
   createdAt DateTime @default(now())
 
   org  Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -221,6 +221,13 @@ model OrgMember {
   @@unique([orgId, userId])
   @@index([orgId])
   @@index([userId])
+}
+
+enum OrgRole {
+  VIEWER
+  UPLOADER
+  CONTRIBUTOR
+  ADMIN
 }
 
 enum ShareView {

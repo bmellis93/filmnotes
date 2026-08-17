@@ -3,8 +3,12 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { redirect } from "next/navigation";
+import type { OrgRole } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { hasRole as hasRoleShared } from "@/lib/auth/roles";
 
 const COOKIE_NAME = "rm_owner_session";
+const ORG_ROLES: OrgRole[] = ["VIEWER", "UPLOADER", "CONTRIBUTOR", "ADMIN"];
 
 const JWT_SECRET = process.env.APP_JWT_SECRET;
 if (!JWT_SECRET) throw new Error("Missing APP_JWT_SECRET");
@@ -14,7 +18,7 @@ const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
 export type OwnerContext = {
   orgId: string;
   userId: string;
-  role: "ADMIN" | "USER";
+  role: OrgRole;
 };
 
 function assertOwnerContext(payload: any): asserts payload is OwnerContext {
@@ -22,7 +26,7 @@ function assertOwnerContext(payload: any): asserts payload is OwnerContext {
 
   const { orgId, userId, role } = payload as Partial<OwnerContext>;
 
-  if (!orgId || !userId || (role !== "ADMIN" && role !== "USER")) {
+  if (!orgId || !userId || !role || !ORG_ROLES.includes(role)) {
     throw new Error("Invalid session");
   }
 }
@@ -79,11 +83,19 @@ async function embedContextFromHeader(): Promise<OwnerContext | null> {
     const { payload } = await jwtVerify(auth.slice("Bearer ".length), SECRET_KEY);
     if (payload.scope !== "embed" || typeof payload.orgId !== "string") return null;
 
-    return {
-      orgId: payload.orgId,
-      userId: typeof payload.userId === "string" ? payload.userId : "unknown",
-      role: "ADMIN",
-    };
+    const orgId = payload.orgId;
+    const userId = typeof payload.userId === "string" ? payload.userId : "unknown";
+
+    // The embed token itself carries no role -- look up the real one. An
+    // org only gets here after a normal OAuth install, which always
+    // creates at least one OrgMember, so a missing row is unexpected; fall
+    // back to VIEWER (never ADMIN) rather than guessing upward.
+    const member = await prisma.orgMember.findUnique({
+      where: { orgId_userId: { orgId, userId } },
+      select: { role: true },
+    });
+
+    return { orgId, userId, role: member?.role ?? "VIEWER" };
   } catch {
     return null; // expired/invalid -- fall back to cookie auth
   }
@@ -107,6 +119,10 @@ export async function requireOwnerContext(): Promise<OwnerContext> {
   return decoded;
 }
 
-export function requireAdmin(ctx: OwnerContext) {
-  if (ctx.role !== "ADMIN") throw new Error("Admin required");
+export function hasRole(ctx: OwnerContext, min: OrgRole): boolean {
+  return hasRoleShared(ctx.role, min);
+}
+
+export function requireRole(ctx: OwnerContext, min: OrgRole) {
+  if (!hasRole(ctx, min)) throw new Error("Forbidden");
 }

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Mux from "@mux/mux-node";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
@@ -15,6 +15,7 @@ function getIdFromPath(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const ctx = await requireOwnerContext(); // { orgId, userId, role }
+    requireRole(ctx, "UPLOADER");
 
     const videoId = getIdFromPath(req);
     if (!videoId) {
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
     console.error("TRANSCODE ROUTE ERROR:", err);
     return NextResponse.json(
       { error: err?.message ?? "Unknown error" },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

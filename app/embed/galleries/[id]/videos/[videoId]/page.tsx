@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import VideoReviewScreen from "@/components/review/VideoReviewScreen";
 import type { OwnerVideoReviewData } from "@/lib/owner/videoReviewData";
 import { useEmbedSession } from "@/components/embed/useEmbedSession";
+import { OwnerRoleProvider } from "@/components/owner/OwnerRoleContext";
 
 export default function EmbedVideoReviewPage({
   params,
@@ -11,7 +12,7 @@ export default function EmbedVideoReviewPage({
   params: Promise<{ id: string; videoId: string }>;
 }) {
   const { id: galleryId, videoId } = use(params);
-  const { ready } = useEmbedSession();
+  const { ready, role } = useEmbedSession();
   const [data, setData] = useState<OwnerVideoReviewData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,27 +46,29 @@ export default function EmbedVideoReviewPage({
     );
   }
 
-  if (error) {
+  if (error || !role) {
     return (
       <div className="min-h-[100dvh] grid place-items-center bg-[var(--surface-0)] text-[var(--text-1)] p-6">
-        <div className="text-sm text-[var(--text-2)]">{error}</div>
+        <div className="text-sm text-[var(--text-2)]">{error ?? "Couldn't load your permissions."}</div>
       </div>
     );
   }
 
   return (
-    <VideoReviewScreen
-      mode="owner"
-      videoId={data!.videoId}
-      projectTitle={data!.projectTitle}
-      stacks={data!.stacks}
-      videoMetaById={data!.videoMetaById}
-      backHref={`/embed/galleries/${galleryId}`}
-      view="REVIEW_DOWNLOAD"
-      initialApprovalStatus={data!.initialApprovalStatus}
-      initialApprovalUpdatedAt={data!.initialApprovalUpdatedAt}
-      initialChangeNote={data!.initialChangeNote}
-      viewInfo={data!.viewInfo}
-    />
+    <OwnerRoleProvider role={role}>
+      <VideoReviewScreen
+        mode="owner"
+        videoId={data!.videoId}
+        projectTitle={data!.projectTitle}
+        stacks={data!.stacks}
+        videoMetaById={data!.videoMetaById}
+        backHref={`/embed/galleries/${galleryId}`}
+        view="REVIEW_DOWNLOAD"
+        initialApprovalStatus={data!.initialApprovalStatus}
+        initialApprovalUpdatedAt={data!.initialApprovalUpdatedAt}
+        initialChangeNote={data!.initialChangeNote}
+        viewInfo={data!.viewInfo}
+      />
+    </OwnerRoleProvider>
   );
 }

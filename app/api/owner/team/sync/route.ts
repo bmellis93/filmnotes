@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { getGhlAccessToken, ghlHeaders } from "@/lib/ghl/client";
 
 export const runtime = "nodejs";
@@ -13,7 +13,9 @@ function mustEnv(name: string) {
 
 export async function POST() {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "ADMIN");
+    const { orgId } = ctx;
     const accessToken = await getGhlAccessToken(orgId);
     const GHL_BASE_URL = mustEnv("GHL_API_BASE_URL");
 
@@ -43,8 +45,7 @@ export async function POST() {
 
       const name = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || null;
       const email = u.email ?? null;
-      const isAdmin = String(u.roles?.role ?? "").toLowerCase() === "admin";
-      const role = isAdmin ? "ADMIN" : "USER";
+      const isGhlAdmin = String(u.roles?.role ?? "").toLowerCase() === "admin";
 
       await prisma.appUser.upsert({
         where: { id: ghlUserId },
@@ -52,11 +53,25 @@ export async function POST() {
         update: { name, email },
       });
 
-      await prisma.orgMember.upsert({
+      const existing = await prisma.orgMember.findUnique({
         where: { orgId_userId: { orgId, userId: ghlUserId } },
-        create: { orgId, userId: ghlUserId, role },
-        update: { role },
+        select: { role: true },
       });
+
+      if (!existing) {
+        // New member: seed from GHL's own admin/user flag.
+        await prisma.orgMember.create({
+          data: { orgId, userId: ghlUserId, role: isGhlAdmin ? "ADMIN" : "VIEWER" },
+        });
+      } else if (isGhlAdmin && existing.role !== "ADMIN") {
+        // GHL's admin/owner flag is always a floor in this app -- promote,
+        // but never touch (downgrade or otherwise) a role an app admin
+        // has manually assigned to a non-GHL-admin member.
+        await prisma.orgMember.update({
+          where: { orgId_userId: { orgId, userId: ghlUserId } },
+          data: { role: "ADMIN" },
+        });
+      }
 
       synced++;
     }
@@ -65,8 +80,8 @@ export async function POST() {
   } catch (err: any) {
     console.error("Team sync error:", err?.message || err);
     return NextResponse.json(
-      { error: "Server error", detail: err?.message || String(err) },
-      { status: 500 }
+      { error: err?.message === "Forbidden" ? "Forbidden" : "Server error", detail: err?.message || String(err) },
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

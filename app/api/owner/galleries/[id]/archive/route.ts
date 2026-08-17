@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
@@ -10,6 +10,7 @@ export async function POST(
 ) {
   try {
     const owner = await requireOwnerContext();
+    requireRole(owner, "CONTRIBUTOR");
 
     const { id } = await params;
     const galleryId = String(id || "").trim();
@@ -37,7 +38,7 @@ export async function POST(
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message ?? "Server error" },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

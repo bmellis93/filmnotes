@@ -5,9 +5,10 @@ import OwnerGalleriesClient, {
   type OwnerGalleryListItem,
 } from "@/components/owner/OwnerGalleriesClient";
 import { useEmbedSession } from "@/components/embed/useEmbedSession";
+import { OwnerRoleProvider } from "@/components/owner/OwnerRoleContext";
 
 export default function EmbedGalleriesPage() {
-  const { ready } = useEmbedSession();
+  const { ready, role } = useEmbedSession();
   const [galleries, setGalleries] = useState<OwnerGalleryListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,13 +42,17 @@ export default function EmbedGalleriesPage() {
     );
   }
 
-  if (error) {
+  if (error || !role) {
     return (
       <div className="min-h-[100dvh] grid place-items-center bg-[var(--surface-0)] text-[var(--text-1)] p-6">
-        <div className="text-sm text-[var(--text-2)]">{error}</div>
+        <div className="text-sm text-[var(--text-2)]">{error ?? "Couldn't load your permissions."}</div>
       </div>
     );
   }
 
-  return <OwnerGalleriesClient initialGalleries={galleries!} basePath="/embed/galleries" />;
+  return (
+    <OwnerRoleProvider role={role}>
+      <OwnerGalleriesClient initialGalleries={galleries!} basePath="/embed/galleries" />
+    </OwnerRoleProvider>
+  );
 }

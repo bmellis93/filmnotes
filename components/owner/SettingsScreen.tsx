@@ -14,6 +14,7 @@ export default function SettingsScreen({ orgId }: Props) {
   const [syncing, setSyncing] = useState(false);
   const [loadingTeam, setLoadingTeam] = useState(true);
   const [team, setTeam] = useState<any[]>([]);
+  const [savingRoleId, setSavingRoleId] = useState<string | null>(null);
 
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
@@ -176,6 +177,25 @@ export default function SettingsScreen({ orgId }: Props) {
     }
   }
 
+  async function updateMemberRole(memberId: string, role: string) {
+    setSavingRoleId(memberId);
+    try {
+      const res = await fetch(`/api/owner/team/${memberId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to update role");
+      await loadTeam();
+      toast({ kind: "success", message: "Role updated" });
+    } catch (e: any) {
+      toast({ kind: "error", message: e?.message || "Failed to update role" });
+    } finally {
+      setSavingRoleId(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-xl font-semibold text-[var(--text-1)]">Settings</h1>
@@ -225,9 +245,17 @@ export default function SettingsScreen({ orgId }: Props) {
                   <div className="truncate text-sm text-[var(--text-1)]">{m.name ?? m.email ?? m.ghlUserId}</div>
                   <div className="truncate text-xs text-[var(--text-muted)]">{m.email ?? "—"}</div>
                 </div>
-                <div className="shrink-0 text-xs font-semibold text-[var(--text-2)]">
-                  {m.role ?? "MEMBER"}
-                </div>
+                <select
+                  value={m.role ?? "VIEWER"}
+                  onChange={(e) => updateMemberRole(m.id, e.target.value)}
+                  disabled={savingRoleId === m.id}
+                  className="shrink-0 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs font-semibold text-[var(--text-2)] disabled:opacity-60"
+                >
+                  <option value="VIEWER">Viewer</option>
+                  <option value="UPLOADER">Uploader</option>
+                  <option value="CONTRIBUTOR">Contributor</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
               </div>
             ))
           )}

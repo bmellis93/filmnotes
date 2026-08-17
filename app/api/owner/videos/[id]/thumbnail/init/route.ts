@@ -5,7 +5,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { prisma } from "@/lib/prisma";
 import { r2, getR2PublicBucket, getR2PublicBaseUrl, getR2SignedUrlTtlSeconds } from "@/lib/r2";
 import { makeThumbnailKey } from "@/lib/r2Keys";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
@@ -20,6 +20,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const owner = await requireOwnerContext();
+  requireRole(owner, "UPLOADER");
   const { id } = await params;
   const videoId = String(id || "").trim();
 

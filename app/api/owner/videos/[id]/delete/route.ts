@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { mux } from "@/lib/mux";
 import { deleteFromR2, deleteFromR2Public } from "@/lib/r2Delete"; // you’ll add this
 
@@ -9,6 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const owner = await requireOwnerContext();
+  requireRole(owner, "CONTRIBUTOR");
   const { id } = await params;
   const videoId = String(id || "").trim();
 

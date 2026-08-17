@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { r2, getR2Bucket } from "@/lib/r2";
 import { makeOriginalVideoKey } from "@/lib/r2Keys";
 import { computeMultipartPlan } from "@/lib/r2Multipart";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { STORAGE_LIMIT_BYTES, clampNonNegativeBigInt } from "@/lib/storageLimit";
 
 export const runtime = "nodejs";
@@ -17,6 +17,7 @@ function s(x: unknown) {
 
 export async function POST(req: Request) {
   const owner = await requireOwnerContext();
+  requireRole(owner, "UPLOADER");
   const orgId = owner.orgId;
 
   let reserved = false;
@@ -192,7 +193,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { ok: false, error: err?.message || "Upload init failed" },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

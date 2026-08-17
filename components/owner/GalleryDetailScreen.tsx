@@ -15,6 +15,7 @@ import ManageSharesModal from "@/components/owner/ManageSharesModal";
 import ManageVersionsModal from "@/components/owner/ManageVersionsModal";
 import EditThumbnailModal from "@/components/owner/EditThumbnailModal";
 import Button from "@/components/ui/Button";
+import { useOwnerRole } from "@/components/owner/OwnerRoleContext";
 
 import type { StackMap } from "@/components/domain/stacks";
 
@@ -55,6 +56,9 @@ export default function GalleryDetailScreen({
   const router = useRouter();
   const galleryId = gallery.id;
   const { toast } = useToast();
+  const { hasRole } = useOwnerRole();
+  const canUpload = hasRole("UPLOADER");
+  const canManageGalleries = hasRole("CONTRIBUTOR");
 
   const [videos, setVideos] = useState<GalleryVideo[]>(initialVideos);
   const [stacks, setStacks] = useState<StackMap>(initialStacks);
@@ -667,38 +671,44 @@ export default function GalleryDetailScreen({
                 </>
               )}
               
-              <button
-                type="button"
-                onClick={() => setShareOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
-              >
-                <Share2 className="h-4 w-4" />
-                Share
-              </button>
+              {canManageGalleries && (
+                <button
+                  type="button"
+                  onClick={() => setShareOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </button>
+              )}
 
-              <button
-                type="button"
-                onClick={() => setManageSharesOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
-              >
-                <Link2 className="h-4 w-4" />
-                Manage Links
-              </button>
+              {canManageGalleries && (
+                <button
+                  type="button"
+                  onClick={() => setManageSharesOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
+                >
+                  <Link2 className="h-4 w-4" />
+                  Manage Links
+                </button>
+              )}
 
-              <UploadDropzone.Button
-                onFiles={handleFiles}
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
-              >
-                <Upload className="h-4 w-4" />
-                Upload Video
-              </UploadDropzone.Button>
+              {canUpload && (
+                <UploadDropzone.Button
+                  onFiles={handleFiles}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-solid)] px-3 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Video
+                </UploadDropzone.Button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-6">
-        <UploadDropzone onFiles={handleFiles} />
+        {canUpload && <UploadDropzone onFiles={handleFiles} />}
 
         <div className="mt-6">
           {visibleForGrid.length === 0 ? (
@@ -706,18 +716,22 @@ export default function GalleryDetailScreen({
               <div className="flex items-start justify-between gap-6">
                 <div>
                   <div className="text-lg font-semibold text-[var(--text-1)]">No videos yet</div>
-                  <div className="mt-1 text-sm text-[var(--text-muted)]">
-                    Drag a video into the drop zone above, or click “Upload Video”.
-                  </div>
+                  {canUpload && (
+                    <div className="mt-1 text-sm text-[var(--text-muted)]">
+                      Drag a video into the drop zone above, or click “Upload Video”.
+                    </div>
+                  )}
                 </div>
 
-                <UploadDropzone.Button
-                  onFiles={handleFiles}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add first video
-                </UploadDropzone.Button>
+                {canUpload && (
+                  <UploadDropzone.Button
+                    onFiles={handleFiles}
+                    className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add first video
+                  </UploadDropzone.Button>
+                )}
               </div>
             </div>
           ) : (

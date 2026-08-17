@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import {
   normalizeString,
   normalizeStatus,
@@ -13,6 +13,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const owner = await requireOwnerContext();
+  requireRole(owner, "VIEWER");
 
   const body = (await req.json().catch(() => ({}))) as { videoIds?: string[] };
   const raw = Array.isArray(body.videoIds) ? body.videoIds.map(String) : [];

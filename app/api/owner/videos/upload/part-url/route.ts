@@ -4,12 +4,13 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { prisma } from "@/lib/prisma";
 import { r2, getR2Bucket, getR2SignedUrlTtlSeconds } from "@/lib/r2";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const owner = await requireOwnerContext();
+  requireRole(owner, "UPLOADER");
 
   const body = await req.json().catch(() => ({} as any));
 

@@ -1,6 +1,6 @@
 // app/api/ghl/conversations/send/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { getGhlAccessToken } from "@/lib/ghl/client";
 import { sendGhlMessage, findGhlConversationId, type GhlChannel } from "@/lib/ghl/sendMessage";
 
@@ -8,7 +8,9 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "CONTRIBUTOR");
+    const { orgId } = ctx;
 
     const body = await req.json();
 
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
     console.error("Send conversation message error:", err?.message || err);
     return NextResponse.json(
       { error: "Server error", detail: err?.message || String(err) },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "ADMIN");
+    const { orgId } = ctx;
 
     const org = await prisma.org.findUnique({
       where: { id: orgId },
@@ -15,13 +17,15 @@ export async function GET() {
 
     return NextResponse.json({ ok: true, notificationWebhookUrl: org?.notificationWebhookUrl ?? null });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 });
+    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: err?.message === "Forbidden" ? 403 : 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "ADMIN");
+    const { orgId } = ctx;
     const body = await req.json().catch(() => ({}));
 
     const raw = String(body.notificationWebhookUrl || "").trim();
@@ -46,6 +50,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, ...updated });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 });
+    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: err?.message === "Forbidden" ? 403 : 500 });
   }
 }

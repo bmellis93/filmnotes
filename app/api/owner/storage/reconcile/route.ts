@@ -1,12 +1,13 @@
 // app/api/owner/storage/reconcile/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
 export async function POST() {
   const owner = await requireOwnerContext();
+  requireRole(owner, "ADMIN");
   const orgId = owner.orgId;
 
   const org = await prisma.org.findUnique({

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { getGhlAccessToken, ghlHeaders } from "@/lib/ghl/client";
 
 export const runtime = "nodejs";
@@ -12,7 +12,9 @@ export type EmailBuilderItem =
 
 export async function GET(req: NextRequest) {
   try {
-    const { orgId } = await requireOwnerContext();
+    const ctx = await requireOwnerContext();
+    requireRole(ctx, "VIEWER");
+    const { orgId } = ctx;
     const accessToken = await getGhlAccessToken(orgId);
 
     const parentId = req.nextUrl.searchParams.get("parentId");
@@ -66,6 +68,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ ok: true, items });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 });
+    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: err?.message === "Forbidden" ? 403 : 500 });
   }
 }

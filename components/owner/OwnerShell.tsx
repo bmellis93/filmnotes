@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LayoutGrid, Search, Settings, PanelLeft } from "lucide-react";
 import { usePersistedState } from "@/components/owner/hooks/usePersistedState";
 import { LogoMark } from "@/components/brand/Logo";
+import { useOwnerRole } from "@/components/owner/OwnerRoleContext";
 
 type Props = {
   children: ReactNode;
@@ -22,6 +23,7 @@ const navItemInactive = "text-[var(--text-3)] hover:text-[var(--text-1)] hover:b
 
 export default function OwnerShell({ children }: Props) {
   const pathname = usePathname();
+  const { hasRole } = useOwnerRole();
 
   const { value: collapsed, setValue: setCollapsed, hydrated } =
     usePersistedState<boolean>("owner:shellCollapsed", false);
@@ -113,21 +115,23 @@ export default function OwnerShell({ children }: Props) {
           <div className="flex-1" />
 
           {/* bottom settings */}
-          <div className="px-2 pb-3">
-            <Link
-              href="/owner/settings"
-              title={collapsedUI ? "Settings" : undefined}
-              className={[
-                navItemBase,
-                isActive("/owner/settings") ? navItemActive : navItemInactive,
-                collapsedUI ? "justify-center" : "",
-              ].join(" ")}
-              aria-current={isActive("/owner/settings") ? "page" : undefined}
-            >
-              <Settings className="h-5 w-5 shrink-0" />
-              {!collapsedUI && <span className="truncate">Settings</span>}
-            </Link>
-          </div>
+          {hasRole("ADMIN") && (
+            <div className="px-2 pb-3">
+              <Link
+                href="/owner/settings"
+                title={collapsedUI ? "Settings" : undefined}
+                className={[
+                  navItemBase,
+                  isActive("/owner/settings") ? navItemActive : navItemInactive,
+                  collapsedUI ? "justify-center" : "",
+                ].join(" ")}
+                aria-current={isActive("/owner/settings") ? "page" : undefined}
+              >
+                <Settings className="h-5 w-5 shrink-0" />
+                {!collapsedUI && <span className="truncate">Settings</span>}
+              </Link>
+            </div>
+          )}
         </aside>
 
         {/* MAIN */}

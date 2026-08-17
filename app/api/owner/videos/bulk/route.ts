@@ -1,7 +1,7 @@
 // app/api/owner/videos/bulk/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { mux } from "@/lib/mux";
 import { deleteFromR2, deleteFromR2Public } from "@/lib/r2Delete";
 import { normalizeStacks, safeParseStacks } from "@/lib/stacks/normalizeStacks";
@@ -141,6 +141,7 @@ async function pruneStacksForDeletedVideos(ownerOrgId: string, deletedVideoIds: 
 export async function POST(req: NextRequest) {
   try {
     const owner = await requireOwnerContext();
+    requireRole(owner, "CONTRIBUTOR");
 
     const body = (await req.json().catch(() => ({}))) as {
       videoIds?: string[];
@@ -219,6 +220,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: 500 });
+    return NextResponse.json({ error: err?.message ?? "Server error" }, { status: err?.message === "Forbidden" ? 403 : 500 });
   }
 }

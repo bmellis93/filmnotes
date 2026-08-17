@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
     const owner = await requireOwnerContext();
+    requireRole(owner, "CONTRIBUTOR");
     const body = await req.json().catch(() => ({}));
 
     const name = String(body?.name || "").trim();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
   } catch (err: any) {
     return NextResponse.json(
       { ok: false, error: err?.message || "Create failed" },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

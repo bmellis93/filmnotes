@@ -1,6 +1,6 @@
 // app/api/owner/galleries/route.ts
 import { NextResponse } from "next/server";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import { getOwnerGalleriesList } from "@/lib/owner/galleriesData";
 
 export const runtime = "nodejs";
@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 // getOwnerGalleriesList() since it doesn't need a round trip through here.
 export async function GET() {
   const owner = await requireOwnerContext();
+  requireRole(owner, "VIEWER");
   const galleries = await getOwnerGalleriesList(owner.orgId);
   return NextResponse.json({ galleries });
 }

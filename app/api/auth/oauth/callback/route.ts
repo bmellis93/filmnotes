@@ -149,8 +149,33 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Everyone is "ADMIN" in your app model
-    await setOwnerSession({ orgId: ctx.orgId, userId: ctx.userId, role: "ADMIN" });
+    // Resolve this person's app role: keep whatever an admin already
+    // assigned them, or bootstrap them in if they're new. The very first
+    // member of an org becomes ADMIN (otherwise nobody could ever reach
+    // Settings to assign anyone a role); anyone joining an org that
+    // already has members defaults to VIEWER.
+    await prisma.appUser.upsert({
+      where: { id: ctx.userId },
+      create: { id: ctx.userId },
+      update: {},
+    });
+
+    const existingMember = await prisma.orgMember.findUnique({
+      where: { orgId_userId: { orgId: ctx.orgId, userId: ctx.userId } },
+    });
+
+    let role: "VIEWER" | "UPLOADER" | "CONTRIBUTOR" | "ADMIN";
+    if (existingMember) {
+      role = existingMember.role;
+    } else {
+      const memberCount = await prisma.orgMember.count({ where: { orgId: ctx.orgId } });
+      role = memberCount === 0 ? "ADMIN" : "VIEWER";
+      await prisma.orgMember.create({
+        data: { orgId: ctx.orgId, userId: ctx.userId, role },
+      });
+    }
+
+    await setOwnerSession({ orgId: ctx.orgId, userId: ctx.userId, role });
 
     const res = NextResponse.redirect(new URL(next, url.origin));
     res.cookies.set("rm_oauth_nonce", "", { path: "/", maxAge: 0 });

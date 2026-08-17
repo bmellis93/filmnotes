@@ -12,6 +12,7 @@ import { usePersistedState } from "@/components/owner/hooks/usePersistedState";
 import GalleryCover from "@/components/owner/GalleryCover";
 import StorageUsagePill from "@/components/owner/StorageUsagePill";
 import Button from "@/components/ui/Button";
+import { useOwnerRole } from "@/components/owner/OwnerRoleContext";
 
 export type OwnerGalleryListItem = {
   id: string;
@@ -44,6 +45,8 @@ export default function OwnerGalleriesClient({
   basePath?: string;
 }) {
   const router = useRouter();
+  const { hasRole } = useOwnerRole();
+  const canManageGalleries = hasRole("CONTRIBUTOR");
 
   const [createOpen, setCreateOpen] = useState(false);
   const [galleries, setGalleries] = useState<OwnerGalleryListItem[]>(initialGalleries);
@@ -242,7 +245,7 @@ export default function OwnerGalleriesClient({
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {showSelectionUI ? (
+            {showSelectionUI && canManageGalleries ? (
               <>
                 <Button
                   variant="secondary"
@@ -276,10 +279,12 @@ export default function OwnerGalleriesClient({
 
             <StorageUsagePill />
 
-            <Button onClick={() => setCreateOpen(true)} disabled={creating}>
-              <Plus className="h-4 w-4" />
-              Gallery
-            </Button>
+            {canManageGalleries && (
+              <Button onClick={() => setCreateOpen(true)} disabled={creating}>
+                <Plus className="h-4 w-4" />
+                Gallery
+              </Button>
+            )}
           </div>
         </div>
 
