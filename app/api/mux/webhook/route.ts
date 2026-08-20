@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
     // Find your video by muxAssetId
     const video = await prisma.video.findFirst({
       where: { muxAssetId },
-      select: { id: true, thumbnailUrl: true, thumbnailIsCustom: true },
+      select: { id: true, status: true, thumbnailUrl: true, thumbnailIsCustom: true },
     });
 
     if (!video) {
@@ -216,7 +216,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // Other status updates
+    // Other status updates. Mux doesn't guarantee delivery order, and a
+    // backlog of retried webhooks can replay an earlier-stage event after
+    // "ready" already landed -- once a video is READY it's the hard
+    // guarantee above, so a stale non-ready event must never regress it.
+    if (video.status === "READY") {
+      return NextResponse.json({ ok: true, ignored: "Video already READY" });
+    }
+
     let status: "PROCESSING" | "FAILED" | null = null;
     if (type === "video.asset.errored") status = "FAILED";
     else if (type?.startsWith("video.asset.")) status = "PROCESSING";
