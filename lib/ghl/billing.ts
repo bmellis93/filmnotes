@@ -43,18 +43,25 @@ export async function getOrgCompanyId(orgId: string): Promise<string> {
 
 export type ChargeStorageOverageArgs = {
   orgId: string;
-  /** GB, may be fractional -- billed at the meter's configured per-unit price. */
+  /** GB, may be fractional -- billed at `price`, or the meter's default if omitted. */
   units: number;
   description: string;
   /** Caller-supplied, unique per charge -- your own reference for this event, not a GHL idempotency key. */
   eventId: string;
+  /**
+   * Per-GB override within the meter's configured $0.09-$0.12 dynamic-price
+   * range (e.g. the Pro-plan discount -- see lib/storageLimit.ts's
+   * overageRatePerGbForPlan). Omit to charge the meter's default ($0.12).
+   */
+  price?: number;
 };
 
 /**
  * Fires a HighLevel Wallet Charge against the "Storage Overage" billing
- * meter (Custom Event (API), $0.12/GB, configured in the Marketplace
- * developer portal). Requires the `charges.write` OAuth scope -- see
- * GHL_SCOPES in .env and the app's scope config in the developer portal.
+ * meter (Custom Event (API), Dynamic pricing $0.09-$0.12/GB, default
+ * $0.12/GB, configured in the Marketplace developer portal). Requires the
+ * `charges.write` OAuth scope -- see GHL_SCOPES in .env and the app's scope
+ * config in the developer portal.
  *
  * API reference: POST /marketplace/billing/charges (RaiseChargeBodyDTO),
  * verified against GoHighLevel/highlevel-api-docs' apps/marketplace.json.
@@ -64,6 +71,7 @@ export async function chargeStorageOverage({
   units,
   description,
   eventId,
+  price,
 }: ChargeStorageOverageArgs): Promise<{ chargeId: string }> {
   const appId = mustEnv("GHL_APP_ID");
   const meterId = mustEnv("GHL_STORAGE_OVERAGE_METER_ID");
@@ -84,8 +92,9 @@ export async function chargeStorageOverage({
       companyId,
       description,
       units,
-      // price omitted deliberately -- the meter is configured as Fixed
-      // price ($0.12/unit), so GHL applies its own default per-unit rate.
+      // Omitted when undefined -- GHL applies the meter's default per-unit
+      // price ($0.12/GB) whenever `price` isn't sent.
+      ...(price != null ? { price } : {}),
     }),
     cache: "no-store",
   });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { chargeStorageOverage } from "@/lib/ghl/billing";
+import { overageRatePerGbForPlan } from "@/lib/storageLimit";
 
 export const runtime = "nodejs";
 
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest) {
     where: { plan: { not: "OWNER" }, appEdition: "PAID" },
     select: {
       id: true,
+      plan: true,
       storageUsedBytes: true,
       storageLimitBytes: true,
       overageBilledBytes: true,
@@ -60,6 +62,7 @@ export async function GET(req: NextRequest) {
   const results: Array<{
     orgId: string;
     unitsBilled?: number;
+    pricePerGb?: number;
     chargeId?: string;
     error?: string;
   }> = [];
@@ -95,7 +98,7 @@ export async function GET(req: NextRequest) {
       }
 
       if (dryRun) {
-        results.push({ orgId: org.id, unitsBilled: unitsGB });
+        results.push({ orgId: org.id, unitsBilled: unitsGB, pricePerGb: overageRatePerGbForPlan(org.plan) ?? 0.12 });
         billed++;
         continue;
       }
@@ -109,6 +112,7 @@ export async function GET(req: NextRequest) {
         units: unitsGB,
         description: `Storage overage: ${unitsGB} GB`,
         eventId,
+        price: overageRatePerGbForPlan(org.plan),
       });
 
       // Only claim the billed bytes if the row hasn't moved under us since
@@ -128,7 +132,7 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      results.push({ orgId: org.id, unitsBilled: unitsGB, chargeId });
+      results.push({ orgId: org.id, unitsBilled: unitsGB, pricePerGb: overageRatePerGbForPlan(org.plan) ?? 0.12, chargeId });
       billed++;
     } catch (err: any) {
       console.error("Storage overage billing failed for org", org.id, err);

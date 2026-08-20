@@ -19,6 +19,20 @@ export function defaultStorageLimitForPlan(plan: OrgPlan): bigint {
   return PLAN_STORAGE_DEFAULTS[plan];
 }
 
+// Per-GB storage overage rate for plans that get a discount off the "Storage
+// Overage" billing meter's default price ($0.12/GB, configured in the GHL
+// dev portal as a Dynamic-pricing meter with a $0.09-$0.12 range). Plans not
+// listed here fall back to the meter's own default -- see
+// lib/ghl/billing.ts's chargeStorageOverage, which only sends an explicit
+// `price` override when this returns a value.
+const OVERAGE_RATE_PER_GB_BY_PLAN: Partial<Record<OrgPlan, number>> = {
+  PRO: 0.09,
+};
+
+export function overageRatePerGbForPlan(plan: OrgPlan): number | undefined {
+  return OVERAGE_RATE_PER_GB_BY_PLAN[plan];
+}
+
 export function clampNonNegativeBigInt(x: bigint) {
   return x < BigInt(0) ? BigInt(0) : x;
 }
