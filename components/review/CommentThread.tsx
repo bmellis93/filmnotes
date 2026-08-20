@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useId } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { Annotation } from "@/lib/annotations/types";
 import Button from "@/components/ui/Button";
 import StatusPill from "@/components/ui/StatusPill";
@@ -28,6 +28,7 @@ type Props = {
 
   isOwner?: boolean;
   onToggleResolved?: (commentId: string, resolved: boolean) => void;
+  onDeleteComment?: (commentId: string) => void;
 
   replyToId: string | null;
   setReplyToId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -57,6 +58,7 @@ type CommentNodeProps = {
   canAddComment: boolean;
   isOwner?: boolean;
   onToggleResolved?: (commentId: string, resolved: boolean) => void;
+  onDeleteComment?: (commentId: string) => void;
   replyToId: string | null;
   setReplyToId: React.Dispatch<React.SetStateAction<string | null>>;
   replyBody: string;
@@ -74,6 +76,7 @@ function CommentNode({
   canAddComment,
   isOwner,
   onToggleResolved,
+  onDeleteComment,
   replyToId,
   setReplyToId,
   replyBody,
@@ -180,6 +183,23 @@ function CommentNode({
               {isResolved ? "Reopen" : "Resolve"}
             </Button>
           ) : null}
+
+          {showOwnerControls && onDeleteComment ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (confirm("Delete this comment? This can't be undone.")) {
+                  onDeleteComment(c.id);
+                }
+              }}
+              title="Delete comment"
+              aria-label="Delete comment"
+              className="ml-auto"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          ) : null}
         </div>
 
         {isOpen && (
@@ -234,6 +254,7 @@ function CommentNode({
               canAddComment={canAddComment}
               isOwner={isOwner}
               onToggleResolved={onToggleResolved}
+              onDeleteComment={onDeleteComment}
               replyToId={replyToId}
               setReplyToId={setReplyToId}
               replyBody={replyBody}
@@ -256,6 +277,7 @@ export default function CommentThread({
   canAddComment,
   isOwner,
   onToggleResolved,
+  onDeleteComment,
   replyToId,
   setReplyToId,
   replyBody,
@@ -275,6 +297,7 @@ export default function CommentThread({
           canAddComment={canAddComment}
           isOwner={isOwner}
           onToggleResolved={onToggleResolved}
+          onDeleteComment={onDeleteComment}
           replyToId={replyToId}
           setReplyToId={setReplyToId}
           replyBody={replyBody}

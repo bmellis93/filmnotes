@@ -17,6 +17,7 @@ type Props = {
 
   isOwner?: boolean;
   onToggleResolved?: (commentId: string, resolved: boolean) => void;
+  onDeleteComment?: (commentId: string) => void;
 
   // thread interactions
   replyToId: string | null;
@@ -45,6 +46,7 @@ export default function CommentsPanel({
 
   isOwner,
   onToggleResolved,
+  onDeleteComment,
 
   replyToId,
   setReplyToId,
@@ -199,6 +201,7 @@ export default function CommentsPanel({
                     onReplySubmit={onReplySubmit}
                     isOwner={isOwner}
                     onToggleResolved={onToggleResolved}
+                    onDeleteComment={onDeleteComment}
                     onViewAnnotation={onViewAnnotation}
                   />
                 )}

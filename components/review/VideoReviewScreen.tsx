@@ -505,6 +505,59 @@ export default function VideoReviewScreen(props: Props) {
     }
   }
 
+  function findCommentInTree(
+    list: ThreadedComment[],
+    commentId: string
+  ): { node: ThreadedComment; parentId: string | null } | null {
+    for (const c of list) {
+      if (c.id === commentId) return { node: c, parentId: c.parentId };
+      const found = findCommentInTree(c.replies || [], commentId);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function removeCommentFromTree(list: ThreadedComment[], commentId: string): ThreadedComment[] {
+    return list
+      .filter((c) => c.id !== commentId)
+      .map((c) => ({ ...c, replies: removeCommentFromTree(c.replies || [], commentId) }));
+  }
+
+  function insertCommentIntoTree(
+    list: ThreadedComment[],
+    node: ThreadedComment,
+    parentId: string | null
+  ): ThreadedComment[] {
+    if (!parentId) return [...list, node];
+    return list.map((c) => {
+      if (c.id === parentId) return { ...c, replies: [...(c.replies || []), node] };
+      return { ...c, replies: insertCommentIntoTree(c.replies || [], node, parentId) };
+    });
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!isOwner) return;
+
+    const found = findCommentInTree(comments, commentId);
+    if (!found) return;
+
+    setComments((prev) => removeCommentFromTree(prev, commentId));
+
+    try {
+      const res = await fetch("/api/comments/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to delete comment");
+    } catch (e: any) {
+      setComments((prev) => insertCommentIntoTree(prev, found.node, found.parentId));
+      setCommentError(e?.message || "Failed to delete comment");
+    }
+  }
+
   function updateCommentStatusInTree(
     list: ThreadedComment[],
     commentId: string,
@@ -780,6 +833,7 @@ export default function VideoReviewScreen(props: Props) {
             isToken={isToken}
             isOwner={isOwner}
             onToggleResolved={handleToggleResolved}
+            onDeleteComment={handleDeleteComment}
             commentsOpen={commentsOpen}
             comments={comments}
             isLoadingComments={isLoadingComments}
