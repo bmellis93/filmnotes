@@ -4,6 +4,17 @@ import { setOwnerSession } from "@/lib/auth/ownerSession";
 import { prisma } from "@/lib/prisma";
 import type { GhlAppConfig } from "@/lib/ghl/oauthApps";
 
+// Comma-separated GHL location ids allowed to create a *new* org through the
+// private app -- deliberately manual (env var, not self-serve) since the
+// private app is free and meant to stay a short, curated list.
+function isAllowedNewPrivateOrg(orgId: string): boolean {
+  const allowlist = (process.env.PRIVATE_APP_ALLOWED_ORG_IDS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return allowlist.includes(orgId);
+}
+
 export async function exchangeCodeForToken(code: string, config: GhlAppConfig) {
   const body = new URLSearchParams();
   body.set("grant_type", "authorization_code");
@@ -106,6 +117,19 @@ export async function handleOauthCallback(req: NextRequest, config: GhlAppConfig
 
     const ctx = { orgId, userId };
     const companyId = token.companyId ? String(token.companyId) : null;
+
+    // The private app has no billing at all -- it must never silently grant
+    // a brand-new org free access just because someone completed the OAuth
+    // handshake (e.g. via the public /login page). Existing orgs can always
+    // re-authenticate; a genuinely new org needs to be explicitly allowed.
+    if (config.edition === "PRIVATE") {
+      const existingOrg = await prisma.org.findUnique({ where: { id: ctx.orgId }, select: { id: true } });
+      if (!existingOrg && !isAllowedNewPrivateOrg(ctx.orgId)) {
+        const res = NextResponse.redirect(new URL("/login?error=private_app_restricted", url.origin));
+        res.cookies.set("rm_oauth_nonce", "", { path: "/", maxAge: 0 });
+        return res;
+      }
+    }
 
     // appEdition is set only on create -- once an org is tagged PRIVATE or
     // PAID it shouldn't flip on a later re-login, since billing/plan logic
