@@ -22,6 +22,7 @@ const plans = [
     name: "Starter",
     price: "$19",
     storage: "100 GB storage",
+    overageRate: "$0.12/GB over",
     blurb: "For solo editors keeping a handful of active projects at once.",
     featured: false,
   },
@@ -29,6 +30,7 @@ const plans = [
     name: "Studio",
     price: "$59",
     storage: "500 GB storage",
+    overageRate: "$0.12/GB over",
     blurb: "For a busy editing or production schedule with several clients in flight.",
     featured: true,
   },
@@ -36,6 +38,7 @@ const plans = [
     name: "Pro",
     price: "$129",
     storage: "1 TB storage",
+    overageRate: "$0.09/GB over",
     blurb: "For high-volume shops delivering long-form or high-resolution footage.",
     featured: false,
   },
@@ -52,7 +55,7 @@ const faqs = [
   },
   {
     q: "What happens if I go over my plan's storage?",
-    a: "You're not cut off — additional storage beyond your plan is billed automatically at $0.12/GB, charged monthly along with your subscription.",
+    a: "You're not cut off — additional storage beyond your plan is billed automatically each month along with your subscription: $0.12/GB on Starter and Studio, $0.09/GB on Pro.",
   },
   {
     q: "Can I change plans later?",
@@ -106,6 +109,7 @@ export default function PricingPage() {
                 <span className="text-sm text-[var(--text-muted)]">/mo</span>
               </div>
               <div className="mt-1 text-sm font-medium text-[var(--text-2)]">{plan.storage}</div>
+              <div className="mt-0.5 text-xs text-[var(--text-muted)]">{plan.overageRate}</div>
 
               <a
                 href={GET_APP_URL}
@@ -147,7 +151,8 @@ export default function PricingPage() {
 
         <p className="mt-8 text-center text-sm text-[var(--text-muted)]">
           Storage beyond your plan's limit is billed at{" "}
-          <span className="font-medium text-[var(--text-2)]">$0.12/GB</span>, charged monthly.
+          <span className="font-medium text-[var(--text-2)]">$0.12/GB</span> on Starter and Studio,{" "}
+          <span className="font-medium text-[var(--text-2)]">$0.09/GB</span> on Pro, charged monthly.
         </p>
       </section>
 
