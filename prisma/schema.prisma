@@ -175,6 +175,11 @@ model Org {
 
   storageUsedBytes  BigInt @default(0)
 
+  // Which GHL Marketplace app this org installed through -- set once at
+  // OAuth install (see lib/ghl/oauthCallback.ts) and never changed after,
+  // since billing (lib/ghl/billing.ts) must never charge a PRIVATE org.
+  appEdition AppEdition @default(PRIVATE)
+
   // Pricing plan -- see lib/storageLimit.ts for the per-plan default byte
   // limits. storageLimitBytes is the actual enforced value; it's seeded
   // from the plan's default at creation but independently overridable
@@ -271,6 +276,11 @@ enum OrgPlan {
   PRO
   CUSTOM
   OWNER // the app developer's own account -- unlimited, never billed
+}
+
+enum AppEdition {
+  PRIVATE
+  PAID
 }
 
 enum CommentStatus {
