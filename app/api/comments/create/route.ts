@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { prisma } from "@/lib/prisma";
 import { parseAllowedIds } from "@/lib/share/shareLinkUtils";
-import { sendOwnerWebhook, getOwnerVideoContext, buildOwnerVideoUrl } from "@/lib/notify/sendOwnerWebhook";
 import { sanitizeAnnotationInput, parseAnnotationJson } from "@/lib/annotations/types";
 
 export const runtime = "nodejs";
@@ -78,18 +77,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const { galleryId, title } = await getOwnerVideoContext(vid);
-    await sendOwnerWebhook({
-      event: "comment",
-      orgId,
-      videoId: vid,
-      videoTitle: title,
-      shareToken: share.token,
-      ownerUrl: buildOwnerVideoUrl(new URL(req.url).origin, galleryId, vid),
-      body: trimmed,
-      timecodeMs: Number(timecodeMs || 0),
-      occurredAt: new Date().toISOString(),
-    });
+    // Owner notification for this comment is handled by the batched flush
+    // path (lib/notify/flushCommentNotifications.ts), triggered by the
+    // client's debounce/browse-away hook -- not sent per-comment here.
 
     return NextResponse.json({
       ok: true,

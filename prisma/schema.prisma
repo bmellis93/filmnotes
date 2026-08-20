@@ -101,6 +101,10 @@ model Video {
 
   changeNote String?
 
+  // High-water mark for batched client-comment notifications (see
+  // lib/notify/flushCommentNotifications.ts) -- null means nothing notified yet.
+  commentsNotifiedThroughAt DateTime?
+
   galleryVideos GalleryVideo[]
 
   shareLinks ShareLink[]

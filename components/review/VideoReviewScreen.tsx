@@ -13,6 +13,7 @@ import ChangeNoteBar from "@/components/review/ChangeNoteBar";
 import DrawingOverlay from "@/components/review/DrawingOverlay";
 import { useRouter } from "next/navigation";
 import { useVideoPlayer } from "@/components/review/hooks/useVideoPlayer";
+import { useFlushCommentNotifications } from "@/components/review/useFlushCommentNotifications";
 
 import VideoCompareScreen from "@/components/review/VideoCompareScreen";
 import { getStackIdsForVideo, getNextIdInStack } from "@/lib/share/stackView";
@@ -166,6 +167,14 @@ export default function VideoReviewScreen(props: Props) {
   const [isShareOpen, setIsShareOpen] = useState(false);
 
   const [comments, setComments] = useState<ThreadedComment[]>([]);
+  const [commentsVersion, setCommentsVersion] = useState(0);
+
+  useFlushCommentNotifications({
+    enabled: mode === "token",
+    token,
+    videoId,
+    commentsVersion,
+  });
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
 
@@ -433,6 +442,8 @@ export default function VideoReviewScreen(props: Props) {
 
         return replace(prev);
       });
+
+      if (mode === "token") setCommentsVersion((v) => v + 1);
 
       if (opts?.parentId) {
         setReplyBody("");

@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 
-export type OwnerWebhookEvent = "comment" | "approved" | "changes_requested";
+export type OwnerWebhookEvent = "approved" | "changes_requested";
 
 export type OwnerWebhookPayload = {
   event: OwnerWebhookEvent;
@@ -12,6 +12,18 @@ export type OwnerWebhookPayload = {
   ownerUrl: string;
   body: string | null;
   timecodeMs: number | null;
+  occurredAt: string;
+};
+
+export type OwnerCommentsBatchWebhookPayload = {
+  event: "comments_batch";
+  orgId: string;
+  videoId: string;
+  videoTitle: string | null;
+  ownerUrl: string;
+  clientFirstName: string | null;
+  count: number;
+  comments: { body: string; timecodeMs: number }[];
   occurredAt: string;
 };
 
@@ -32,14 +44,17 @@ export function buildOwnerVideoUrl(origin: string, galleryId: string | null, vid
 
 /**
  * Best-effort notification -- never let a webhook failure affect the
- * client-facing request that triggered it. Awaited (not truly "fire and
- * forget") because serverless functions can freeze right after the response
- * is sent, which would silently drop an unawaited fetch.
+ * caller that triggered it. Awaited (not truly "fire and forget") because
+ * serverless functions can freeze right after the response is sent, which
+ * would silently drop an unawaited fetch.
  */
-export async function sendOwnerWebhook(payload: OwnerWebhookPayload): Promise<void> {
+async function postToOwnerWebhook(
+  orgId: string,
+  payload: OwnerWebhookPayload | OwnerCommentsBatchWebhookPayload
+): Promise<void> {
   try {
     const org = await prisma.org.findUnique({
-      where: { id: payload.orgId },
+      where: { id: orgId },
       select: { notificationWebhookUrl: true },
     });
 
@@ -55,4 +70,13 @@ export async function sendOwnerWebhook(payload: OwnerWebhookPayload): Promise<vo
   } catch (err) {
     console.error("Owner webhook notify failed:", err);
   }
+}
+
+export async function sendOwnerWebhook(payload: OwnerWebhookPayload): Promise<void> {
+  return postToOwnerWebhook(payload.orgId, payload);
+}
+
+/** Single POST summarizing a batch of client comments, in place of one-per-comment. */
+export async function sendOwnerBatchWebhook(payload: OwnerCommentsBatchWebhookPayload): Promise<void> {
+  return postToOwnerWebhook(payload.orgId, payload);
 }
