@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
     const asset = await mux.video.assets.create({
       inputs: [{ url: video.sourceUrl }],
       playback_policy: ["public"],
+      max_resolution_tier: "2160p",
     });
 
     const playbackId = asset.playback_ids?.[0]?.id ?? null;

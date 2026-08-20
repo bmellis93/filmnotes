@@ -52,6 +52,10 @@ export async function POST(req: Request) {
     const asset = await mux.video.assets.create({
       inputs: [{ url: inputUrl }],
       playback_policy: ["signed", "public"],
+      // Default video_quality ("basic") caps delivered output at 1080p
+      // regardless of source resolution -- 2160p unlocks true 4K delivery
+      // for UHD sources instead of silently downscaling them.
+      max_resolution_tier: "2160p",
     });
 
     // 4) Persist muxAssetId and mark processing
