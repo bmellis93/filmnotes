@@ -4,7 +4,7 @@ import { setOwnerSession } from "@/lib/auth/ownerSession";
 import { prisma } from "@/lib/prisma";
 import type { GhlAppConfig } from "@/lib/ghl/oauthApps";
 
-async function exchangeCodeForToken(code: string, config: GhlAppConfig) {
+export async function exchangeCodeForToken(code: string, config: GhlAppConfig) {
   const body = new URLSearchParams();
   body.set("grant_type", "authorization_code");
   body.set("client_id", config.clientId);

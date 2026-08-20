@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/toast";
 import TemplateFolderPicker, { type PickedTemplate } from "@/components/owner/TemplateFolderPicker";
 
-type Props = { orgId: string };
+type Props = { orgId: string; isReviewerOrg?: boolean; hasGhlConnection?: boolean };
 
 type GhlTemplate = { id: string; name: string };
 
-export default function SettingsScreen({ orgId }: Props) {
+export default function SettingsScreen({ orgId, isReviewerOrg, hasGhlConnection }: Props) {
   const { toast } = useToast();
   const [syncing, setSyncing] = useState(false);
   const [loadingTeam, setLoadingTeam] = useState(true);
@@ -447,6 +447,32 @@ export default function SettingsScreen({ orgId }: Props) {
           </div>
         )}
       </div>
+
+      {isReviewerOrg && (
+        <div className="mt-6 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-0)]/40 p-4">
+          <div className="text-sm font-semibold text-[var(--text-1)]">GHL sandbox</div>
+          <div className="mt-1 text-xs text-[var(--text-muted)]">
+            Connect a HighLevel sub-account of your own to test message sending, email
+            templates, and contacts search against real data. This uses HighLevel's own
+            login and consent screen -- FilmNotes never sees your credentials.
+          </div>
+
+          <div className="mt-4">
+            {hasGhlConnection ? (
+              <span className="inline-flex items-center gap-2 rounded-lg bg-[var(--success)]/15 px-3 py-2 text-xs font-medium text-[var(--success)]">
+                Connected
+              </span>
+            ) : (
+              <a
+                href="/api/auth/reviewer-connect/start"
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)]"
+              >
+                Connect a GHL sandbox
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       <TemplateFolderPicker
         open={builderPickerOpen}
