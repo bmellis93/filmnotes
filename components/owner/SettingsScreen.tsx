@@ -32,6 +32,10 @@ export default function SettingsScreen({ orgId, isReviewerOrg, hasGhlConnection 
   const [webhookDraft, setWebhookDraft] = useState("");
   const [savingWebhook, setSavingWebhook] = useState(false);
 
+  const [notificationEmail, setNotificationEmail] = useState("");
+  const [notificationEmailDraft, setNotificationEmailDraft] = useState("");
+  const [savingNotificationEmail, setSavingNotificationEmail] = useState(false);
+
   const [loadingPlan, setLoadingPlan] = useState(true);
   const [plan, setPlan] = useState<string | null>(null);
   const [storageLimitBytes, setStorageLimitBytes] = useState<number | null>(null);
@@ -141,10 +145,32 @@ export default function SettingsScreen({ orgId, isReviewerOrg, hasGhlConnection 
       if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to load webhook");
       setWebhookUrl(json.notificationWebhookUrl ?? "");
       setWebhookDraft(json.notificationWebhookUrl ?? "");
+      setNotificationEmail(json.notificationEmail ?? "");
+      setNotificationEmailDraft(json.notificationEmail ?? "");
     } catch (e: any) {
       toast({ kind: "error", message: e?.message || "Failed to load webhook" });
     } finally {
       setLoadingWebhook(false);
+    }
+  }
+
+  async function saveNotificationEmail() {
+    setSavingNotificationEmail(true);
+    try {
+      const res = await fetch("/api/owner/settings/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationEmail: notificationEmailDraft.trim() || null }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to save notification email");
+      setNotificationEmail(json.notificationEmail ?? "");
+      setNotificationEmailDraft(json.notificationEmail ?? "");
+      toast({ kind: "success", message: json.notificationEmail ? "Notification email saved" : "Notification email cleared" });
+    } catch (e: any) {
+      toast({ kind: "error", message: e?.message || "Failed to save notification email" });
+    } finally {
+      setSavingNotificationEmail(false);
     }
   }
 
@@ -429,22 +455,48 @@ export default function SettingsScreen({ orgId, isReviewerOrg, hasGhlConnection 
         {loadingWebhook ? (
           <div className="mt-4 text-sm text-[var(--text-muted)]">Loading…</div>
         ) : (
-          <div className="mt-4 flex items-center gap-2">
-            <input
-              value={webhookDraft}
-              onChange={(e) => setWebhookDraft(e.target.value)}
-              placeholder="https://services.leadconnectorhq.com/hooks/..."
-              className="min-w-0 flex-1 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
-            />
-            <button
-              type="button"
-              onClick={saveWebhook}
-              disabled={savingWebhook || webhookDraft === webhookUrl}
-              className="shrink-0 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)] disabled:opacity-50"
-            >
-              {savingWebhook ? "Saving…" : "Save"}
-            </button>
-          </div>
+          <>
+            <div className="mt-4 flex items-center gap-2">
+              <input
+                value={webhookDraft}
+                onChange={(e) => setWebhookDraft(e.target.value)}
+                placeholder="https://services.leadconnectorhq.com/hooks/..."
+                className="min-w-0 flex-1 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
+              />
+              <button
+                type="button"
+                onClick={saveWebhook}
+                disabled={savingWebhook || webhookDraft === webhookUrl}
+                className="shrink-0 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+              >
+                {savingWebhook ? "Saving…" : "Save"}
+              </button>
+            </div>
+
+            <div className="mt-5 border-t border-[var(--border-2)] pt-4">
+              <div className="text-xs text-[var(--text-muted)]">
+                Or skip GHL entirely — we'll email this address directly on the same events, no
+                workflow required.
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="email"
+                  value={notificationEmailDraft}
+                  onChange={(e) => setNotificationEmailDraft(e.target.value)}
+                  placeholder="you@yourbusiness.com"
+                  className="min-w-0 flex-1 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-1)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
+                />
+                <button
+                  type="button"
+                  onClick={saveNotificationEmail}
+                  disabled={savingNotificationEmail || notificationEmailDraft === notificationEmail}
+                  className="shrink-0 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-sm font-semibold text-[var(--text-1)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+                >
+                  {savingNotificationEmail ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

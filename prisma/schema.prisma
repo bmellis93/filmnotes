@@ -216,6 +216,7 @@ model Org {
   defaultEmailTemplatePreviewUrl String? // builder templates only -- lets us re-fetch content without re-browsing folders
 
   notificationWebhookUrl String? // POSTed to when a client comments or acts on approval
+  notificationEmail      String? // emailed directly (via Resend) on the same events, independent of the webhook above
 }
 
 model Installation {

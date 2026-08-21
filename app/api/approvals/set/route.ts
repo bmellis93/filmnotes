@@ -3,6 +3,16 @@ import { requireValidShareToken } from "@/lib/share-auth";
 import { prisma } from "@/lib/prisma";
 import { parseAllowedIds } from "@/lib/share/shareLinkUtils";
 import { sendOwnerWebhook, getOwnerVideoContext, buildOwnerVideoUrl } from "@/lib/notify/sendOwnerWebhook";
+import { sendOwnerEmail } from "@/lib/notify/sendOwnerEmail";
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export const runtime = "nodejs";
 
@@ -92,16 +102,31 @@ export async function POST(req: NextRequest) {
     });
 
     const { galleryId, title } = await getOwnerVideoContext(vid);
+    const ownerUrl = buildOwnerVideoUrl(new URL(req.url).origin, galleryId, vid);
+    const videoTitle = title ?? "your video";
+
     await sendOwnerWebhook({
       event: nextStatus === "APPROVED" ? "approved" : "changes_requested",
       orgId,
       videoId: vid,
       videoTitle: title,
       shareToken: share.token,
-      ownerUrl: buildOwnerVideoUrl(new URL(req.url).origin, galleryId, vid),
+      ownerUrl,
       body: trimmedNote || null,
       timecodeMs: null,
       occurredAt: now.toISOString(),
+    });
+
+    const verb = nextStatus === "APPROVED" ? "approved" : "requested changes on";
+    const noteHtml = trimmedNote ? `<p>${escapeHtml(trimmedNote)}</p>` : "";
+    await sendOwnerEmail({
+      orgId,
+      subject: `A client ${verb} ${videoTitle}`,
+      html: `
+        <p>A client ${verb} <strong>${escapeHtml(videoTitle)}</strong>.</p>
+        ${noteHtml}
+        <p><a href="${ownerUrl}">Open in FilmNotes</a></p>
+      `,
     });
 
     return NextResponse.json({ ok: true, video, comment });

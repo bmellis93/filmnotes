@@ -1,8 +1,19 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOwnerVideoContext, buildOwnerVideoUrl, sendOwnerBatchWebhook } from "@/lib/notify/sendOwnerWebhook";
+import { sendOwnerEmail } from "@/lib/notify/sendOwnerEmail";
 
 const MAX_COMMENTS_IN_PAYLOAD = 10;
+
+// Comment bodies are client-authored -- never interpolate raw into HTML.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 /**
  * Sends one batched owner notification for every client comment posted on a
@@ -45,13 +56,14 @@ export async function flushPendingCommentNotifications(
   const clientFirstName = share?.contactName?.trim().split(/\s+/)[0] || null;
 
   const { galleryId, title } = await getOwnerVideoContext(videoId);
+  const ownerUrl = buildOwnerVideoUrl(origin, galleryId, videoId);
 
   await sendOwnerBatchWebhook({
     event: "comments_batch",
     orgId: video.orgId,
     videoId,
     videoTitle: title,
-    ownerUrl: buildOwnerVideoUrl(origin, galleryId, videoId),
+    ownerUrl,
     clientFirstName,
     count: pending.length,
     comments: pending.slice(0, MAX_COMMENTS_IN_PAYLOAD).map((c) => ({
@@ -59,6 +71,22 @@ export async function flushPendingCommentNotifications(
       timecodeMs: c.timecodeMs,
     })),
     occurredAt: new Date().toISOString(),
+  });
+
+  const who = clientFirstName ? escapeHtml(clientFirstName) : "A client";
+  const commentsHtml = pending
+    .slice(0, MAX_COMMENTS_IN_PAYLOAD)
+    .map((c) => `<li>${escapeHtml(c.body)}</li>`)
+    .join("");
+
+  await sendOwnerEmail({
+    orgId: video.orgId,
+    subject: `${who} left ${pending.length} comment${pending.length === 1 ? "" : "s"} on ${title ?? "your video"}`,
+    html: `
+      <p>${who} left ${pending.length} comment${pending.length === 1 ? "" : "s"} on <strong>${escapeHtml(title ?? "your video")}</strong>:</p>
+      <ul>${commentsHtml}</ul>
+      <p><a href="${ownerUrl}">Open in FilmNotes</a></p>
+    `,
   });
 
   const maxCreatedAt = pending[pending.length - 1].createdAt;
