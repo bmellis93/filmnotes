@@ -1,24 +1,21 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { getAppConfigForOrg } from "@/lib/ghl/oauthApps";
 
 const GHL_BASE_URL = process.env.GHL_API_BASE_URL!;
 
 // Refresh a bit before actual expiry so an in-flight request never races the clock.
 const REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
-function mustEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env var: ${name}`);
-  return v;
-}
-
 // De-dupe concurrent refreshes for the same org within one server process
 // (GHL refresh tokens rotate on use, so two simultaneous refreshes would race).
 const inflightRefreshes = new Map<string, Promise<string>>();
 
 async function refreshAccessToken(orgId: string, refreshToken: string): Promise<string> {
-  const clientId = mustEnv("GHL_CLIENT_ID");
-  const clientSecret = mustEnv("GHL_CLIENT_SECRET");
+  // A refresh_token must be redeemed against the exact client_id/secret that
+  // issued it -- using the wrong app's credentials here was silently
+  // breaking every paid-app org's API access once their token expired.
+  const { clientId, clientSecret } = await getAppConfigForOrg(orgId);
 
   const body = new URLSearchParams();
   body.set("grant_type", "refresh_token");

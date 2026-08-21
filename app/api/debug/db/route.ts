@@ -20,6 +20,10 @@ function redact(url: string) {
 }
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const DATABASE_URL = process.env.DATABASE_URL || "";
   const DIRECT_URL = process.env.DIRECT_URL || "";
 

@@ -2,6 +2,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getGhlAccessToken, ghlHeaders } from "@/lib/ghl/client";
+import { getAppConfigForOrg } from "@/lib/ghl/oauthApps";
 
 const GHL_BASE_URL = process.env.GHL_API_BASE_URL!;
 
@@ -73,10 +74,16 @@ export async function chargeStorageOverage({
   eventId,
   price,
 }: ChargeStorageOverageArgs): Promise<{ chargeId: string }> {
-  const appId = mustEnv("GHL_APP_ID");
   const meterId = mustEnv("GHL_STORAGE_OVERAGE_METER_ID");
 
-  const [accessToken, companyId] = await Promise.all([
+  // Wallet Charges must be raised under the app that actually owns the
+  // billing meter -- was hardcoded to the private app's id, which has no
+  // pricing/meters configured at all. In practice this only ever runs for
+  // PAID orgs (the billing cron already filters to appEdition: "PAID"), but
+  // resolving it properly rather than assuming keeps this correct if that
+  // ever changes.
+  const [{ appId }, accessToken, companyId] = await Promise.all([
+    getAppConfigForOrg(orgId),
     getGhlAccessToken(orgId),
     getOrgCompanyId(orgId),
   ]);
