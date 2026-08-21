@@ -60,6 +60,12 @@ export default function TermsPage() {
         applies to your account.
       </p>
       <p>
+        Storage limits assume ordinary use. Repeatedly uploading and deleting
+        large volumes of video to work around your plan&rsquo;s storage limit
+        isn&rsquo;t ordinary use, and may be billed as overage or result in a
+        review of your account.
+      </p>
+      <p>
         Custom plans negotiated directly with us are governed by these Terms
         together with whatever storage and pricing terms we agree to in
         writing.

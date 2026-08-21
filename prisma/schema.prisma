@@ -115,6 +115,11 @@ model Video {
   originalMime String?
   originalSize BigInt?
 
+  // Set once this video's originalSize has been counted into the org's
+  // monthly ingestedBytesThisPeriod meter (see Org model) -- guards against
+  // double-counting if Mux redelivers the video.asset.ready webhook.
+  ingestCountedAt DateTime?
+
   failureReason String?
 
   @@index([createdAt])
@@ -209,6 +214,20 @@ model Org {
   // only ever bills newly-crossed bytes, not the same overage repeatedly.
   overageBilledBytes        BigInt    @default(0)
   overageBillingPeriodStart DateTime?
+
+  // Fair-use anti-cycling meter: cumulative bytes of videos that reached
+  // Mux's "ready" state this calendar month, never decremented by delete
+  // (unlike storageUsedBytes above). Mux bills storage per minute with a
+  // one-month minimum per asset regardless of how quickly it's deleted, so
+  // an org that fills-deletes-refills repeatedly costs real money without
+  // ever tripping the live-storage overage check. The overage cron bills
+  // whichever of the two meters shows more overage -- see
+  // FAIR_USE_INGEST_MULTIPLIER in lib/storageLimit.ts. ingestPeriodStart is
+  // updated by the webhook that increments this counter, not by the cron
+  // (unlike overageBillingPeriodStart's lazy reset), since the webhook is
+  // the only thing that needs to decide reset-vs-increment in real time.
+  ingestedBytesThisPeriod BigInt    @default(0)
+  ingestPeriodStart       DateTime?
 
   defaultSmsTemplateId   String?
   defaultEmailTemplateId String?

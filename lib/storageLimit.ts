@@ -36,3 +36,11 @@ export function overageRatePerGbForPlan(plan: OrgPlan): number | undefined {
 export function clampNonNegativeBigInt(x: bigint) {
   return x < BigInt(0) ? BigInt(0) : x;
 }
+
+// Monthly fair-use ceiling for Org.ingestedBytesThisPeriod, as a multiple of
+// storageLimitBytes -- the anti-cycling backstop (see bill-storage-overage
+// cron). Chosen from a real Mux+R2 cost model: normal usage runs 51-70%
+// gross margin, and the tightest plan (Studio) breaks even around 2.04x its
+// limit ingested in one month. 2x sits right at that ceiling -- generous
+// enough that no ordinary turnover pattern approaches it.
+export const FAIR_USE_INGEST_MULTIPLIER = 2;

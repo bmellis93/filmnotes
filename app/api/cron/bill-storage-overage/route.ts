@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { chargeStorageOverage } from "@/lib/ghl/billing";
-import { overageRatePerGbForPlan } from "@/lib/storageLimit";
+import { overageRatePerGbForPlan, FAIR_USE_INGEST_MULTIPLIER } from "@/lib/storageLimit";
 
 export const runtime = "nodejs";
 
@@ -53,6 +53,8 @@ export async function GET(req: NextRequest) {
       storageLimitBytes: true,
       overageBilledBytes: true,
       overageBillingPeriodStart: true,
+      ingestedBytesThisPeriod: true,
+      ingestPeriodStart: true,
     },
   });
 
@@ -71,7 +73,22 @@ export async function GET(req: NextRequest) {
     try {
       const used = BigInt(org.storageUsedBytes);
       const limit = BigInt(org.storageLimitBytes);
-      const currentOverage = used > limit ? used - limit : BigInt(0);
+      const liveOverage = used > limit ? used - limit : BigInt(0);
+
+      // Anti-cycling: bill on whichever meter shows more overage. A fresh
+      // fill-delete-refill cycle never shows up in liveOverage (it drops on
+      // delete), but ingestedBytesThisPeriod only ever grows -- treat it as
+      // 0 if its period marker isn't in the current UTC month, since it's
+      // reset by the Mux webhook itself (see recordMonthlyIngest), not by
+      // this cron.
+      const ingestPeriodCurrent = isNewBillingPeriod(org.ingestPeriodStart, now)
+        ? BigInt(0)
+        : BigInt(org.ingestedBytesThisPeriod);
+      const fairUseCeiling = BigInt(FAIR_USE_INGEST_MULTIPLIER) * limit;
+      const ingestOverage =
+        ingestPeriodCurrent > fairUseCeiling ? ingestPeriodCurrent - fairUseCeiling : BigInt(0);
+
+      const currentOverage = liveOverage > ingestOverage ? liveOverage : ingestOverage;
 
       if (currentOverage === BigInt(0)) {
         skipped++;

@@ -143,6 +143,42 @@ async function hardBlockIfOverLimit(videoId: string) {
   return { blocked: true };
 }
 
+// Fair-use anti-cycling meter (see Org.ingestedBytesThisPeriod). Resets to
+// just this video's bytes on a new UTC month, otherwise increments -- the
+// compare-and-swap on ingestPeriodStart-as-read means two webhooks landing
+// right at a month boundary can't both "win" the reset and stomp each other.
+async function recordMonthlyIngest(orgId: string, size: bigint) {
+  if (size <= BigInt(0)) return;
+
+  const org = await prisma.org.findUnique({
+    where: { id: orgId },
+    select: { ingestPeriodStart: true },
+  });
+
+  const now = new Date();
+  const priorStart = org?.ingestPeriodStart ?? null;
+  const isNewMonth =
+    !priorStart ||
+    priorStart.getUTCFullYear() !== now.getUTCFullYear() ||
+    priorStart.getUTCMonth() !== now.getUTCMonth();
+
+  if (isNewMonth) {
+    const reset = await prisma.org.updateMany({
+      where: { id: orgId, ingestPeriodStart: priorStart },
+      data: { ingestedBytesThisPeriod: size, ingestPeriodStart: now },
+    });
+
+    if (reset.count === 1) return;
+    // Lost the race -- someone else already rolled the period over just
+    // now; fall through to a plain increment on top of whatever they set.
+  }
+
+  await prisma.org.update({
+    where: { id: orgId },
+    data: { ingestedBytesThisPeriod: { increment: size } },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
@@ -174,7 +210,7 @@ export async function POST(req: NextRequest) {
     // Find your video by muxAssetId
     const video = await prisma.video.findFirst({
       where: { muxAssetId },
-      select: { id: true, status: true, thumbnailUrl: true, thumbnailIsCustom: true },
+      select: { id: true, orgId: true, status: true, thumbnailUrl: true, thumbnailIsCustom: true, originalSize: true },
     });
 
     if (!video) {
@@ -212,6 +248,16 @@ export async function POST(req: NextRequest) {
           failureReason: null,
         },
       });
+
+      // Fair-use ingest meter -- claim before counting so a redelivered
+      // ready event for this same video can't double-count its bytes.
+      const claimed = await prisma.video.updateMany({
+        where: { muxAssetId, ingestCountedAt: null },
+        data: { ingestCountedAt: new Date() },
+      });
+      if (claimed.count === 1 && video.originalSize && video.originalSize > BigInt(0)) {
+        await recordMonthlyIngest(video.orgId, video.originalSize);
+      }
 
       return NextResponse.json({ ok: true });
     }
