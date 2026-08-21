@@ -106,11 +106,6 @@ export default function VideoCard({ galleryId, video }: Props) {
           ].join(" ")}
         />
 
-        {/* top-right hover checkbox placeholder (scaffold) */}
-        <div className="absolute right-3 top-3 opacity-0 transition group-hover:opacity-100">
-          <div className="h-6 w-6 rounded-md border border-[var(--border-3)] bg-[var(--surface-0)]/70" />
-        </div>
-
         {/* status pill */}
         <div className="absolute left-3 top-3">
           <StatusPill tone={statusTone(video.status)} className="px-2 py-0.5 backdrop-blur">
