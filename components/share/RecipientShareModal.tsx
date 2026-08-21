@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveTemplateText, resolveTemplateHtml } from "@/lib/ghl/templateMerge";
 import TemplateFolderPicker, { type PickedTemplate } from "@/components/owner/TemplateFolderPicker";
 import Button from "@/components/ui/Button";
+import { useToast } from "@/components/ui/toast";
 
 type Contact = {
   id: string;
@@ -167,10 +168,19 @@ export default function RecipientShareModal({
 
   const [isSearching, setIsSearching] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [justSent, setJustSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSend, setLastSend] = useState<SendResult | null>(null);
 
+  const { toast } = useToast();
   const searchAbortRef = useRef<AbortController | null>(null);
+  const justSentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (justSentTimerRef.current) clearTimeout(justSentTimerRef.current);
+    };
+  }, []);
 
   // Reset + load templates when opening
   useEffect(() => {
@@ -187,6 +197,8 @@ export default function RecipientShareModal({
     setCustomMessage("");
     setError(null);
     setLastSend(null);
+    setJustSent(false);
+    if (justSentTimerRef.current) clearTimeout(justSentTimerRef.current);
 
     setSmsTemplateId("");
     setSmsTemplateText("");
@@ -315,6 +327,7 @@ export default function RecipientShareModal({
   function toggleSelect(c: Contact) {
     setLastSend(null);
     setError(null);
+    setJustSent(false);
 
     if (selectedIds.has(c.id)) {
       setSelected((prev) => prev.filter((x) => x.id !== c.id));
@@ -499,6 +512,26 @@ export default function RecipientShareModal({
       }
 
       setLastSend({ results });
+
+      const succeeded = results.filter((r) => r.ok).length;
+      const failed = results.length - succeeded;
+
+      if (succeeded > 0 && failed === 0) {
+        toast({
+          kind: "success",
+          message: `Link sent to ${succeeded} ${succeeded === 1 ? "recipient" : "recipients"}.`,
+        });
+        setJustSent(true);
+        if (justSentTimerRef.current) clearTimeout(justSentTimerRef.current);
+        justSentTimerRef.current = setTimeout(() => setJustSent(false), 2500);
+      } else if (succeeded > 0 && failed > 0) {
+        toast({
+          kind: "error",
+          message: `Sent to ${succeeded} of ${results.length} — ${failed} failed. See details below.`,
+        });
+      } else {
+        toast({ kind: "error", message: "Send failed. See details below." });
+      }
     } catch (e: any) {
       setError(e?.message || "Send failed");
     } finally {
@@ -891,7 +924,7 @@ export default function RecipientShareModal({
                     (selected.length === 0 ? "Select at least one recipient" : "Send")
                   }
                 >
-                  {isSending ? "Sending…" : "Send"}
+                  {isSending ? "Sending…" : justSent ? "Sent ✓" : "Send"}
                 </Button>
               </div>
 
