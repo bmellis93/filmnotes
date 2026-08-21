@@ -533,7 +533,7 @@ export default function GalleryDetailScreen({
     <div className="min-h-full">
       <div className="sticky top-0 z-10 border-b border-[var(--border-2)] bg-[var(--surface-0)]/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
@@ -555,7 +555,7 @@ export default function GalleryDetailScreen({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {showSelectionUI && (
                 <>
                   <Button

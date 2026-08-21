@@ -364,7 +364,7 @@ export default function SettingsScreen({ orgId, isReviewerOrg, hasGhlConnection 
                   </span>
                 </div>
 
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <select
                     value={defaultEmailTemplateSource === "classic" ? defaultEmailTemplateId : ""}
                     onChange={(e) => {
@@ -381,7 +381,7 @@ export default function SettingsScreen({ orgId, isReviewerOrg, hasGhlConnection 
                       });
                     }}
                     disabled={savingTemplates}
-                    className="min-w-0 flex-1 rounded-lg border border-[var(--border-1)] bg-[var(--surface-0)] px-2 py-1.5 text-sm text-[var(--text-1)]"
+                    className="min-w-[160px] flex-1 rounded-lg border border-[var(--border-1)] bg-[var(--surface-0)] px-2 py-1.5 text-sm text-[var(--text-1)]"
                   >
                     <option value="">Custom message</option>
                     {emailTemplates.map((t) => (
