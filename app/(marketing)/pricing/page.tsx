@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check } from "lucide-react";
+import { Check, TrendingDown } from "lucide-react";
 import { buttonVariants } from "@/components/ui/Button";
 import { GET_APP_URL } from "@/lib/marketing/links";
 
@@ -22,24 +22,30 @@ const plans = [
     name: "Starter",
     price: "$19",
     storage: "100 GB storage",
+    capacity: "~6-7 full projects live at once",
     overageRate: "$0.12/GB over",
     blurb: "For solo editors keeping a handful of active projects at once.",
+    perk: null as string | null,
     featured: false,
   },
   {
     name: "Studio",
     price: "$59",
     storage: "500 GB storage",
+    capacity: "~30-35 full projects live at once",
     overageRate: "$0.12/GB over",
     blurb: "For a busy editing or production schedule with several clients in flight.",
+    perk: null as string | null,
     featured: true,
   },
   {
     name: "Pro",
     price: "$129",
     storage: "1 TB storage",
+    capacity: "~65-70 full projects live at once",
     overageRate: "$0.09/GB over",
     blurb: "For high-volume shops delivering long-form or high-resolution footage.",
+    perk: "25% lower overage rate than Starter & Studio" as string | null,
     featured: false,
   },
 ];
@@ -75,8 +81,9 @@ export default function PricingPage() {
           Pricing that scales with your footage
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-[var(--text-3)]">
-          Every plan includes the same review workflow. The only thing that
-          changes is how much storage you need.
+          Every plan includes the same review workflow. Tiers scale with how
+          much footage you keep live at once — and Pro gets a lower overage
+          rate too.
         </p>
         <p className="mt-3 text-sm font-medium text-[var(--cue)]">
           Every plan starts with a 14-day free trial. A card is required to start.
@@ -109,7 +116,9 @@ export default function PricingPage() {
                 <span className="text-sm text-[var(--text-muted)]">/mo</span>
               </div>
               <div className="mt-1 text-sm font-medium text-[var(--text-2)]">{plan.storage}</div>
-              <div className="mt-0.5 text-xs text-[var(--text-muted)]">{plan.overageRate}</div>
+              <div className="mt-0.5 text-xs text-[var(--text-muted)]">
+                {plan.capacity} &middot; {plan.overageRate}
+              </div>
 
               <a
                 href={GET_APP_URL}
@@ -122,6 +131,12 @@ export default function PricingPage() {
               </a>
 
               <ul className="mt-8 flex flex-col gap-3 border-t border-[var(--border-2)] pt-6">
+                {plan.perk && (
+                  <li className="flex items-start gap-2.5 text-sm font-medium text-[var(--cue)]">
+                    <TrendingDown className="mt-0.5 h-4 w-4 shrink-0" />
+                    {plan.perk}
+                  </li>
+                )}
                 {includedEverywhere.map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-[var(--text-2)]">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--scope)]" />
@@ -132,6 +147,11 @@ export default function PricingPage() {
             </div>
           ))}
         </div>
+
+        <p className="mt-4 text-center text-xs text-[var(--text-muted)]">
+          Capacity estimates assume a mix of full-length masters and highlight reels —
+          actual footage varies by project.
+        </p>
 
         {/* Custom tier */}
         <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-3xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 p-8 sm:flex-row">

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "The terms that govern your use of FilmNotes.",
 };
 
-const UPDATED = "August 17, 2026";
+const UPDATED = "August 21, 2026";
 
 export default function TermsPage() {
   return (

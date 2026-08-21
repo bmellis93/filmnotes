@@ -59,7 +59,7 @@ const features = [
   {
     icon: ShieldCheck,
     title: "Secure by default",
-    body: "Review links are scoped to a gallery. Your footage isn't sitting on a public share drive.",
+    body: "Review links are scoped to a gallery, can expire or be revoked any time, and your team's roles control who can upload, share, or just view.",
   },
   {
     icon: Link2,

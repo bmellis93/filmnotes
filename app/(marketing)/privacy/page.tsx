@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "How FilmNotes collects, uses, and protects your data.",
 };
 
-const UPDATED = "August 17, 2026";
+const UPDATED = "August 21, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -39,11 +39,15 @@ export default function PrivacyPage() {
         actions taken, browser and device type, and IP address — collected
         automatically through server logs and similar technology.
       </p>
-      <h3>Cookies</h3>
+      <h3>Cookies and local storage</h3>
       <p>
         We use cookies to keep you signed in and to protect the sign-in flow
         (for example, a short-lived cookie used to verify the HighLevel
-        OAuth handshake). We don&rsquo;t use third-party advertising cookies.
+        OAuth handshake). If you use FilmNotes embedded inside HighLevel, we
+        use your browser&rsquo;s session storage instead of a cookie to hold a
+        short-lived authorization token, since embedded views can&rsquo;t
+        always rely on cookies. We don&rsquo;t use third-party advertising
+        cookies.
       </p>
 
       <h2>2. How we use information</h2>
@@ -73,6 +77,15 @@ export default function PrivacyPage() {
         <li>
           <strong>Cloudflare (R2)</strong> — storage of uploaded source video
           and files
+        </li>
+        <li>
+          <strong>Supabase</strong> — hosts our production database, where
+          account, gallery, video, and comment records are stored
+        </li>
+        <li>
+          <strong>Resend</strong> — delivers direct account-notification
+          emails, if you set a notification email address in Settings (your
+          own address, not your reviewers&rsquo;)
         </li>
         <li>
           <strong>Vercel</strong> — application hosting and infrastructure
