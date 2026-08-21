@@ -1,13 +1,14 @@
 // app/api/comments/delete/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const ctx = await requireOwnerContext(); // { orgId, userId, role }
+    requireRole(ctx, "CONTRIBUTOR");
 
     const { commentId } = await req.json();
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     console.error("delete comment error:", err);
     return NextResponse.json(
       { error: err?.message ?? "Server error" },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

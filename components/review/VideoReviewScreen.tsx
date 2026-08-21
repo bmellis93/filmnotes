@@ -19,6 +19,7 @@ import VideoCompareScreen from "@/components/review/VideoCompareScreen";
 import { getStackIdsForVideo, getNextIdInStack } from "@/lib/share/stackView";
 import type { Annotation } from "@/lib/annotations/types";
 import { isEmptyAnnotation } from "@/lib/annotations/types";
+import { hasRole, type OrgRole } from "@/lib/auth/roles";
 import { Undo2, Eraser, Check } from "lucide-react";
 
 function makeTempId() {
@@ -47,6 +48,9 @@ type Props = {
 
   view?: "VIEW_ONLY" | "REVIEW_DOWNLOAD";
   backHref?: string;
+
+  /** The signed-in owner's org role -- gates posting/resolving/deleting comments (mode === "owner" only). */
+  ownerRole?: OrgRole;
 
   permissions?: {
     allowComments?: boolean;
@@ -82,6 +86,7 @@ export default function VideoReviewScreen(props: Props) {
     permissions,
     view = "REVIEW_DOWNLOAD",
     backHref,
+    ownerRole,
     stacks: stacksProp,
     videoMetaById: videoMetaByIdProp,
     projectTitle,
@@ -96,8 +101,12 @@ export default function VideoReviewScreen(props: Props) {
   const isToken = mode === "token";
   const isOwner = mode === "owner";
 
+  // CONTRIBUTOR+ can post/resolve/delete comments -- matches the same bar
+  // enforced server-side (comments/create-owner, toggle-resolved, delete).
+  const canManageComments = isOwner && !!ownerRole && hasRole(ownerRole, "CONTRIBUTOR");
+
   const canAddComment =
-    mode === "owner" ? true : view !== "VIEW_ONLY" && Boolean(permissions?.allowComments);
+    mode === "owner" ? canManageComments : view !== "VIEW_ONLY" && Boolean(permissions?.allowComments);
 
   // Download is a client-side action (their copy of the delivered footage);
   // the owner already has the original, so no download button for them.
@@ -547,7 +556,7 @@ export default function VideoReviewScreen(props: Props) {
   }
 
   async function handleDeleteComment(commentId: string) {
-    if (!isOwner) return;
+    if (!canManageComments) return;
 
     const found = findCommentInTree(comments, commentId);
     if (!found) return;
@@ -584,7 +593,7 @@ export default function VideoReviewScreen(props: Props) {
   }
 
   async function handleToggleResolved(commentId: string, resolved: boolean) {
-    if (!isOwner) return;
+    if (!canManageComments) return;
 
     const nextStatus: "OPEN" | "RESOLVED" = resolved ? "RESOLVED" : "OPEN";
     const rollbackStatus: "OPEN" | "RESOLVED" = resolved ? "OPEN" : "RESOLVED";
@@ -843,8 +852,8 @@ export default function VideoReviewScreen(props: Props) {
           <CommentsPanel
             isToken={isToken}
             isOwner={isOwner}
-            onToggleResolved={handleToggleResolved}
-            onDeleteComment={handleDeleteComment}
+            onToggleResolved={canManageComments ? handleToggleResolved : undefined}
+            onDeleteComment={canManageComments ? handleDeleteComment : undefined}
             commentsOpen={commentsOpen}
             comments={comments}
             isLoadingComments={isLoadingComments}

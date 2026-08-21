@@ -58,6 +58,7 @@ export default function EmbedVideoReviewPage({
     <EmbedShell role={role}>
       <VideoReviewScreen
         mode="owner"
+        ownerRole={role}
         videoId={data!.videoId}
         projectTitle={data!.projectTitle}
         stacks={data!.stacks}

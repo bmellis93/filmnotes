@@ -24,6 +24,7 @@ export default async function OwnerGalleryVideoPage({ params }: Props) {
   return (
     <VideoReviewScreen
       mode="owner"
+      ownerRole={owner.role}
       videoId={data.videoId}
       projectTitle={data.projectTitle}
       stacks={data.stacks}

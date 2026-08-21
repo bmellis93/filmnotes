@@ -43,25 +43,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const token = makeToken();
-
     const expiresAt =
       expiresInDays && !Number.isNaN(expiresInDays)
         ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
         : null;
 
+    const contactId = body.contactId ? String(body.contactId) : null;
+    const contactName = body.contactName ? String(body.contactName) : null;
+    const conversationId = body.conversationId ? String(body.conversationId) : null;
+
+    // Resending to the same contact for the same video reuses their existing
+    // link (refreshing settings/expiry) instead of piling up a new row every
+    // send -- only meaningful when there's a contact to key the match on.
+    if (contactId) {
+      const existing = await prisma.shareLink.findFirst({
+        where: { orgId: ctx.orgId, videoId, contactId },
+        select: { id: true, token: true, videoId: true },
+      });
+
+      if (existing) {
+        const updated = await prisma.shareLink.update({
+          where: { id: existing.id },
+          data: { expiresAt, allowComments, allowDownload, contactName, conversationId },
+          select: { token: true, videoId: true },
+        });
+
+        return NextResponse.json({
+          ok: true,
+          token: updated.token,
+          url: `/r/${updated.token}/videos/${updated.videoId}`,
+          reused: true,
+        });
+      }
+    }
+
     const share = await prisma.shareLink.create({
       data: {
         orgId: ctx.orgId,
-        token,
+        token: makeToken(),
         videoId,
         expiresAt,
         allowComments,
         allowDownload,
         view: "REVIEW_DOWNLOAD", // single-video shares default to review+download; tweak if you want
-        contactId: body.contactId ? String(body.contactId) : null,
-        contactName: body.contactName ? String(body.contactName) : null,
-        conversationId: body.conversationId ? String(body.conversationId) : null,
+        contactId,
+        contactName,
+        conversationId,
       },
       select: { token: true, videoId: true },
     });
@@ -71,6 +98,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       token: share.token,
       url: `/r/${share.token}/videos/${share.videoId}`,
+      reused: false,
     });
   } catch (err: any) {
     console.error("Create share error:", err?.message || err);

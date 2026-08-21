@@ -91,12 +91,43 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const token = makeToken();
+    const contactId = body.contactId ? safeString(body.contactId) : null;
+    const contactName = body.contactName ? safeString(body.contactName) : null;
+    const conversationId = body.conversationId ? safeString(body.conversationId) : null;
+
+    // Same dedup as shares/create -- resending this gallery to the same
+    // contact reuses their existing link instead of a new row every send.
+    // Only meaningful with both a contact and a gallery to key the match on.
+    if (contactId && galleryId) {
+      const existing = await prisma.shareLink.findFirst({
+        where: { orgId: ctx.orgId, galleryId, contactId },
+        select: { id: true, token: true },
+      });
+
+      if (existing) {
+        const updated = await prisma.shareLink.update({
+          where: { id: existing.id },
+          data: {
+            title,
+            allowedVideoIdsJson: JSON.stringify(allowedVideoIds),
+            stacksJson: JSON.stringify(stacks ?? {}),
+            view,
+            allowComments,
+            allowDownload,
+            contactName,
+            conversationId,
+          },
+          select: { token: true },
+        });
+
+        return NextResponse.json({ ok: true, token: updated.token, url: `/r/${updated.token}`, reused: true });
+      }
+    }
 
     const share = await prisma.shareLink.create({
       data: {
         orgId: ctx.orgId,
-        token,
+        token: makeToken(),
         galleryId,
         title,
         allowedVideoIdsJson: JSON.stringify(allowedVideoIds),
@@ -104,9 +135,9 @@ export async function POST(req: NextRequest) {
         view,
         allowComments,
         allowDownload,
-        contactId: body.contactId ? safeString(body.contactId) : null,
-        contactName: body.contactName ? safeString(body.contactName) : null,
-        conversationId: body.conversationId ? safeString(body.conversationId) : null,
+        contactId,
+        contactName,
+        conversationId,
       },
       select: { token: true },
     });
@@ -116,6 +147,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       token: share.token,
       url: `/r/${share.token}`,
+      reused: false,
     });
   } catch (err: any) {
     console.error("Create gallery share error:", err?.message || err);

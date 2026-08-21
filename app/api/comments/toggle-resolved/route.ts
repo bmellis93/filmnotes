@@ -1,13 +1,14 @@
 // app/api/comments/toggle-resolved/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const ctx = await requireOwnerContext(); // { orgId, userId, role }
+    requireRole(ctx, "CONTRIBUTOR");
 
     const { commentId } = await req.json();
 
@@ -29,11 +30,6 @@ export async function POST(req: NextRequest) {
     if (existing.orgId !== ctx.orgId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-
-    // Optional: only allow admins to resolve/unresolve
-    // if (ctx.role !== "ADMIN") {
-    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // }
 
     const nextStatus = existing.status === "OPEN" ? "RESOLVED" : "OPEN";
 
@@ -59,7 +55,7 @@ export async function POST(req: NextRequest) {
     console.error("toggle-resolved error:", err);
     return NextResponse.json(
       { error: err?.message ?? "Server error" },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }
