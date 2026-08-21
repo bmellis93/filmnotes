@@ -14,9 +14,17 @@ type ShareRow = {
   allowDownload: boolean;
   createdAt: string;
   expiresAt: string | null;
+  revokedAt: string | null;
   contactName: string | null;
   url: string;
 };
+
+const EXPIRY_OPTIONS = [
+  { value: "never", label: "Never" },
+  { value: "7", label: "7 days" },
+  { value: "30", label: "30 days" },
+  { value: "90", label: "90 days" },
+];
 
 type Props = {
   open: boolean;
@@ -73,8 +81,10 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
 
   if (!open) return null;
 
-  async function updateShare(id: string, patch: { allowComments?: boolean; allowDownload?: boolean }) {
-    setShares((prev) => (prev ? prev.map((s) => (s.id === id ? { ...s, ...patch } : s)) : prev));
+  async function updateShare(
+    id: string,
+    patch: { allowComments?: boolean; allowDownload?: boolean; expiresInDays?: number | null; revoked?: boolean }
+  ) {
     setBusyId(id);
     try {
       const res = await fetch(`/api/owner/shares/${id}`, {
@@ -84,9 +94,22 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
       });
       const data = await res.json();
       if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to update link");
+      setShares((prev) =>
+        prev
+          ? prev.map((s) =>
+              s.id === id
+                ? {
+                    ...s,
+                    ...("allowComments" in patch ? { allowComments: patch.allowComments! } : {}),
+                    ...("allowDownload" in patch ? { allowDownload: patch.allowDownload! } : {}),
+                    expiresAt: data.share?.expiresAt ?? s.expiresAt,
+                    revokedAt: data.share?.revokedAt ?? s.revokedAt,
+                  }
+                : s
+            )
+          : prev
+      );
     } catch (e: any) {
-      // roll back on failure
-      await load();
       toast({ kind: "error", message: e?.message || "Failed to update link" });
     } finally {
       setBusyId(null);
@@ -160,7 +183,10 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
             {shares?.map((s) => (
               <div
                 key={s.id}
-                className="rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/20 p-3"
+                className={[
+                  "rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/20 p-3",
+                  s.revokedAt ? "opacity-60" : "",
+                ].join(" ")}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -171,6 +197,11 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                       <span className="shrink-0 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-2)]">
                         {s.kind === "gallery" ? "Gallery" : `Video: ${s.label}`}
                       </span>
+                      {s.revokedAt && (
+                        <span className="shrink-0 rounded-full border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-2 py-0.5 text-[11px] font-semibold text-[var(--danger)]">
+                          Revoked
+                        </span>
+                      )}
                     </div>
                     <div className="mt-0.5 text-xs text-[var(--text-muted)]">
                       Created {fmtDate(s.createdAt)} · {expiryLabel(s.expiresAt)}
@@ -221,6 +252,40 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                       className="h-4 w-4"
                     />
                     Downloads
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs text-[var(--text-2)]">
+                    <span>Expires</span>
+                    <select
+                      defaultValue=""
+                      disabled={busyId === s.id}
+                      onChange={(e) => {
+                        const days = e.target.value === "never" ? null : Number(e.target.value);
+                        updateShare(s.id, { expiresInDays: days });
+                        e.target.value = "";
+                      }}
+                      className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs"
+                    >
+                      <option value="" disabled>
+                        Change…
+                      </option>
+                      {EXPIRY_OPTIONS.map((o) => (
+                        <option key={o.label} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs text-[var(--text-2)]">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(s.revokedAt)}
+                      disabled={busyId === s.id}
+                      onChange={(e) => updateShare(s.id, { revoked: e.target.checked })}
+                      className="h-4 w-4 accent-[var(--danger)]"
+                    />
+                    Revoked
                   </label>
 
                   <a

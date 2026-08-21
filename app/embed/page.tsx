@@ -7,7 +7,8 @@ import { EMBED_TOKEN_STORAGE_KEY } from "@/lib/embed/constants";
 type SsoResponse =
   | { connected: true; embedToken: string; orgId: string }
   | { connected: false; reason: "not-installed"; connectUrl: string }
-  | { connected: false; reason: "no-location" };
+  | { connected: false; reason: "no-location" }
+  | { connected: false; reason: "no-access" };
 
 type ViewState =
   | { status: "loading" }
@@ -61,6 +62,14 @@ export default function GhlEmbedPage() {
 
       if (data.reason === "not-installed") {
         setView({ status: "not-connected", connectUrl: data.connectUrl });
+        return;
+      }
+
+      if (data.reason === "no-access") {
+        setView({
+          status: "error",
+          message: "Your role on this account doesn't include dashboard access.",
+        });
         return;
       }
 

@@ -1,7 +1,7 @@
 import "server-only";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, hasRole } from "@/lib/auth/ownerSession";
 import { getShareContextFromRequest } from "@/lib/auth/shareContext";
 
 export type VideoAccess =
@@ -29,7 +29,7 @@ export async function resolveVideoAccess(
   // Owner access
   try {
     const owner = await requireOwnerContext();
-    if (owner.orgId === video.orgId) {
+    if (owner.orgId === video.orgId && hasRole(owner, "VIEWER")) {
       return { allowed: true, orgId: video.orgId };
     }
   } catch {

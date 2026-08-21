@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 
 export const runtime = "nodejs";
 
@@ -13,6 +13,7 @@ function makeToken(bytes = 24) {
 export async function POST(req: NextRequest) {
   try {
     const ctx = await requireOwnerContext(); // { orgId, userId, role }
+    requireRole(ctx, "VIEWER");
 
     const body = await req.json();
 
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
     console.error("Create share error:", err?.message || err);
     return NextResponse.json(
       { error: "Server error", detail: err?.message || String(err) },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

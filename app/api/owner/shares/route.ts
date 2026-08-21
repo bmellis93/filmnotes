@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
         allowDownload: true,
         createdAt: true,
         expiresAt: true,
+        revokedAt: true,
         contactName: true,
       },
     });
@@ -71,6 +72,7 @@ export async function GET(req: NextRequest) {
       allowDownload: s.allowDownload,
       createdAt: s.createdAt,
       expiresAt: s.expiresAt,
+      revokedAt: s.revokedAt,
       contactName: s.contactName,
       url: s.videoId ? `/r/${s.token}/videos/${s.videoId}` : `/r/${s.token}`,
     }));

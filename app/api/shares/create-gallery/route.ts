@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerContext } from "@/lib/auth/ownerSession";
+import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
 import type { StackMap } from "@/components/domain/stacks";
 
 export const runtime = "nodejs";
@@ -18,6 +18,7 @@ function safeString(x: unknown) {
 export async function POST(req: NextRequest) {
   try {
     const ctx = await requireOwnerContext(); // { orgId, userId, role }
+    requireRole(ctx, "VIEWER");
 
     const body = await req.json();
 
@@ -32,6 +33,13 @@ export async function POST(req: NextRequest) {
     const allowComments = body.allowComments !== false;
     const allowDownload = body.allowDownload === true;
     const view = body.view === "VIEW_ONLY" ? "VIEW_ONLY" : "REVIEW_DOWNLOAD";
+
+    const expiresInDays =
+      body.expiresInDays !== undefined && body.expiresInDays !== null ? Number(body.expiresInDays) : null;
+    const expiresAt =
+      expiresInDays && !Number.isNaN(expiresInDays)
+        ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+        : null;
 
     if (allowedVideoIds.length === 0) {
       return NextResponse.json(
@@ -114,6 +122,7 @@ export async function POST(req: NextRequest) {
             view,
             allowComments,
             allowDownload,
+            expiresAt,
             contactName,
             conversationId,
           },
@@ -135,6 +144,7 @@ export async function POST(req: NextRequest) {
         view,
         allowComments,
         allowDownload,
+        expiresAt,
         contactId,
         contactName,
         conversationId,
@@ -153,7 +163,7 @@ export async function POST(req: NextRequest) {
     console.error("Create gallery share error:", err?.message || err);
     return NextResponse.json(
       { error: "Server error", detail: err?.message || String(err) },
-      { status: 500 }
+      { status: err?.message === "Forbidden" ? 403 : 500 }
     );
   }
 }

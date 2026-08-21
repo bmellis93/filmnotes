@@ -343,8 +343,9 @@ export default function VideoGrid({
                     }}
                   />
                 ) : v.status === "UPLOADING" || v.status === "UPLOADED" || v.status === "PROCESSING" ? (
-                  <div className="absolute inset-0">
-                    <div className="h-full w-full animate-pulse bg-gradient-to-br from-[var(--surface-2)]/60 via-[var(--surface-1)]/30 to-[var(--surface-2)]/60" />
+                  <div className="absolute inset-0 overflow-hidden">
+                    <div className="h-full w-full bg-gradient-to-br from-[var(--surface-2)]/60 via-[var(--surface-1)]/30 to-[var(--surface-2)]/60" />
+                    <div className="absolute inset-0 -translate-x-full animate-shimmer -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                     <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-3)]">
                       {statusLabel(v.status)}
                     </div>

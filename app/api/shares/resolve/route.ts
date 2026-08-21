@@ -24,10 +24,15 @@ export async function POST(req: NextRequest) {
         allowedVideoIdsJson: true,
         stacksJson: true,
         expiresAt: true,
+        revokedAt: true,
       },
     });
 
     if (!share) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    if (share.revokedAt) {
+      return NextResponse.json({ error: "Revoked" }, { status: 410 });
+    }
 
     if (share.expiresAt && share.expiresAt.getTime() < Date.now()) {
       return NextResponse.json({ error: "Expired" }, { status: 410 });

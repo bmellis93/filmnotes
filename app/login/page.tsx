@@ -10,6 +10,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const next = encodeURIComponent(params?.next ?? "/owner/galleries");
   const restricted = params?.error === "private_app_restricted";
+  const noAccess = params?.error === "no_access";
 
   return (
     <main className="min-h-[100dvh] grid place-items-center bg-[var(--surface-0)] text-[var(--text-1)]">
@@ -27,6 +28,14 @@ export default async function LoginPage({
             <a href="/pricing" className={buttonVariants({ className: "mt-6 w-full" })}>
               See pricing
             </a>
+          </>
+        ) : noAccess ? (
+          <>
+            <h1 className="text-lg">You don't have access to this account</h1>
+            <p className="mt-1 text-sm text-[var(--text-3)]">
+              Your role on this account doesn't include dashboard access. Ask an admin on
+              your team to change your role if you think this is a mistake.
+            </p>
           </>
         ) : (
           <>

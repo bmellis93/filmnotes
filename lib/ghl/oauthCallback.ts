@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { setOwnerSession } from "@/lib/auth/ownerSession";
 import { prisma } from "@/lib/prisma";
 import type { GhlAppConfig } from "@/lib/ghl/oauthApps";
+import type { OrgRole } from "@prisma/client";
 
 // Comma-separated GHL location ids allowed to create a *new* org through the
 // private app -- deliberately manual (env var, not self-serve) since the
@@ -170,7 +171,7 @@ export async function handleOauthCallback(req: NextRequest, config: GhlAppConfig
       where: { orgId_userId: { orgId: ctx.orgId, userId: ctx.userId } },
     });
 
-    let role: "VIEWER" | "UPLOADER" | "CONTRIBUTOR" | "ADMIN";
+    let role: OrgRole;
     if (existingMember) {
       role = existingMember.role;
     } else {

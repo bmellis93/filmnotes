@@ -5,7 +5,7 @@ import type { OrgRole } from "@prisma/client";
 
 export const runtime = "nodejs";
 
-const VALID_ROLES: OrgRole[] = ["VIEWER", "UPLOADER", "CONTRIBUTOR", "ADMIN"];
+const VALID_ROLES: OrgRole[] = ["NONE", "VIEWER", "UPLOADER", "CONTRIBUTOR", "ADMIN"];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

@@ -82,8 +82,16 @@ export type RecipientShareModalProps = {
     contactName?: string;
     allowComments: boolean;
     allowDownload: boolean;
+    expiresInDays: number | null;
   }) => Promise<CreateShareResult>;
 };
+
+const EXPIRY_OPTIONS: { value: string; label: string }[] = [
+  { value: "never", label: "Never" },
+  { value: "7", label: "7 days" },
+  { value: "30", label: "30 days" },
+  { value: "90", label: "90 days" },
+];
 
 async function sendChannel(args: {
   contactId: string;
@@ -129,6 +137,7 @@ export default function RecipientShareModal({
 
   const [allowComments, setAllowComments] = useState(true);
   const [allowDownloads, setAllowDownloads] = useState(false);
+  const [expiry, setExpiry] = useState("never");
 
   // Delivery checkboxes: if none selected, we try SMS then Email client-side.
   const [sendSms, setSendSms] = useState(false);
@@ -172,6 +181,7 @@ export default function RecipientShareModal({
     setSelected([]);
     setAllowComments(true);
     setAllowDownloads(false);
+    setExpiry("never");
     setSendSms(false);
     setSendEmail(false);
     setCustomMessage("");
@@ -402,6 +412,7 @@ export default function RecipientShareModal({
           contactName: c.name,
           allowComments,
           allowDownload: allowDownloads,
+          expiresInDays: expiry === "never" ? null : Number(expiry),
         });
 
         if (!created.ok) {
@@ -821,6 +832,21 @@ export default function RecipientShareModal({
                       onChange={(e) => setAllowDownloads(e.target.checked)}
                       className="h-4 w-4 accent-[var(--accent-solid)]"
                     />
+                  </label>
+
+                  <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
+                    <span className="text-[var(--text-2)]">Link expires</span>
+                    <select
+                      value={expiry}
+                      onChange={(e) => setExpiry(e.target.value)}
+                      className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)]"
+                    >
+                      {EXPIRY_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 </div>
               </div>

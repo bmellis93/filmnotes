@@ -323,6 +323,7 @@ export default function SettingsScreen({ orgId, isReviewerOrg, hasGhlConnection 
                   disabled={savingRoleId === m.id}
                   className="shrink-0 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs font-semibold text-[var(--text-2)] disabled:opacity-60"
                 >
+                  <option value="NONE">None — no access</option>
                   <option value="VIEWER">Viewer</option>
                   <option value="UPLOADER">Uploader</option>
                   <option value="CONTRIBUTOR">Contributor</option>

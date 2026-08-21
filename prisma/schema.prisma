@@ -20,6 +20,7 @@ model ShareLink {
   allowDownload       Boolean   @default(false)
   createdAt           DateTime  @default(now())
   expiresAt           DateTime?
+  revokedAt           DateTime?
   contactId           String?
   contactName         String?
   conversationId      String?
@@ -259,6 +260,7 @@ model OrgMember {
 }
 
 enum OrgRole {
+  NONE
   VIEWER
   UPLOADER
   CONTRIBUTOR

@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { hasRole as hasRoleShared } from "@/lib/auth/roles";
 
 const COOKIE_NAME = "rm_owner_session";
-const ORG_ROLES: OrgRole[] = ["VIEWER", "UPLOADER", "CONTRIBUTOR", "ADMIN"];
+const ORG_ROLES: OrgRole[] = ["NONE", "VIEWER", "UPLOADER", "CONTRIBUTOR", "ADMIN"];
 
 const JWT_SECRET = process.env.APP_JWT_SECRET;
 if (!JWT_SECRET) throw new Error("Missing APP_JWT_SECRET");

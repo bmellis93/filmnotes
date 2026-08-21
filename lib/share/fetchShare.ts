@@ -62,6 +62,7 @@ export async function fetchShare(shareId: string): Promise<SharePayload | null> 
       allowedVideoIdsJson: true,
       stacksJson: true,
       expiresAt: true,
+      revokedAt: true,
     },
   });
 
@@ -69,6 +70,7 @@ export async function fetchShare(shareId: string): Promise<SharePayload | null> 
 
   // Matches requireValidShareToken's enforcement for the current /r/[token]
   // flow -- this legacy route was letting expired links keep working forever.
+  if (share.revokedAt) return null;
   if (share.expiresAt && share.expiresAt.getTime() < Date.now()) return null;
 
   // Allowed IDs: gallery shares use allowedVideoIdsJson; single-video shares fall back to videoId

@@ -16,6 +16,10 @@ export async function requireValidShareToken(token: string): Promise<ShareAuthRe
 
   if (!share) return { ok: false, status: 404, error: "Invalid token" };
 
+  if (share.revokedAt) {
+    return { ok: false, status: 410, error: "Link revoked" };
+  }
+
   if (share.expiresAt && share.expiresAt.getTime() < Date.now()) {
     return { ok: false, status: 410, error: "Link expired" };
   }

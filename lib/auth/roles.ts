@@ -6,10 +6,11 @@ import type { OrgRole } from "@prisma/client";
 export type { OrgRole };
 
 export const ROLE_RANK: Record<OrgRole, number> = {
-  VIEWER: 0,
-  UPLOADER: 1,
-  CONTRIBUTOR: 2,
-  ADMIN: 3,
+  NONE: 0,
+  VIEWER: 1,
+  UPLOADER: 2,
+  CONTRIBUTOR: 3,
+  ADMIN: 4,
 };
 
 export function hasRole(role: OrgRole, min: OrgRole): boolean {

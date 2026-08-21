@@ -4,6 +4,17 @@
    (set by next-themes) instead of the OS prefers-color-scheme media query. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Shimmer sweep for processing-video placeholders (VideoGrid.tsx). */
+@theme {
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* FilmNotes brand primitives — see public/brand/brand-guide.md */
 :root {
   --ink: #0e0e11;
