@@ -7,7 +7,10 @@ import { Logo } from "@/components/brand/Logo";
 import { buttonVariants } from "@/components/ui/Button";
 import { GET_APP_URL, LOGIN_URL } from "@/lib/marketing/links";
 
-const navLinks = [{ href: "/pricing", label: "Pricing" }];
+const navLinks = [
+  { href: "/pricing", label: "Pricing" },
+  { href: "/support", label: "Support" },
+];
 
 export default function MarketingHeader() {
   const [open, setOpen] = useState(false);
