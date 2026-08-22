@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
 import Hls from "hls.js";
+import { useChromecast } from "./useChromecast";
 
 export type QualityLevel = {
   index: number;
@@ -26,6 +27,9 @@ type UseVideoPlayerOptions = {
   // whatever token is currently valid.
   playbackTokenUrl?: string;
 
+  // Title shown on the Chromecast receiver's UI.
+  title?: string;
+
   snapToZeroThreshold?: number; // default 0.02
   fsHintMs?: number; // default 2500
 };
@@ -48,6 +52,18 @@ type UseVideoPlayerReturn = {
 
   isFullscreen: boolean;
   showFsHint: boolean;
+
+  // AirPlay (Safari/WebKit only -- undefined everywhere else)
+  isAirPlaySupported: boolean;
+  isAirPlayActive: boolean;
+  startAirPlay: () => void;
+
+  // Chromecast
+  isCastAvailable: boolean;
+  isCasting: boolean;
+  castDeviceName: string | null;
+  startCast: () => Promise<void>;
+  stopCast: () => void;
 
   // quality (real, when the source is HLS and hls.js is driving playback)
   qualityLevels: QualityLevel[];
@@ -84,7 +100,7 @@ function clamp(n: number, min: number, max: number) {
 }
 
 export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayerReturn {
-  const { src: legacySrc, playbackTokenUrl } = opts;
+  const { src: legacySrc, playbackTokenUrl, title } = opts;
   const snapToZeroThreshold = opts.snapToZeroThreshold ?? 0.02;
   const fsHintMs = opts.fsHintMs ?? 2500;
 
@@ -97,6 +113,33 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
   );
   const currentTokenRef = useRef<string | null>(null);
   const isSignedRef = useRef(Boolean(playbackTokenUrl));
+  // Unsigned "public" playback id, when the playback-token endpoint reports
+  // one -- handed to a Chromecast receiver instead of the signed stream,
+  // since a receiver is a separate device with no path to receive our
+  // background token refresh. null when absent (older videos without a
+  // public policy); startCast falls back to the current signed URL/token
+  // in that case.
+  const muxPublicPlaybackIdRef = useRef<string | null>(null);
+
+  // Inject the current token onto requests to Mux's main manifest domain.
+  // Sub-playlist/segment requests Mux hands back point at a *different*
+  // edge domain with their own baked-in signature (signature/expires/skid
+  // params) derived from that top-level token -- appending our token onto
+  // those breaks Mux's own signature check, so leave anything that already
+  // carries a "signature" param untouched. Hoisted (not just used by the
+  // hls.js attach effect below) so the Chromecast fallback path can also
+  // build a fully-tokened URL to hand a cast receiver.
+  const withCurrentToken = useCallback((url: string) => {
+    if (!isSignedRef.current || !currentTokenRef.current) return url;
+    try {
+      const u = new URL(url);
+      if (u.searchParams.has("signature")) return url;
+      u.searchParams.set("token", currentTokenRef.current);
+      return u.toString();
+    } catch {
+      return url;
+    }
+  }, []);
 
   useEffect(() => {
     isSignedRef.current = Boolean(playbackTokenUrl);
@@ -117,6 +160,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
         if (cancelled) return;
 
         currentTokenRef.current = data.token as string;
+        muxPublicPlaybackIdRef.current = (data.muxPublicPlaybackId as string | null) ?? null;
         setResolvedSrc((prev) => {
           const next = `https://stream.mux.com/${data.playbackId}.m3u8`;
           return prev === next ? prev : next;
@@ -334,6 +378,66 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     return () => window.clearTimeout(t);
   }, [isFullscreen, fsHintMs]);
 
+  // AirPlay -- a native WebKit API on the <video> element itself, only
+  // present in Safari. Feature-detect rather than sniffing the UA.
+  const [isAirPlaySupported, setIsAirPlaySupported] = useState(false);
+  const [isAirPlayActive, setIsAirPlayActive] = useState(false);
+
+  useEffect(() => {
+    const v = videoRef.current as
+      | (HTMLVideoElement & {
+          webkitShowPlaybackTargetPicker?: () => void;
+          webkitCurrentPlaybackTargetIsWireless?: boolean;
+        })
+      | null;
+    if (!v || typeof v.webkitShowPlaybackTargetPicker !== "function") return;
+
+    // Fires when Safari discovers/loses an AirPlay receiver on the network
+    // -- that's what actually gates whether to show the button, not just
+    // API presence (every Safari has the API; not every network has a TV).
+    const onAvailabilityChanged = (e: any) => {
+      setIsAirPlaySupported(e?.availability === "available");
+    };
+    const onTargetChanged = () => {
+      setIsAirPlayActive(Boolean(v.webkitCurrentPlaybackTargetIsWireless));
+    };
+
+    v.addEventListener("webkitplaybacktargetavailabilitychanged", onAvailabilityChanged);
+    v.addEventListener("webkitcurrentplaybacktargetiswirelesschanged", onTargetChanged);
+    return () => {
+      v.removeEventListener("webkitplaybacktargetavailabilitychanged", onAvailabilityChanged);
+      v.removeEventListener("webkitcurrentplaybacktargetiswirelesschanged", onTargetChanged);
+    };
+  }, []);
+
+  const startAirPlay = useCallback(() => {
+    const v = videoRef.current as (HTMLVideoElement & { webkitShowPlaybackTargetPicker?: () => void }) | null;
+    v?.webkitShowPlaybackTargetPicker?.();
+  }, []);
+
+  // Chromecast
+  const chromecast = useChromecast();
+
+  const startCast = useCallback(async () => {
+    const publicId = muxPublicPlaybackIdRef.current;
+    const url = publicId
+      ? `https://stream.mux.com/${publicId}.m3u8`
+      : resolvedSrc
+      ? withCurrentToken(resolvedSrc)
+      : null;
+    if (!url) return;
+
+    // Stop local playback once the receiver takes over -- otherwise both
+    // play at once with no way to hear which is which.
+    pause();
+
+    await chromecast.startCast({
+      url,
+      title,
+      currentTimeSec: getCurrentTimeMs() / 1000,
+    });
+  }, [resolvedSrc, withCurrentToken, title, chromecast, pause, getCurrentTimeMs]);
+
   // Try to start playback as soon as the source is ready to go, so the
   // viewer lands on a playing video instead of a static first frame.
   // Unmuted autoplay is blocked by most mobile browsers without a user
@@ -372,24 +476,6 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     setIsAutoQuality(true);
 
     const isHlsSource = src.includes(".m3u8");
-
-    // Inject the current token onto requests to Mux's main manifest domain.
-    // Sub-playlist/segment requests Mux hands back point at a *different*
-    // edge domain with their own baked-in signature (signature/expires/skid
-    // params) derived from that top-level token -- appending our token onto
-    // those breaks Mux's own signature check, so leave anything that
-    // already carries a "signature" param untouched.
-    const withCurrentToken = (url: string) => {
-      if (!isSignedRef.current || !currentTokenRef.current) return url;
-      try {
-        const u = new URL(url);
-        if (u.searchParams.has("signature")) return url;
-        u.searchParams.set("token", currentTokenRef.current);
-        return u.toString();
-      } catch {
-        return url;
-      }
-    };
 
     // Always prefer hls.js over native HLS (e.g. Safari) when MSE is
     // available, same approach YouTube's web player uses: native playback
@@ -468,7 +554,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
         hlsRef.current = null;
       }
     };
-  }, [resolvedSrc, attemptAutoplay]);
+  }, [resolvedSrc, attemptAutoplay, withCurrentToken]);
 
   const setQualityLevel = useCallback((index: number) => {
     if (hlsRef.current) hlsRef.current.currentLevel = index;
@@ -532,6 +618,16 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
 
     isFullscreen,
     showFsHint,
+
+    isAirPlaySupported,
+    isAirPlayActive,
+    startAirPlay,
+
+    isCastAvailable: chromecast.isCastAvailable,
+    isCasting: chromecast.isCasting,
+    castDeviceName: chromecast.castDeviceName,
+    startCast,
+    stopCast: chromecast.stopCast,
 
     qualityLevels,
     currentQualityIndex,

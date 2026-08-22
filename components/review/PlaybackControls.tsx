@@ -12,6 +12,8 @@ import {
   Maximize,
   Minimize,
   ChevronDown,
+  Airplay,
+  Cast,
 } from "lucide-react";
 
 const iconBtnBase =
@@ -64,6 +66,17 @@ type Props = {
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
 
+  // AirPlay -- omit or leave `showAirPlay` false to hide the button
+  // entirely (no receiver on the network, or a non-Safari browser)
+  showAirPlay?: boolean;
+  isAirPlayActive?: boolean;
+  onAirPlay?: () => void;
+
+  // Chromecast -- same show/hide convention as AirPlay
+  showCast?: boolean;
+  isCasting?: boolean;
+  onCast?: () => void;
+
   // quality (real HLS renditions, when available)
   qualityLevels?: { index: number; label: string }[];
   currentQualityIndex?: number; // the level actually playing right now
@@ -101,6 +114,14 @@ export default function PlaybackControls({
 
   onToggleFullscreen,
   isFullscreen,
+
+  showAirPlay = false,
+  isAirPlayActive = false,
+  onAirPlay,
+
+  showCast = false,
+  isCasting = false,
+  onCast,
 
   qualityLevels = [],
   currentQualityIndex = -1,
@@ -380,6 +401,34 @@ export default function PlaybackControls({
 
         {/* RIGHT cluster */}
         <div className="flex items-center justify-end gap-4">
+          {/* AirPlay */}
+          {showAirPlay && (
+            <button
+              type="button"
+              onClick={onAirPlay}
+              className={isAirPlayActive ? iconBtnToggledOn : iconBtnMuted}
+              title={isAirPlayActive ? "Playing on AirPlay" : "AirPlay"}
+              aria-label="AirPlay"
+              aria-pressed={isAirPlayActive}
+            >
+              <Airplay className="h-5 w-5" />
+            </button>
+          )}
+
+          {/* Chromecast */}
+          {showCast && (
+            <button
+              type="button"
+              onClick={onCast}
+              className={isCasting ? iconBtnToggledOn : iconBtnMuted}
+              title={isCasting ? "Stop casting" : "Cast"}
+              aria-label="Cast"
+              aria-pressed={isCasting}
+            >
+              <Cast className="h-5 w-5" />
+            </button>
+          )}
+
           {/* Viewer Settings */}
           <div ref={settingsWrapRef} className="relative">
             <button

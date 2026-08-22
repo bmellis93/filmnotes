@@ -20,7 +20,7 @@ import { getStackIdsForVideo, getNextIdInStack } from "@/lib/share/stackView";
 import type { Annotation } from "@/lib/annotations/types";
 import { isEmptyAnnotation } from "@/lib/annotations/types";
 import { hasRole, type OrgRole } from "@/lib/auth/roles";
-import { Undo2, Eraser, Check } from "lucide-react";
+import { Undo2, Eraser, Check, Cast } from "lucide-react";
 
 function makeTempId() {
   return `temp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -130,7 +130,9 @@ export default function VideoReviewScreen(props: Props) {
     return shareAuthToken ? `${base}?token=${encodeURIComponent(shareAuthToken)}` : base;
   }, [videoId, shareAuthToken]);
 
-  const player = useVideoPlayer({ playbackTokenUrl });
+  const currentLabel = videoMetaById[videoId]?.name ?? `Video ${videoId}`;
+
+  const player = useVideoPlayer({ playbackTokenUrl, title: currentLabel });
 
   // View receipts: record that the client opened this video (once per mount).
   useEffect(() => {
@@ -147,8 +149,6 @@ export default function VideoReviewScreen(props: Props) {
 
   // Versions in the stack (for dropdown + compare)
   const versions = useMemo(() => getStackIdsForVideo(videoId, stacks), [videoId, stacks]);
-
-  const currentLabel = videoMetaById[videoId]?.name ?? `Video ${videoId}`;
 
   // Next version in stack (for the version-switch dropdown/route prefetch;
   // no longer preloaded as a hidden <video> since that would need its own
@@ -743,6 +743,24 @@ export default function VideoReviewScreen(props: Props) {
                   onTimeUpdate={player.onTimeUpdate}
                 />
 
+                {player.isCasting && (
+                  <div className="absolute inset-0 grid place-items-center bg-black/90">
+                    <div className="flex flex-col items-center gap-3 px-6 text-center">
+                      <Cast className="h-10 w-10 text-[var(--text-2)]" />
+                      <div className="text-sm font-medium text-[var(--text-1)]">
+                        Casting to {player.castDeviceName ?? "your TV"}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={player.stopCast}
+                        className="rounded-lg border border-[var(--border-1)] px-3 py-1.5 text-xs font-semibold text-[var(--text-2)] hover:bg-[var(--surface-1)]"
+                      >
+                        Stop casting
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {isDrawingActive && (
                   <>
                     <DrawingOverlay
@@ -826,6 +844,12 @@ export default function VideoReviewScreen(props: Props) {
                   onQualityChange={player.setQualityLevel}
                   isFullscreen={player.isFullscreen}
                   onToggleFullscreen={player.toggleFullscreen}
+                  showAirPlay={player.isAirPlaySupported}
+                  isAirPlayActive={player.isAirPlayActive}
+                  onAirPlay={player.startAirPlay}
+                  showCast={player.isCastAvailable}
+                  isCasting={player.isCasting}
+                  onCast={player.isCasting ? player.stopCast : player.startCast}
                 />
               </div>
 

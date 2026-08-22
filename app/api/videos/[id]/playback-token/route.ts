@@ -24,7 +24,7 @@ export async function GET(
 
   const video = await prisma.video.findUnique({
     where: { id },
-    select: { muxPlaybackId: true, status: true },
+    select: { muxPlaybackId: true, muxPublicPlaybackId: true, status: true },
   });
 
   if (!video?.muxPlaybackId) {
@@ -39,5 +39,9 @@ export async function GET(
     playbackId: video.muxPlaybackId,
     token,
     expiresInSeconds: TOKEN_TTL_SECONDS,
+    // Unsigned, no-token-needed playback id -- handed to a Chromecast
+    // receiver instead of the signed URL, since a receiver is a separate
+    // device with no path to receive our background token refresh.
+    muxPublicPlaybackId: video.muxPublicPlaybackId,
   });
 }
