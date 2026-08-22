@@ -31,7 +31,7 @@ export default function ShareGalleryModal({
       sendDisabledReason={
         allowedVideoIds.length === 0 ? "No ready videos in this gallery yet." : null
       }
-      createShare={async ({ contactId, contactName, allowComments, allowDownload, expiresInDays }) => {
+      createShare={async ({ contactId, contactName, allowComments, allowDownload, expiresInDays, view }) => {
         const res = await fetch("/api/shares/create-gallery", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -43,7 +43,7 @@ export default function ShareGalleryModal({
             allowComments,
             allowDownload,
             expiresInDays,
-            view: "REVIEW_DOWNLOAD",
+            view,
             contactId,
             contactName,
           }),

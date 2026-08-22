@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     const videoId = String(body.videoId || "").trim();
     const allowComments = body.allowComments !== false;
     const allowDownload = body.allowDownload === true;
+    const view = body.view === "VIEW_ONLY" ? "VIEW_ONLY" : "REVIEW_DOWNLOAD";
 
     const expiresInDays =
       body.expiresInDays !== undefined && body.expiresInDays !== null
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       if (existing) {
         const updated = await prisma.shareLink.update({
           where: { id: existing.id },
-          data: { expiresAt, allowComments, allowDownload, contactName, conversationId },
+          data: { expiresAt, allowComments, allowDownload, view, contactName, conversationId },
           select: { token: true, videoId: true },
         });
 
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
         expiresAt,
         allowComments,
         allowDownload,
-        view: "REVIEW_DOWNLOAD", // single-video shares default to review+download; tweak if you want
+        view,
         contactId,
         contactName,
         conversationId,

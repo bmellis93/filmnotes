@@ -75,15 +75,18 @@ export type RecipientShareModalProps = {
   sendDisabledReason?: string | null;
 
   /**
-   * Creates a tokenized share link for one contact. Returning `ok: false`
-   * marks that recipient as failed without aborting the rest of the batch.
+   * Creates a tokenized share link. `contactId` is omitted for a link
+   * created via "Get link" (no recipient — nothing to dedup against or
+   * message). Returning `ok: false` marks that recipient as failed without
+   * aborting the rest of the batch.
    */
   createShare: (args: {
-    contactId: string;
+    contactId?: string;
     contactName?: string;
     allowComments: boolean;
     allowDownload: boolean;
     expiresInDays: number | null;
+    view: "REVIEW_DOWNLOAD" | "VIEW_ONLY";
   }) => Promise<CreateShareResult>;
 };
 
@@ -138,7 +141,12 @@ export default function RecipientShareModal({
 
   const [allowComments, setAllowComments] = useState(true);
   const [allowDownloads, setAllowDownloads] = useState(false);
+  const [view, setView] = useState<"REVIEW_DOWNLOAD" | "VIEW_ONLY">("REVIEW_DOWNLOAD");
   const [expiry, setExpiry] = useState("never");
+
+  const [isGettingLink, setIsGettingLink] = useState(false);
+  const [justGotLink, setJustGotLink] = useState(false);
+  const [linkResult, setLinkResult] = useState<string | null>(null);
 
   // Delivery checkboxes: if none selected, we try SMS then Email client-side.
   const [sendSms, setSendSms] = useState(false);
@@ -191,6 +199,7 @@ export default function RecipientShareModal({
     setSelected([]);
     setAllowComments(true);
     setAllowDownloads(false);
+    setView("REVIEW_DOWNLOAD");
     setExpiry("never");
     setSendSms(false);
     setSendEmail(false);
@@ -198,6 +207,9 @@ export default function RecipientShareModal({
     setError(null);
     setLastSend(null);
     setJustSent(false);
+    setIsGettingLink(false);
+    setJustGotLink(false);
+    setLinkResult(null);
     if (justSentTimerRef.current) clearTimeout(justSentTimerRef.current);
 
     setSmsTemplateId("");
@@ -423,9 +435,10 @@ export default function RecipientShareModal({
         const created = await createShare({
           contactId: c.id,
           contactName: c.name,
-          allowComments,
-          allowDownload: allowDownloads,
+          allowComments: view === "VIEW_ONLY" ? false : allowComments,
+          allowDownload: view === "VIEW_ONLY" ? false : allowDownloads,
           expiresInDays: expiry === "never" ? null : Number(expiry),
+          view,
         });
 
         if (!created.ok) {
@@ -536,6 +549,50 @@ export default function RecipientShareModal({
       setError(e?.message || "Send failed");
     } finally {
       setIsSending(false);
+    }
+  }
+
+  async function handleGetLink() {
+    setError(null);
+    setLinkResult(null);
+
+    if (sendDisabledReason) {
+      setError(sendDisabledReason);
+      return;
+    }
+
+    setIsGettingLink(true);
+    try {
+      const created = await createShare({
+        allowComments: view === "VIEW_ONLY" ? false : allowComments,
+        allowDownload: view === "VIEW_ONLY" ? false : allowDownloads,
+        expiresInDays: expiry === "never" ? null : Number(expiry),
+        view,
+      });
+
+      if (!created.ok) {
+        setError(created.error);
+        toast({ kind: "error", message: created.error });
+        return;
+      }
+
+      const fullUrl = `${window.location.origin}${created.url}`;
+      setLinkResult(fullUrl);
+
+      try {
+        await navigator.clipboard.writeText(fullUrl);
+        toast({ kind: "success", message: "Link created and copied to clipboard." });
+      } catch {
+        toast({ kind: "success", message: "Link created." });
+      }
+
+      setJustGotLink(true);
+      if (justSentTimerRef.current) clearTimeout(justSentTimerRef.current);
+      justSentTimerRef.current = setTimeout(() => setJustGotLink(false), 2500);
+    } catch (e: any) {
+      setError(e?.message || "Failed to create link");
+    } finally {
+      setIsGettingLink(false);
     }
   }
 
@@ -848,24 +905,40 @@ export default function RecipientShareModal({
                 <div className="text-sm font-semibold">Permissions</div>
                 <div className="mt-2 space-y-2">
                   <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
-                    <span className="text-[var(--text-2)]">Allow comments</span>
-                    <input
-                      type="checkbox"
-                      checked={allowComments}
-                      onChange={(e) => setAllowComments(e.target.checked)}
-                      className="h-4 w-4 accent-[var(--accent-solid)]"
-                    />
+                    <span className="text-[var(--text-2)]">Link type</span>
+                    <select
+                      value={view}
+                      onChange={(e) => setView(e.target.value as "REVIEW_DOWNLOAD" | "VIEW_ONLY")}
+                      className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)]"
+                    >
+                      <option value="REVIEW_DOWNLOAD">Review &amp; comment</option>
+                      <option value="VIEW_ONLY">View only</option>
+                    </select>
                   </label>
 
-                  <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
-                    <span className="text-[var(--text-2)]">Allow downloads</span>
-                    <input
-                      type="checkbox"
-                      checked={allowDownloads}
-                      onChange={(e) => setAllowDownloads(e.target.checked)}
-                      className="h-4 w-4 accent-[var(--accent-solid)]"
-                    />
-                  </label>
+                  {view !== "VIEW_ONLY" && (
+                    <>
+                      <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
+                        <span className="text-[var(--text-2)]">Allow comments</span>
+                        <input
+                          type="checkbox"
+                          checked={allowComments}
+                          onChange={(e) => setAllowComments(e.target.checked)}
+                          className="h-4 w-4 accent-[var(--accent-solid)]"
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
+                        <span className="text-[var(--text-2)]">Allow downloads</span>
+                        <input
+                          type="checkbox"
+                          checked={allowDownloads}
+                          onChange={(e) => setAllowDownloads(e.target.checked)}
+                          className="h-4 w-4 accent-[var(--accent-solid)]"
+                        />
+                      </label>
+                    </>
+                  )}
 
                   <label className="flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
                     <span className="text-[var(--text-2)]">Link expires</span>
@@ -916,27 +989,70 @@ export default function RecipientShareModal({
                   {subjectLabel}: <span className="text-[var(--text-3)]">{subjectValue}</span>
                 </div>
 
-                <Button
-                  disabled={isSending || selected.length === 0 || Boolean(sendDisabledReason)}
-                  onClick={handleSend}
-                  title={
-                    sendDisabledReason ??
-                    (selected.length === 0 ? "Select at least one recipient" : "Send")
-                  }
-                >
-                  {isSending ? "Sending…" : justSent ? "Sent ✓" : "Send"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    disabled={isGettingLink || Boolean(sendDisabledReason)}
+                    onClick={handleGetLink}
+                    title="Create a link without messaging anyone — copy and share it yourself"
+                  >
+                    {isGettingLink ? "Creating…" : justGotLink ? "Copied ✓" : "Get link"}
+                  </Button>
+
+                  <Button
+                    disabled={isSending || selected.length === 0 || Boolean(sendDisabledReason)}
+                    onClick={handleSend}
+                    title={
+                      sendDisabledReason ??
+                      (selected.length === 0 ? "Select at least one recipient" : "Send")
+                    }
+                  >
+                    {isSending ? "Sending…" : justSent ? "Sent ✓" : "Send"}
+                  </Button>
+                </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3">
-                <div className="text-xs text-[var(--text-muted)]">Review links</div>
-                <div className="mt-1 text-sm text-[var(--text-2)]">
-                  A unique review link will be generated for each recipient when you send.
+              {linkResult ? (
+                <div className="mt-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3">
+                  <div className="text-xs text-[var(--text-muted)]">Link ready</div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      readOnly
+                      value={linkResult}
+                      onFocus={(e) => e.currentTarget.select()}
+                      className="min-w-0 flex-1 truncate rounded-lg border border-[var(--border-1)] bg-[var(--surface-0)] px-3 py-2 text-xs text-[var(--text-2)]"
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(linkResult);
+                          toast({ kind: "success", message: "Copied." });
+                        } catch {
+                          toast({ kind: "error", message: "Couldn't copy link." });
+                        }
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="mt-2 text-xs text-[var(--text-muted)]">
+                    Nobody&rsquo;s been messaged — paste this link anywhere you&rsquo;d like.
+                  </div>
                 </div>
-                <div className="mt-2 text-xs text-[var(--text-muted)]">
-                  Links are permissioned and can be disabled later.
+              ) : (
+                <div className="mt-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3">
+                  <div className="text-xs text-[var(--text-muted)]">Review links</div>
+                  <div className="mt-1 text-sm text-[var(--text-2)]">
+                    A unique review link will be generated for each recipient when you send, or
+                    use &ldquo;Get link&rdquo; for one you can share yourself.
+                  </div>
+                  <div className="mt-2 text-xs text-[var(--text-muted)]">
+                    Links are permissioned and can be disabled later.
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 

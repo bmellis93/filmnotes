@@ -274,8 +274,22 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
       const el = viewerRef.current;
       if (!el) return;
 
+      // iOS Safari has no Fullscreen API on arbitrary elements at all --
+      // only the <video> element itself supports going fullscreen, via the
+      // non-standard webkitEnterFullscreen (which hands off to the native
+      // player chrome, since that's the only fullscreen iOS offers).
+      // Feature-detect rather than sniff the UA: requestFullscreen simply
+      // doesn't exist on iOS Safari for non-video elements.
+      if (typeof el.requestFullscreen !== "function") {
+        const v = videoRef.current as
+          | (HTMLVideoElement & { webkitEnterFullscreen?: () => void })
+          | null;
+        v?.webkitEnterFullscreen?.();
+        return;
+      }
+
       if (!document.fullscreenElement) {
-        await el.requestFullscreen?.();
+        await el.requestFullscreen();
       } else {
         await document.exitFullscreen?.();
       }
@@ -291,6 +305,25 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     }
     document.addEventListener("fullscreenchange", onFs);
     return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  // iOS's webkitEnterFullscreen path above never touches
+  // document.fullscreenElement, so the listener above can't see it -- track
+  // it separately via the non-standard begin/end events iOS fires on the
+  // <video> element itself.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    const onBegin = () => setIsFullscreen(true);
+    const onEnd = () => setIsFullscreen(false);
+
+    v.addEventListener("webkitbeginfullscreen", onBegin);
+    v.addEventListener("webkitendfullscreen", onEnd);
+    return () => {
+      v.removeEventListener("webkitbeginfullscreen", onBegin);
+      v.removeEventListener("webkitendfullscreen", onEnd);
+    };
   }, []);
 
   useEffect(() => {
