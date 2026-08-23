@@ -477,13 +477,24 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
 
     const isHlsSource = src.includes(".m3u8");
 
-    // Always prefer hls.js over native HLS (e.g. Safari) when MSE is
-    // available, same approach YouTube's web player uses: native playback
-    // gives the browser's built-in decoder no JS API for picking a quality
-    // level, so relying on it means manual selection silently doesn't work
-    // anywhere it's actually needed. Native <video src> is only a fallback
-    // for engines without MSE support at all (e.g. very old iOS Safari).
-    if (isHlsSource && Hls.isSupported()) {
+    // Engines with *native* HLS support (Safari, desktop and iOS) are
+    // exactly the ones where AirPlay matters, so they're the one case where
+    // native playback is preferred over hls.js despite losing the manual
+    // quality picker: a third-party AirPlay 2 receiver (a smart TV, not an
+    // Apple TV) needs a real, independently-fetchable URL to stream video,
+    // which only native <video src> playback can hand off. hls.js's
+    // MSE/ManagedMediaSource-backed video has no such URL to hand over, so
+    // Safari silently falls back to routing audio only -- confirmed against
+    // real hardware (a third-party AirPlay 2 TV played audio with no video).
+    // feature-detected via canPlayType rather than UA-sniffed.
+    const hasNativeHls = video.canPlayType("application/vnd.apple.mpegurl") !== "";
+
+    // Elsewhere (Chrome, Firefox, Android -- no native HLS at all), keep
+    // preferring hls.js over nothing, same approach YouTube's web player
+    // uses: native playback there would give the decoder no JS API for
+    // picking a quality level, so manual selection would silently not work
+    // anywhere it's actually needed.
+    if (isHlsSource && Hls.isSupported() && !hasNativeHls) {
       setIsHlsActive(true);
 
       const hls = new Hls(
@@ -539,10 +550,14 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
       hls.loadSource(src);
       hls.attachMedia(video);
     } else {
-      // Native <video src> fallback (browsers without MSE support, now rare
-      // since hls.js is used everywhere else): background token refresh
-      // can't silently update an already-set src, so playback here is only
-      // guaranteed for one token TTL. Acceptable given how narrow this path is.
+      // Native <video src> path: Safari (for real AirPlay video support, see
+      // above) plus the old fallback case of engines with neither native
+      // HLS nor MSE. Background token refresh can't silently update an
+      // already-set src the way hls.js's xhrSetup does, so playback here is
+      // only guaranteed for one token TTL (4h) from when this src was set --
+      // a Safari tab left open/paused longer than that could fail to fetch
+      // further segments. Not fixed here since it's a pre-existing
+      // limitation of this fallback path, just now hit by more traffic.
       setIsHlsActive(false);
       video.src = withCurrentToken(src);
       attemptAutoplay(video);
