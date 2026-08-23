@@ -1,7 +1,8 @@
 // lib/auth/shareContext.ts
 import "server-only";
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { loadGatedShare } from "@/lib/share/shareGate";
+import { unlockCookieName } from "@/lib/share/sharePassword";
 
 export type ShareContext =
   | {
@@ -58,22 +59,15 @@ export async function getShareContextFromRequest(req: NextRequest): Promise<Shar
   const token = getTokenFromRequest(req);
   if (!token) return null;
 
-  const link = await prisma.shareLink.findFirst({
-    where: { token },
-    select: {
-      token: true,
-      orgId: true,
-      videoId: true,
-      galleryId: true,
-      allowedVideoIdsJson: true,
-      allowDownload: true,
-      allowComments: true,
-      view: true,
-    },
-  });
+  // Delegates to the same revoked/expired/password gate every other share
+  // consumer uses -- this used to be a bare, unguarded findFirst that never
+  // checked revoked/expired at all, a pre-existing gap fixed by this shared
+  // path (see lib/share/shareGate.ts).
+  const unlockProof = req.cookies.get(unlockCookieName(token))?.value ?? null;
+  const gate = await loadGatedShare(token, unlockProof);
+  if (!gate.ok) return null;
 
-  if (!link) return null;
-
+  const link = gate.share;
   const videoIds = parseAllowedVideoIds(link);
   if (videoIds.length === 0) return null;
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { X, Copy, Trash2, Link2 } from "lucide-react";
+import { X, Copy, Trash2, Link2, Lock, LockOpen } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import Button from "@/components/ui/Button";
 
 type ShareRow = {
   id: string;
@@ -15,6 +16,7 @@ type ShareRow = {
   createdAt: string;
   expiresAt: string | null;
   revokedAt: string | null;
+  hasPassword: boolean;
   contactName: string | null;
   url: string;
 };
@@ -56,6 +58,8 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editingPasswordFor, setEditingPasswordFor] = useState<string | null>(null);
+  const [passwordDraft, setPasswordDraft] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,7 +87,13 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
 
   async function updateShare(
     id: string,
-    patch: { allowComments?: boolean; allowDownload?: boolean; expiresInDays?: number | null; revoked?: boolean }
+    patch: {
+      allowComments?: boolean;
+      allowDownload?: boolean;
+      expiresInDays?: number | null;
+      revoked?: boolean;
+      password?: string | null;
+    }
   ) {
     setBusyId(id);
     try {
@@ -104,11 +114,17 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                     ...("allowDownload" in patch ? { allowDownload: patch.allowDownload! } : {}),
                     expiresAt: data.share?.expiresAt ?? s.expiresAt,
                     revokedAt: data.share?.revokedAt ?? s.revokedAt,
+                    hasPassword: data.share?.hasPassword ?? s.hasPassword,
                   }
                 : s
             )
           : prev
       );
+      if ("password" in patch) {
+        setEditingPasswordFor(null);
+        setPasswordDraft("");
+        toast({ kind: "success", message: patch.password ? "Password set." : "Password removed." });
+      }
     } catch (e: any) {
       toast({ kind: "error", message: e?.message || "Failed to update link" });
     } finally {
@@ -202,6 +218,12 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                           Revoked
                         </span>
                       )}
+                      {s.hasPassword && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-2)]">
+                          <Lock className="h-3 w-3" />
+                          Password protected
+                        </span>
+                      )}
                     </div>
                     <div className="mt-0.5 text-xs text-[var(--text-muted)]">
                       Created {fmtDate(s.createdAt)} · {expiryLabel(s.expiresAt)}
@@ -288,6 +310,23 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                     Revoked
                   </label>
 
+                  <button
+                    type="button"
+                    disabled={busyId === s.id}
+                    onClick={() => {
+                      if (editingPasswordFor === s.id) {
+                        setEditingPasswordFor(null);
+                      } else {
+                        setEditingPasswordFor(s.id);
+                        setPasswordDraft("");
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text-1)] disabled:opacity-50"
+                  >
+                    {s.hasPassword ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
+                    {s.hasPassword ? "Change password" : "Set password"}
+                  </button>
+
                   <a
                     href={s.url}
                     target="_blank"
@@ -298,6 +337,46 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                     Open
                   </a>
                 </div>
+
+                {editingPasswordFor === s.id && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={passwordDraft}
+                      onChange={(e) => setPasswordDraft(e.target.value)}
+                      placeholder={s.hasPassword ? "New password" : "Set a password"}
+                      className="flex-1 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={busyId === s.id || !passwordDraft}
+                      onClick={() => updateShare(s.id, { password: passwordDraft })}
+                    >
+                      Save
+                    </Button>
+                    {s.hasPassword && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={busyId === s.id}
+                        onClick={() => updateShare(s.id, { password: null })}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setEditingPasswordFor(null);
+                        setPasswordDraft("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

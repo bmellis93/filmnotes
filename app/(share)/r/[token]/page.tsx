@@ -1,11 +1,14 @@
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import ClientGalleryScreen, {
   type ShareGalleryVideo,
   type SharePermissions,
 } from "@/components/share/ClientGalleryScreen";
+import SharePasswordGate from "@/components/share/SharePasswordGate";
 
 import { prisma } from "@/lib/prisma";
 import { requireValidShareToken } from "@/lib/share-auth";
+import { unlockCookieName } from "@/lib/share/sharePassword";
 import { parseAllowedIds, parseStacks } from "@/lib/share/shareLinkUtils";
 
 export const runtime = "nodejs";
@@ -22,8 +25,12 @@ export default async function ShareTokenPage({ params }: Props) {
   const { token } = await params;
   const cleanToken = String(token || "").trim();
 
-  const res = await requireValidShareToken(cleanToken);
-  if (!res.ok) notFound();
+  const unlockProof = (await cookies()).get(unlockCookieName(cleanToken))?.value ?? null;
+  const res = await requireValidShareToken(cleanToken, unlockProof);
+  if (!res.ok) {
+    if (res.passwordRequired) return <SharePasswordGate token={cleanToken} />;
+    notFound();
+  }
 
   const share = res.share;
 

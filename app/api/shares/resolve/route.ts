@@ -1,6 +1,7 @@
 // app/api/shares/resolve/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { loadGatedShare } from "@/lib/share/shareGate";
+import { unlockCookieName } from "@/lib/share/sharePassword";
 
 export const runtime = "nodejs";
 
@@ -11,32 +12,15 @@ export async function POST(req: NextRequest) {
 
     if (!t) return NextResponse.json({ error: "token required" }, { status: 400 });
 
-    const share = await prisma.shareLink.findUnique({
-      where: { token: t },
-      select: {
-        token: true,
-        videoId: true,
-        galleryId: true,
-        title: true,
-        view: true,
-        allowComments: true,
-        allowDownload: true,
-        allowedVideoIdsJson: true,
-        stacksJson: true,
-        expiresAt: true,
-        revokedAt: true,
-      },
-    });
-
-    if (!share) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-    if (share.revokedAt) {
-      return NextResponse.json({ error: "Revoked" }, { status: 410 });
+    const unlockProof = req.cookies.get(unlockCookieName(t))?.value ?? null;
+    const gate = await loadGatedShare(t, unlockProof);
+    if (!gate.ok) {
+      return NextResponse.json(
+        { error: gate.error, passwordRequired: gate.passwordRequired },
+        { status: gate.status }
+      );
     }
-
-    if (share.expiresAt && share.expiresAt.getTime() < Date.now()) {
-      return NextResponse.json({ error: "Expired" }, { status: 410 });
-    }
+    const share = gate.share;
 
     return NextResponse.json({
       ok: true,

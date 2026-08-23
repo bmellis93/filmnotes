@@ -87,6 +87,8 @@ export type RecipientShareModalProps = {
     allowDownload: boolean;
     expiresInDays: number | null;
     view: "REVIEW_DOWNLOAD" | "VIEW_ONLY";
+    /** Blank = no password. Never sent via the SMS/Email body -- tell the recipient separately. */
+    password?: string;
   }) => Promise<CreateShareResult>;
 };
 
@@ -143,6 +145,7 @@ export default function RecipientShareModal({
   const [allowDownloads, setAllowDownloads] = useState(false);
   const [view, setView] = useState<"REVIEW_DOWNLOAD" | "VIEW_ONLY">("REVIEW_DOWNLOAD");
   const [expiry, setExpiry] = useState("never");
+  const [password, setPassword] = useState("");
 
   const [isGettingLink, setIsGettingLink] = useState(false);
   const [justGotLink, setJustGotLink] = useState(false);
@@ -201,6 +204,7 @@ export default function RecipientShareModal({
     setAllowDownloads(false);
     setView("REVIEW_DOWNLOAD");
     setExpiry("never");
+    setPassword("");
     setSendSms(false);
     setSendEmail(false);
     setCustomMessage("");
@@ -439,6 +443,7 @@ export default function RecipientShareModal({
           allowDownload: view === "VIEW_ONLY" ? false : allowDownloads,
           expiresInDays: expiry === "never" ? null : Number(expiry),
           view,
+          password,
         });
 
         if (!created.ok) {
@@ -568,6 +573,7 @@ export default function RecipientShareModal({
         allowDownload: view === "VIEW_ONLY" ? false : allowDownloads,
         expiresInDays: expiry === "never" ? null : Number(expiry),
         view,
+        password,
       });
 
       if (!created.ok) {
@@ -954,6 +960,23 @@ export default function RecipientShareModal({
                       ))}
                     </select>
                   </label>
+
+                  <label className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm">
+                    <span className="text-[var(--text-2)]">Password</span>
+                    <input
+                      type="text"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="No password"
+                      className="w-40 rounded-lg border border-[var(--border-1)] bg-[var(--surface-0)] px-2 py-1 text-xs text-[var(--text-2)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
+                    />
+                  </label>
+                  {password && (
+                    <div className="text-xs text-[var(--text-muted)]">
+                      Tell the recipient this password separately — sending it in the same
+                      message as the link defeats the point.
+                    </div>
+                  )}
                 </div>
               </div>
 

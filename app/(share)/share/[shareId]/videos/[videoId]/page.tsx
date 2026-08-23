@@ -1,7 +1,10 @@
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import VideoReviewScreen from "@/components/review/VideoReviewScreen";
+import SharePasswordGate from "@/components/share/SharePasswordGate";
 import { prisma } from "@/lib/prisma";
 import { fetchShare } from "@/lib/share/fetchShare";
+import { unlockCookieName } from "@/lib/share/sharePassword";
 import { buildChildToParent, latestIdForCard } from "@/components/domain/stacks";
 import { buildVideoMaps } from "@/lib/videoMaps";
 
@@ -17,8 +20,13 @@ export default async function ClientVideoPage({ params }: Props) {
   const videoId = String(rawVideoId || "").trim();
   if (!shareId || !videoId) notFound();
 
-  const share = await fetchShare(shareId);
-  if (!share) notFound();
+  const unlockProof = (await cookies()).get(unlockCookieName(shareId))?.value ?? null;
+  const result = await fetchShare(shareId, unlockProof);
+  if (!result.ok) {
+    if (result.passwordRequired) return <SharePasswordGate token={shareId} />;
+    notFound();
+  }
+  const share = result.share;
 
   const allowed = share.allowedVideoIds ?? [];
   if (!allowed.includes(videoId)) notFound();

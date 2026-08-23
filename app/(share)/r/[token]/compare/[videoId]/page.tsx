@@ -1,9 +1,12 @@
 // app/(share)/r/[token]/compare/[videoId]/page.tsx
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { requireValidShareToken } from "@/lib/share-auth";
+import { unlockCookieName } from "@/lib/share/sharePassword";
 import { parseAllowedIds, parseStacks } from "@/lib/share/shareLinkUtils";
 import { getLatestIdForVideo, getStackIdsForVideo } from "@/lib/share/stackView";
 import VideoCompareScreen from "@/components/review/VideoCompareScreen";
+import SharePasswordGate from "@/components/share/SharePasswordGate";
 
 export const runtime = "nodejs";
 
@@ -18,8 +21,12 @@ export default async function TokenVideoPage({ params }: Props) {
   const videoId = String(rawVideoId || "").trim();
   if (!token || !videoId) notFound();
 
-  const res = await requireValidShareToken(token);
-  if (!res.ok) notFound();
+  const unlockProof = (await cookies()).get(unlockCookieName(token))?.value ?? null;
+  const res = await requireValidShareToken(token, unlockProof);
+  if (!res.ok) {
+    if (res.passwordRequired) return <SharePasswordGate token={token} />;
+    notFound();
+  }
 
   const share = res.share;
 

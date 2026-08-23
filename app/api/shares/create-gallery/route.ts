@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
+import { hashSharePassword } from "@/lib/share/sharePassword";
 import type { StackMap } from "@/components/domain/stacks";
 
 export const runtime = "nodejs";
@@ -33,6 +34,8 @@ export async function POST(req: NextRequest) {
     const allowComments = body.allowComments !== false;
     const allowDownload = body.allowDownload === true;
     const view = body.view === "VIEW_ONLY" ? "VIEW_ONLY" : "REVIEW_DOWNLOAD";
+    const password = typeof body.password === "string" ? body.password.trim() : "";
+    const passwordHash = password ? hashSharePassword(password) : null;
 
     const expiresInDays =
       body.expiresInDays !== undefined && body.expiresInDays !== null ? Number(body.expiresInDays) : null;
@@ -123,6 +126,7 @@ export async function POST(req: NextRequest) {
             allowComments,
             allowDownload,
             expiresAt,
+            passwordHash,
             contactName,
             conversationId,
           },
@@ -145,6 +149,7 @@ export async function POST(req: NextRequest) {
         allowComments,
         allowDownload,
         expiresAt,
+        passwordHash,
         contactId,
         contactName,
         conversationId,

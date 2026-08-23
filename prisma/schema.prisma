@@ -21,6 +21,10 @@ model ShareLink {
   createdAt           DateTime  @default(now())
   expiresAt           DateTime?
   revokedAt           DateTime?
+  // Optional password gate, formatted "scrypt:<salt-hex>:<hash-hex>" (salt
+  // embedded, no separate column). null means no password required. See
+  // lib/share/sharePassword.ts.
+  passwordHash        String?
   contactId           String?
   contactName         String?
   conversationId      String?

@@ -6,6 +6,7 @@ import type {
   SharePermissions,
 } from "@/components/share/ClientGalleryScreen";
 import { prisma } from "@/lib/prisma";
+import { loadGatedShare } from "@/lib/share/shareGate";
 
 export type SharePayload = {
   shareId: string; // token
@@ -15,6 +16,10 @@ export type SharePayload = {
   stacks: StackMap;
   videos: ShareGalleryVideo[];
 };
+
+export type FetchShareResult =
+  | { ok: true; share: SharePayload }
+  | { ok: false; status: number; error: string; passwordRequired?: true };
 
 function parseJsonArray(value: string | null | undefined): string[] {
   if (!value) return [];
@@ -49,29 +54,13 @@ function pickThumbTimeSeconds(createdAtIso?: string) {
   return 5;
 }
 
-export async function fetchShare(shareId: string): Promise<SharePayload | null> {
-  const share = await prisma.shareLink.findUnique({
-    where: { token: shareId },
-    select: {
-      token: true,
-      title: true,
-      view: true,
-      allowComments: true,
-      allowDownload: true,
-      videoId: true,
-      allowedVideoIdsJson: true,
-      stacksJson: true,
-      expiresAt: true,
-      revokedAt: true,
-    },
-  });
+// "shareId" here is actually the share's token (legacy route naming) --
+// requireValidShareToken and this both look up ShareLink by token.
+export async function fetchShare(shareId: string, unlockProof?: string | null): Promise<FetchShareResult> {
+  const gate = await loadGatedShare(shareId, unlockProof ?? null);
+  if (!gate.ok) return gate;
 
-  if (!share) return null;
-
-  // Matches requireValidShareToken's enforcement for the current /r/[token]
-  // flow -- this legacy route was letting expired links keep working forever.
-  if (share.revokedAt) return null;
-  if (share.expiresAt && share.expiresAt.getTime() < Date.now()) return null;
+  const share = gate.share;
 
   // Allowed IDs: gallery shares use allowedVideoIdsJson; single-video shares fall back to videoId
   const parsedAllowed = parseJsonArray(share.allowedVideoIdsJson);
@@ -99,12 +88,15 @@ export async function fetchShare(shareId: string): Promise<SharePayload | null> 
   // If the share is malformed (no allowed ids), return a consistent payload
   if (allowedVideoIds.length === 0) {
     return {
-      shareId: share.token,
-      title: share.title ?? "Shared Gallery",
-      permissions,
-      allowedVideoIds: [],
-      stacks,
-      videos: [],
+      ok: true,
+      share: {
+        shareId: share.token,
+        title: share.title ?? "Shared Gallery",
+        permissions,
+        allowedVideoIds: [],
+        stacks,
+        videos: [],
+      },
     };
   }
 
@@ -146,11 +138,14 @@ export async function fetchShare(shareId: string): Promise<SharePayload | null> 
     .filter(Boolean) as ShareGalleryVideo[];
 
   return {
-    shareId: share.token,
-    title: share.title ?? "Shared Gallery",
-    permissions,
-    allowedVideoIds,
-    stacks,
-    videos,
+    ok: true,
+    share: {
+      shareId: share.token,
+      title: share.title ?? "Shared Gallery",
+      permissions,
+      allowedVideoIds,
+      stacks,
+      videos,
+    },
   };
 }

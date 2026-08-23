@@ -1,16 +1,22 @@
 // app/api/shares/validate/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { requireValidShareToken } from "@/lib/share-auth";
+import { unlockCookieName } from "@/lib/share/sharePassword";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const { token } = await req.json();
+    const t = String(token || "");
 
-    const res = await requireValidShareToken(String(token || ""));
+    const unlockProof = req.cookies.get(unlockCookieName(t))?.value ?? null;
+    const res = await requireValidShareToken(t, unlockProof);
     if (!res.ok) {
-      return NextResponse.json({ error: res.error }, { status: res.status });
+      return NextResponse.json(
+        { error: res.error, passwordRequired: res.passwordRequired },
+        { status: res.status }
+      );
     }
 
     const { share } = res;

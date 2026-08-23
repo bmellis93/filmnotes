@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
+import { hashSharePassword } from "@/lib/share/sharePassword";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       allowDownload?: boolean;
       expiresAt?: Date | null;
       revokedAt?: Date | null;
+      passwordHash?: string | null;
     } = {};
     if (typeof body.allowComments === "boolean") data.allowComments = body.allowComments;
     if (typeof body.allowDownload === "boolean") data.allowDownload = body.allowDownload;
@@ -40,6 +42,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data.revokedAt = body.revoked ? new Date() : null;
     }
 
+    // password: absent -> leave unchanged, null -> clear, non-empty string -> set/change
+    if (body.password !== undefined) {
+      const trimmed = typeof body.password === "string" ? body.password.trim() : "";
+      data.passwordHash = trimmed ? hashSharePassword(trimmed) : null;
+    }
+
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
@@ -47,10 +55,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const updated = await prisma.shareLink.update({
       where: { id },
       data,
-      select: { id: true, allowComments: true, allowDownload: true, expiresAt: true, revokedAt: true },
+      select: {
+        id: true,
+        allowComments: true,
+        allowDownload: true,
+        expiresAt: true,
+        revokedAt: true,
+        passwordHash: true,
+      },
     });
 
-    return NextResponse.json({ ok: true, share: updated });
+    // Never send the hash itself to the client -- just whether one is set.
+    const { passwordHash, ...rest } = updated;
+    return NextResponse.json({ ok: true, share: { ...rest, hasPassword: passwordHash != null } });
   } catch (err: any) {
     console.error("Update share error:", err?.message || err);
     return NextResponse.json(

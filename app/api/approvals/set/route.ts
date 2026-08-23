@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireValidShareToken } from "@/lib/share-auth";
+import { unlockCookieName } from "@/lib/share/sharePassword";
 import { prisma } from "@/lib/prisma";
 import { parseAllowedIds } from "@/lib/share/shareLinkUtils";
 import { sendOwnerWebhook, getOwnerVideoContext, buildOwnerVideoUrl } from "@/lib/notify/sendOwnerWebhook";
@@ -21,8 +22,10 @@ const ALLOWED_STATUSES = new Set(["APPROVED", "CHANGES_REQUESTED"]);
 export async function POST(req: NextRequest) {
   try {
     const { token, videoId, status, note } = await req.json();
+    const t = String(token || "");
 
-    const res = await requireValidShareToken(String(token || ""));
+    const unlockProof = req.cookies.get(unlockCookieName(t))?.value ?? null;
+    const res = await requireValidShareToken(t, unlockProof);
     if (!res.ok) {
       return NextResponse.json({ error: res.error }, { status: res.status });
     }

@@ -20,7 +20,7 @@ export default function ShareModal({
       subjectValue={videoId}
       defaultMessage="Your video is ready to review:"
       sendDisabledReason={!videoId ? "Missing videoId. Refresh the page and try again." : null}
-      createShare={async ({ contactId, contactName, allowComments, allowDownload, expiresInDays, view }) => {
+      createShare={async ({ contactId, contactName, allowComments, allowDownload, expiresInDays, view, password }) => {
         const res = await fetch("/api/shares/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -30,6 +30,7 @@ export default function ShareModal({
             allowDownload,
             expiresInDays,
             view,
+            password,
             contactId,
             contactName,
           }),

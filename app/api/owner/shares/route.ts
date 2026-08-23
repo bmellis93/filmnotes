@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
         createdAt: true,
         expiresAt: true,
         revokedAt: true,
+        passwordHash: true,
         contactName: true,
       },
     });
@@ -73,6 +74,7 @@ export async function GET(req: NextRequest) {
       createdAt: s.createdAt,
       expiresAt: s.expiresAt,
       revokedAt: s.revokedAt,
+      hasPassword: s.passwordHash != null,
       contactName: s.contactName,
       url: s.videoId ? `/r/${s.token}/videos/${s.videoId}` : `/r/${s.token}`,
     }));

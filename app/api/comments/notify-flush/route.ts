@@ -1,6 +1,7 @@
 // app/api/comments/notify-flush/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { requireValidShareToken } from "@/lib/share-auth";
+import { unlockCookieName } from "@/lib/share/sharePassword";
 import { parseAllowedIds } from "@/lib/share/shareLinkUtils";
 import { flushPendingCommentNotifications } from "@/lib/notify/flushCommentNotifications";
 
@@ -17,8 +18,10 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const { token, videoId } = await req.json().catch(() => ({}) as Record<string, unknown>);
+    const t = String(token || "");
 
-    const res = await requireValidShareToken(String(token || ""));
+    const unlockProof = req.cookies.get(unlockCookieName(t))?.value ?? null;
+    const res = await requireValidShareToken(t, unlockProof);
     if (!res.ok) {
       return NextResponse.json({ ok: true, ignored: res.error });
     }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext, requireRole } from "@/lib/auth/ownerSession";
+import { hashSharePassword } from "@/lib/share/sharePassword";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,8 @@ export async function POST(req: NextRequest) {
     const allowComments = body.allowComments !== false;
     const allowDownload = body.allowDownload === true;
     const view = body.view === "VIEW_ONLY" ? "VIEW_ONLY" : "REVIEW_DOWNLOAD";
+    const password = typeof body.password === "string" ? body.password.trim() : "";
+    const passwordHash = password ? hashSharePassword(password) : null;
 
     const expiresInDays =
       body.expiresInDays !== undefined && body.expiresInDays !== null
@@ -66,7 +69,15 @@ export async function POST(req: NextRequest) {
       if (existing) {
         const updated = await prisma.shareLink.update({
           where: { id: existing.id },
-          data: { expiresAt, allowComments, allowDownload, view, contactName, conversationId },
+          data: {
+            expiresAt,
+            allowComments,
+            allowDownload,
+            view,
+            passwordHash,
+            contactName,
+            conversationId,
+          },
           select: { token: true, videoId: true },
         });
 
@@ -88,6 +99,7 @@ export async function POST(req: NextRequest) {
         allowComments,
         allowDownload,
         view,
+        passwordHash,
         contactId,
         contactName,
         conversationId,
