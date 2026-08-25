@@ -18,7 +18,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 The app needs a `.env.local` with (at minimum):
 
 - `DATABASE_URL`, `DIRECT_URL` — Postgres connection strings (Prisma)
-- `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET`, `GHL_REDIRECT_URI`, `GHL_AUTHORIZE_URL`, `GHL_API_BASE_URL`, `GHL_SCOPES` — GoHighLevel OAuth app credentials for owner sign-in
+- `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET`, `GHL_REDIRECT_URI`, `GHL_AUTHORIZE_URL`, `GHL_API_BASE_URL`, `GHL_SCOPES` — GoHighLevel OAuth app credentials for owner sign-in (private/free app)
+- `GHL_PAID_APP_ID`, `GHL_PAID_CLIENT_ID`, `GHL_PAID_CLIENT_SECRET`, `GHL_PAID_REDIRECT_URI`, `GHL_PAID_SCOPES`, `GHL_PAID_APP_VERSION_ID`, `GHL_PAID_AUTHORIZE_URL` — the public/paid Marketplace app (see `lib/ghl/oauthApps.ts`). `GHL_PAID_APP_VERSION_ID` ties installs to the published listing and is required — without it GHL rejects installs with "paid apps must be installed through the marketplace". Both values come from the whitelabel/install link in the dev portal's Marketplace listing settings.
 - `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`, `MUX_SIGNING_KEY`, `MUX_PRIVATE_KEY`, `MUX_WEBHOOK_SECRET`, `MUX_WEBHOOK_SIGNING_SECRET` — Mux video API + webhook verification
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_BUCKET`, `R2_PUBLIC_BUCKET`, `R2_PUBLIC_BASE_URL`, `R2_SIGNED_URL_TTL` — Cloudflare R2 storage
 - `APP_JWT_SECRET` — signs owner session cookies/embed tokens

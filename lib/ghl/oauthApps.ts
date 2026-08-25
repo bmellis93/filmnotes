@@ -11,6 +11,15 @@ export type GhlAppConfig = {
   authorizeUrl: string;
   apiBaseUrl: string;
   scopes: string;
+  /**
+   * Ties the OAuth authorize request to this app's published Marketplace
+   * listing. Required for monetized/paid apps -- omitting it makes GHL treat
+   * the request as a bare OAuth call rather than a Marketplace install, which
+   * paid apps reject with "must be installed through the marketplace".
+   * Copy the `version_id` query param off the app's whitelabel/install link
+   * in the dev portal's Marketplace listing settings.
+   */
+  versionId?: string;
 };
 
 function mustEnv(name: string) {
@@ -34,8 +43,13 @@ export function getPrivateAppConfig(): GhlAppConfig {
 }
 
 // The public/paid GHL Marketplace app -- filmnotes.app/api/auth/oauth/callback/paid.
-// Shares the same GHL_AUTHORIZE_URL/GHL_API_BASE_URL (those are generic GHL
-// endpoints, not per-app) but has its own client id/secret/redirect/scopes.
+// Shares GHL_API_BASE_URL with the private app (generic GHL endpoint, not
+// per-app), but has its own client id/secret/redirect/scopes/authorize URL --
+// paid-app installs must be tied to the Marketplace listing via versionId
+// (see GhlAppConfig), which the private app has no listing for and doesn't
+// need. GHL_PAID_AUTHORIZE_URL falls back to GHL_AUTHORIZE_URL since in
+// practice they're the same host; override it if the dev portal's whitelabel
+// link for this app ever points somewhere else.
 export function getPaidAppConfig(): GhlAppConfig {
   return {
     edition: "PAID",
@@ -43,9 +57,10 @@ export function getPaidAppConfig(): GhlAppConfig {
     clientId: mustEnv("GHL_PAID_CLIENT_ID"),
     clientSecret: mustEnv("GHL_PAID_CLIENT_SECRET"),
     redirectUri: mustEnv("GHL_PAID_REDIRECT_URI"),
-    authorizeUrl: mustEnv("GHL_AUTHORIZE_URL"),
+    authorizeUrl: process.env.GHL_PAID_AUTHORIZE_URL || mustEnv("GHL_AUTHORIZE_URL"),
     apiBaseUrl: mustEnv("GHL_API_BASE_URL"),
     scopes: process.env.GHL_PAID_SCOPES || "locations.read",
+    versionId: mustEnv("GHL_PAID_APP_VERSION_ID"),
   };
 }
 

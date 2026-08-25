@@ -8,12 +8,15 @@ export const runtime = "nodejs";
 const GiB = BigInt(1024) * BigInt(1024) * BigInt(1024);
 const MIN_BILLABLE_BYTES = GiB; // don't fire a charge for < 1 GB of new overage
 
-// Sanity ceiling: never bill more than this many GB for one org in a single
-// run, even if the math says more. Guards against a bug (bad migration,
-// corrupted counter) causing a runaway charge -- a real customer would need
-// to be ~5x over the largest plan (1 TB) to hit this legitimately, which
-// isn't a real scenario. It's a circuit breaker, not a plan limit.
-const MAX_BILLABLE_UNITS_PER_RUN = 5000; // GB
+// Ceiling on GB billed for one org in a single run. This isn't just a bug
+// backstop -- the "Storage Overage" meter itself is configured in the GHL
+// dev portal with a max usage limit of 500 GB/day, and the cron fires at
+// most one charge per org per day, so any single charge above this WILL be
+// rejected by GHL, not just by us. Set it at that ceiling so the existing
+// clamp-and-roll-forward logic below (bill up to the cap, leave the rest as
+// still-unbilled overage for tomorrow's run) actually engages before GHL's
+// own limit does, instead of the charge call failing outright.
+const MAX_BILLABLE_UNITS_PER_RUN = 500; // GB/day, matches the meter's dev-portal config
 
 function isNewBillingPeriod(periodStart: Date | null, now: Date): boolean {
   if (!periodStart) return true;

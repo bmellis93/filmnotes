@@ -18,6 +18,7 @@ export function buildOauthStartResponse(req: NextRequest, config: GhlAppConfig) 
   auth.searchParams.set("response_type", "code");
   auth.searchParams.set("scope", config.scopes);
   auth.searchParams.set("state", state);
+  if (config.versionId) auth.searchParams.set("version_id", config.versionId);
 
   const res = NextResponse.redirect(auth.toString());
   res.cookies.set("rm_oauth_nonce", nonce, {
