@@ -22,7 +22,12 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
   const cutoff = new Date(now.getTime() - NUDGE_AFTER_MS);
-  const origin = new URL(req.url).origin;
+  // NOT new URL(req.url).origin -- Vercel invokes scheduled crons against the
+  // deployment's own immutable *.vercel.app alias, not the filmnotes.app
+  // custom domain, so that origin leaks into the reminder SMS/email sent to
+  // real contacts. Carriers flag links to shared PaaS domains as spam (this
+  // is very likely why some of these reminders started failing to send).
+  const origin = "https://filmnotes.app";
 
   const candidates = await prisma.shareLink.findMany({
     where: {

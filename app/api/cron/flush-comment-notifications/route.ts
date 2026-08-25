@@ -22,7 +22,12 @@ export async function GET(req: NextRequest) {
   }
 
   const dryRun = req.nextUrl.searchParams.get("dryRun") === "true";
-  const origin = new URL(req.url).origin;
+  // NOT new URL(req.url).origin -- see the nudge-unopened cron's identical
+  // fix; Vercel invokes scheduled crons against the deployment's own
+  // *.vercel.app alias, not the custom domain, so this must use the same
+  // hardcoded fallback flushPendingCommentNotifications already defaults to
+  // for request-less callers (passing an explicit origin here overrode it).
+  const origin = "https://filmnotes.app";
   const since = new Date(Date.now() - LOOKBACK_MS);
 
   const candidates = await prisma.comment.groupBy({
