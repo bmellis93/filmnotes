@@ -675,6 +675,7 @@ export default function VideoReviewScreen(props: Props) {
           if (isComparing) return;
           setCommentsOpen((v) => !v);
         }}
+        showThemeToggle={!isOwner}
       />
 
       {!isComparing && (

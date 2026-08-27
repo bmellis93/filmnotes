@@ -8,6 +8,7 @@ import {
   Columns2,
   Share2,
 } from "lucide-react";
+import ThemeToggleSimple from "@/components/ThemeToggleSimple";
 
 type Props = {
   // left
@@ -34,6 +35,11 @@ type Props = {
 
   commentsOpen: boolean;
   onToggleComments: () => void;
+
+  // Client-facing views (share links) have no other place to set this --
+  // the owner's own theme control lives in Settings, so this only needs to
+  // show up when there isn't one already available.
+  showThemeToggle?: boolean;
 };
 
 export default function TopBar({
@@ -58,6 +64,8 @@ export default function TopBar({
 
   commentsOpen,
   onToggleComments,
+
+  showThemeToggle = false,
 }: Props) {
   return (
     <header className="shrink-0 border-b border-[var(--border-1)] bg-[var(--surface-0)]/80 backdrop-blur">
@@ -157,6 +165,8 @@ export default function TopBar({
               <span className="hidden sm:inline">Share</span>
             </button>
           )}
+
+          {showThemeToggle && <ThemeToggleSimple />}
 
           {/* Hide comments toggle while comparing (button still renders, but disabled) */}
           <button
