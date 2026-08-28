@@ -53,7 +53,15 @@ export async function POST(req: Request) {
       }
       await tx.video.updateMany({
         where: { id: videoId, orgId: owner.orgId },
-        data: { status: "FAILED", originalSize: null, failureReason: "Upload failed or was cancelled" },
+        data: {
+          status: "FAILED",
+          originalSize: null,
+          failureReason: "Upload failed or was cancelled",
+          uploadId: null,
+          uploadPartSize: null,
+          uploadTotalParts: null,
+          uploadFingerprint: null,
+        },
       });
     });
   } catch {}

@@ -4,6 +4,7 @@ import { SignJWT } from "jose";
 import { prisma } from "@/lib/prisma";
 import { decryptGhlSsoPayload, type GhlSsoContext } from "@/lib/ghl/ssoContext";
 import { hasRole } from "@/lib/auth/roles";
+import { EMBED_TOKEN_TTL_SECONDS } from "@/lib/embed/constants";
 
 export const runtime = "nodejs";
 
@@ -31,8 +32,8 @@ function decryptWithAnySecret(payload: string, secrets: string[]): GhlSsoContext
 
 // Reuses the same signing secret as the owner-session cookie, but this token
 // carries a distinct shape (`scope: "embed"`, no `role`) so it can't be
-// replayed against requireOwnerContext()/assertOwnerContext.
-const EMBED_TOKEN_TTL = "15m";
+// replayed against requireOwnerContext()/assertOwnerContext. TTL lives in
+// lib/embed/constants.ts, shared with useEmbedSession's background refresh.
 
 /**
  * Called from the embedded Custom Page (app/embed/page.tsx) with the
@@ -95,6 +96,8 @@ export async function POST(req: NextRequest) {
     }
 
     const secretKey = new TextEncoder().encode(appJwtSecret);
+    const issuedAt = Date.now();
+    const expiresAt = issuedAt + EMBED_TOKEN_TTL_SECONDS * 1000;
     const embedToken = await new SignJWT({
       orgId,
       userId,
@@ -102,10 +105,16 @@ export async function POST(req: NextRequest) {
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
-      .setExpirationTime(EMBED_TOKEN_TTL)
+      .setExpirationTime(`${EMBED_TOKEN_TTL_SECONDS}s`)
       .sign(secretKey);
 
-    return NextResponse.json({ connected: true as const, embedToken, orgId });
+    // expiresAt lets the client schedule its background refresh relative to
+    // the token's actual absolute expiry (see useEmbedSession.ts) instead of
+    // a fixed offset from whenever it happens to mount -- every embed page
+    // remounts that hook independently (no shared layout under app/embed),
+    // so a mount-relative countdown resets on every navigation and can leave
+    // a gap where the token expires before the next scheduled refresh fires.
+    return NextResponse.json({ connected: true as const, embedToken, orgId, expiresAt });
   } catch (err: any) {
     console.error("GHL SSO decrypt failed:", err);
     return NextResponse.json({ error: "Invalid SSO payload" }, { status: 400 });

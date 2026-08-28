@@ -2,40 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { EMBED_TOKEN_STORAGE_KEY } from "@/lib/embed/constants";
-
-type SsoResponse =
-  | { connected: true; embedToken: string; orgId: string }
-  | { connected: false; reason: "not-installed"; connectUrl: string }
-  | { connected: false; reason: "no-location" }
-  | { connected: false; reason: "no-access" };
+import { EMBED_TOKEN_STORAGE_KEY, EMBED_TOKEN_EXPIRES_AT_STORAGE_KEY } from "@/lib/embed/constants";
+import { fetchEmbedSsoResponse } from "@/lib/embed/ghlHandshake";
 
 type ViewState =
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "not-connected"; connectUrl: string };
-
-// Request the encrypted SSO payload from the GHL parent window. See
-// https://marketplace.gohighlevel.com/docs/other/user-context-marketplace-apps
-// -- this is GHL's documented Custom Page handshake, not something we invented.
-function requestGhlUserData(timeoutMs = 4000): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      window.removeEventListener("message", onMessage);
-      reject(new Error("timeout"));
-    }, timeoutMs);
-
-    function onMessage(event: MessageEvent) {
-      if (event.data?.message !== "REQUEST_USER_DATA_RESPONSE") return;
-      clearTimeout(timer);
-      window.removeEventListener("message", onMessage);
-      resolve(event.data.payload as string);
-    }
-
-    window.addEventListener("message", onMessage);
-    window.parent.postMessage({ message: "REQUEST_USER_DATA" }, "*");
-  });
-}
 
 export default function GhlEmbedPage() {
   const router = useRouter();
@@ -45,17 +18,11 @@ export default function GhlEmbedPage() {
     setView({ status: "loading" });
 
     try {
-      const encryptedPayload = await requestGhlUserData();
-
-      const res = await fetch("/api/ghl/sso", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: encryptedPayload }),
-      });
-      const data: SsoResponse = await res.json();
+      const data = await fetchEmbedSsoResponse();
 
       if (data.connected) {
         sessionStorage.setItem(EMBED_TOKEN_STORAGE_KEY, data.embedToken);
+        sessionStorage.setItem(EMBED_TOKEN_EXPIRES_AT_STORAGE_KEY, String(data.expiresAt));
         router.replace("/embed/galleries");
         return;
       }

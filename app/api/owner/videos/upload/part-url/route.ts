@@ -27,17 +27,24 @@ export async function POST(req: Request) {
 
   const video = await prisma.video.findFirst({
     where: { id: videoId, orgId: owner.orgId },
-    select: { originalKey: true },
+    select: { originalKey: true, uploadId: true },
   });
 
   if (!video?.originalKey) {
     return NextResponse.json({ ok: false, error: "Video not found" }, { status: 404 });
   }
 
+  // Sign against the uploadId this video was actually created with, not
+  // whatever the client happens to send -- the client's copy is only ever a
+  // cache of this value (needed for a resumed upload to reattach correctly).
+  if (video.uploadId && video.uploadId !== uploadId) {
+    return NextResponse.json({ ok: false, error: "Stale uploadId" }, { status: 409 });
+  }
+
   const cmd = new UploadPartCommand({
     Bucket: getR2Bucket(),
     Key: video.originalKey,
-    UploadId: uploadId,
+    UploadId: video.uploadId ?? uploadId,
     PartNumber: partNumber,
   });
 

@@ -3,8 +3,25 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { installEmbedFetchAuth } from "@/lib/embed/fetchAuth";
-import { EMBED_TOKEN_STORAGE_KEY } from "@/lib/embed/constants";
+import {
+  EMBED_TOKEN_STORAGE_KEY,
+  EMBED_TOKEN_EXPIRES_AT_STORAGE_KEY,
+  EMBED_TOKEN_TTL_SECONDS,
+} from "@/lib/embed/constants";
+import { fetchEmbedSsoResponse } from "@/lib/embed/ghlHandshake";
 import type { OrgRole } from "@/lib/auth/roles";
+
+// 80% of whatever time is actually left until `expiresAt`, not 80% of the
+// full TTL -- every embed page mounts this hook independently (no shared
+// layout under app/embed), so a fixed offset from mount time resets on every
+// navigation and can leave a gap where the token expires before the next
+// scheduled refresh fires. Scheduling off the real remaining time instead
+// means a refresh always lands strictly before expiry, no matter when in
+// the token's lifetime this hook happens to (re)mount.
+function msUntilRefresh(expiresAt: number): number {
+  const remaining = expiresAt - Date.now();
+  return remaining > 0 ? remaining * 0.8 : 0;
+}
 
 /**
  * Every embed page under app/embed/** (other than the handshake root
@@ -32,9 +49,48 @@ export function useEmbedSession(): { ready: boolean; role: OrgRole | null; orgId
       return;
     }
 
-    const restore = installEmbedFetchAuth(token);
+    // Older/missing storage (shouldn't happen post-handshake, but stay safe)
+    // falls back to assuming a fresh full TTL rather than refreshing instantly.
+    const storedExpiresAt = Number(sessionStorage.getItem(EMBED_TOKEN_EXPIRES_AT_STORAGE_KEY));
+    const expiresAt = Number.isFinite(storedExpiresAt) && storedExpiresAt > 0
+      ? storedExpiresAt
+      : Date.now() + EMBED_TOKEN_TTL_SECONDS * 1000;
 
+    let restore = installEmbedFetchAuth(token);
     let cancelled = false;
+    let refreshTimer: number | undefined;
+
+    // The embed token is short-lived (EMBED_TOKEN_TTL_SECONDS) so a tab left
+    // open past that would otherwise start failing every API call with no
+    // way to recover short of a manual reload -- mirrors the same
+    // refresh-before-expiry pattern useVideoPlayer already uses for Mux
+    // playback tokens. GHL keeps the parent window's postMessage handshake
+    // available for as long as the Custom Page iframe is mounted, so this
+    // can silently re-run it and swap in a new token with no user action.
+    async function refreshToken() {
+      try {
+        const data = await fetchEmbedSsoResponse();
+        if (cancelled) return;
+        if (data.connected) {
+          sessionStorage.setItem(EMBED_TOKEN_STORAGE_KEY, data.embedToken);
+          sessionStorage.setItem(EMBED_TOKEN_EXPIRES_AT_STORAGE_KEY, String(data.expiresAt));
+          restore();
+          restore = installEmbedFetchAuth(data.embedToken);
+          refreshTimer = window.setTimeout(refreshToken, msUntilRefresh(data.expiresAt));
+          return;
+        }
+        // Not connected any more (e.g. uninstalled mid-session) -- next API
+        // call will 401 and the page's own error handling takes over;
+        // nothing productive to retry here.
+      } catch (err) {
+        console.error("Failed to refresh embed session token:", err);
+        // Retry sooner rather than leaving the session stuck until it
+        // actually expires.
+        if (!cancelled) refreshTimer = window.setTimeout(refreshToken, 60_000);
+      }
+    }
+    refreshTimer = window.setTimeout(refreshToken, msUntilRefresh(expiresAt));
+
     (async () => {
       try {
         const res = await fetch("/api/owner/me", { cache: "no-store" });
@@ -50,6 +106,7 @@ export function useEmbedSession(): { ready: boolean; role: OrgRole | null; orgId
 
     return () => {
       cancelled = true;
+      if (refreshTimer) window.clearTimeout(refreshTimer);
       restore();
     };
   }, [router]);

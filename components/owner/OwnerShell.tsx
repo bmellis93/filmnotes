@@ -3,10 +3,11 @@
 import { ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Search, Settings, PanelLeft, Menu } from "lucide-react";
+import { LayoutGrid, Search, Settings, PanelLeft, Menu, Loader2, AlertTriangle } from "lucide-react";
 import { usePersistedState } from "@/components/owner/hooks/usePersistedState";
 import { LogoMark } from "@/components/brand/Logo";
 import { useOwnerRole } from "@/components/owner/OwnerRoleContext";
+import { useUploadManager } from "@/lib/uploads/UploadManagerContext";
 
 type Props = {
   children: ReactNode;
@@ -29,6 +30,7 @@ const navItemInactive = "text-[var(--text-3)] hover:text-[var(--text-1)] hover:b
 export default function OwnerShell({ children, basePath = "/owner" }: Props) {
   const pathname = usePathname();
   const { hasRole } = useOwnerRole();
+  const { uploads } = useUploadManager();
 
   const { value: collapsed, setValue: setCollapsed, hydrated } =
     usePersistedState<boolean>("owner:shellCollapsed", false);
@@ -149,6 +151,44 @@ export default function OwnerShell({ children, basePath = "/owner" }: Props) {
           </nav>
 
           <div className="flex-1" />
+
+          {/* Persistent across navigation and modal close -- the upload
+              itself lives in UploadManagerProvider (app/providers.tsx), not
+              in whatever page/modal started it. */}
+          {uploads.length > 0 && (
+            <div className="px-2 pb-2">
+              <Link
+                href={`${basePath}/galleries/${uploads[0].galleryId}`}
+                onClick={() => setMobileNavOpen(false)}
+                title={
+                  collapsedUI
+                    ? uploads[0].status === "error"
+                      ? `Upload failed: ${uploads[0].fileName}`
+                      : `Uploading ${uploads[0].fileName}… ${Math.round(uploads[0].progress)}%`
+                    : undefined
+                }
+                className={[
+                  navItemBase,
+                  uploads[0].status === "error"
+                    ? "text-[var(--danger)] hover:bg-[var(--danger)]/10"
+                    : navItemInactive,
+                  collapsedUI ? "lg:justify-center" : "",
+                ].join(" ")}
+              >
+                {uploads[0].status === "error" ? (
+                  <AlertTriangle className="h-5 w-5 shrink-0" />
+                ) : (
+                  <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+                )}
+                <span className={["min-w-0 flex-1 truncate", collapsedUI ? "lg:hidden" : ""].join(" ")}>
+                  {uploads[0].status === "error"
+                    ? `Upload failed: ${uploads[0].fileName}`
+                    : `Uploading… ${Math.round(uploads[0].progress)}%`}
+                  {uploads.length > 1 ? ` (+${uploads.length - 1} more)` : ""}
+                </span>
+              </Link>
+            </div>
+          )}
 
           {/* bottom settings */}
           {hasRole("ADMIN") && (

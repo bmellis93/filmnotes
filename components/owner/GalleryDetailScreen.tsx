@@ -22,6 +22,8 @@ import type { StackMap } from "@/components/domain/stacks";
 import { useToast } from "@/components/ui/toast";
 
 import { logUploadFailure } from "@/lib/telemetry";
+import { discardStalledUpload } from "@/lib/uploadClient";
+import { useUploadManager } from "@/lib/uploads/UploadManagerContext";
 
 import {
   getVisibleVideos,
@@ -57,6 +59,7 @@ export default function GalleryDetailScreen({
   const galleryId = gallery.id;
   const { toast } = useToast();
   const { hasRole } = useOwnerRole();
+  const { uploads, resumeUpload } = useUploadManager();
   const canUpload = hasRole("UPLOADER");
   const canManageGalleries = hasRole("CONTRIBUTOR");
 
@@ -389,6 +392,58 @@ export default function GalleryDetailScreen({
 
   function patchVideo(id: string, patch: Partial<GalleryVideo>) {
     setVideos((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
+  }
+
+  // Videos this tab's own upload manager is actively working on right now
+  // -- a video can be server-status UPLOADED (with a live uploadId) just
+  // because it's genuinely mid-upload, not because it's stalled. Without
+  // this, navigating away and back to this gallery while a real upload is
+  // still running would incorrectly show it as "interrupted."
+  const activeUploadVideoIds = useMemo(() => {
+    return new Set(
+      uploads.filter((u) => u.status === "uploading" && u.videoId).map((u) => u.videoId as string)
+    );
+  }, [uploads]);
+
+  function handleResumeStalled(videoId: string, file: File) {
+    resumeUpload({
+      id: crypto.randomUUID(),
+      videoId,
+      galleryId,
+      file,
+      onStage: (id, stage) => patchVideo(id, { status: stage }),
+      onUploaded: ({ title, description }) => patchVideo(videoId, { name: title, description: description ?? "" }),
+      onDone: () => {
+        toast({ kind: "success", message: "Resumed and finished uploading." });
+      },
+    });
+
+    // Resume failures (including a mismatched re-picked file) surface via
+    // the manager's own uploads state rather than a thrown exception here,
+    // since resumeUpload() fires-and-forgets like startUpload() does -- see
+    // the effect below that watches for this specific upload erroring out.
+  }
+
+  const toastedUploadErrorsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const u of uploads) {
+      if (u.status === "error" && u.error && !toastedUploadErrorsRef.current.has(u.id)) {
+        toastedUploadErrorsRef.current.add(u.id);
+        toast({ kind: "error", message: u.error });
+      }
+    }
+  }, [uploads, toast]);
+
+  async function handleDiscardStalled(videoId: string, uploadId: string) {
+    try {
+      await discardStalledUpload({ videoId, uploadId });
+      // Matches the exact text the abort route itself sets server-side, so
+      // this optimistic patch doesn't say something different from what a
+      // subsequent reload would show.
+      patchVideo(videoId, { status: "FAILED", failureReason: "Upload failed or was cancelled" });
+    } catch (e: any) {
+      toast({ kind: "error", message: e?.message || "Failed to discard upload." });
+    }
   }
 
   const pollForceRef = useRef<null | (() => void)>(null);
@@ -760,6 +815,9 @@ export default function GalleryDetailScreen({
                 setRetryForVideoId(videoId);
                 setUploadOpen(true);
               }}
+              activeUploadVideoIds={activeUploadVideoIds}
+              onResumeStalled={canUpload ? handleResumeStalled : undefined}
+              onDiscardStalled={canUpload ? handleDiscardStalled : undefined}
             />
           )}
         </div>

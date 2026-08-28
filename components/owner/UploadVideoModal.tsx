@@ -4,9 +4,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import type { GalleryVideo } from "@/components/owner/VideoGrid";
-import { uploadVideoToR2, fmtGB, type StorageLimitError } from "@/lib/uploadClient";
+import { fmtGB } from "@/lib/uploadClient";
 import { useRouter } from "next/navigation";
-import { logUploadFailure } from "@/lib/telemetry";
+import { useUploadManager } from "@/lib/uploads/UploadManagerContext";
 import FilePickerButton from "@/components/owner/FilePickerButton";
 import Button from "@/components/ui/Button";
 
@@ -52,22 +52,51 @@ export default function UploadVideoModal({
   const [desc, setDesc] = useState("");
   const [thumbFile, setThumbFile] = useState<File | null>(null);
   const [thumbPreviewUrl, setThumbPreviewUrl] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   const [file, setFile] = useState<File | null>(initialFile);
-  const [progress, setProgress] = useState(0);
-
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [usage, setUsage] = useState<{ used: number; limit: number } | null>(null);
+
+  const { uploads, startUpload, dismissUpload } = useUploadManager();
+
+  // The id actually passed to startUpload, captured once when the upload
+  // begins -- GalleryDetailScreen's onClose clears pendingUpload (and so
+  // this modal's tempId prop) as soon as it's closed, so recomputing
+  // `tempId ?? fallback` reactively would start looking at the wrong id (or
+  // no id) the moment the user closes the modal, right when it matters
+  // most for a backgrounded upload.
+  const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
+  const currentUpload = activeUploadId ? uploads.find((u) => u.id === activeUploadId) : undefined;
+
+  // The upload itself lives in the global manager now (see
+  // lib/uploads/UploadManagerContext.tsx) so it survives this modal closing
+  // or the owner navigating elsewhere -- progress/error/busy are read back
+  // from there instead of tracked locally.
+  const progress = currentUpload?.progress ?? 0;
+  const busy = currentUpload?.status === "uploading";
+  const errorMsg = currentUpload?.error ?? null;
 
   useEffect(() => {
     if (!open) return;
     setFile(initialFile ?? null);
     setThumbFile(null);
-    setProgress(0);
-    setErrorMsg(null);
+    setActiveUploadId(null);
   }, [open, initialFile]);
+
+  // Auto-close + reset on success, mirroring the modal's previous behavior
+  // -- but this can now fire even after the user closed the modal while the
+  // upload continued in the background, so it just tidies up on whichever
+  // render notices the transition.
+  useEffect(() => {
+    if (!activeUploadId || currentUpload?.status !== "done") return;
+    setName("");
+    setDesc("");
+    setThumbFile(null);
+    setFile(null);
+    dismissUpload(activeUploadId);
+    onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUpload?.status, activeUploadId]);
 
   useEffect(() => {
     if (!thumbFile) {
@@ -162,59 +191,28 @@ export default function UploadVideoModal({
   const router = useRouter();
   if (!open) return null;
 
-  async function handleCreate() {
+  function handleCreate() {
     if (!file) return;
-    setBusy(true);
-    setProgress(0);
 
-    try {
-      const { videoId } = await uploadVideoToR2({
-        galleryId,
-        file,
-        title: name.trim() || file.name,
-        description: desc.trim() || undefined,
-        thumbnailFile: thumbFile,
-        onProgress: (pct) => setProgress(pct),
-      });
+    const id = tempId ?? `upload_${Math.random().toString(36).slice(2)}`;
+    setActiveUploadId(id);
 
-      // temp -> real id (so the optimistic card becomes the real card)
-      if (tempId) onBound?.(tempId, videoId);
-      onStage?.(videoId, "PROCESSING");
-      onUploaded?.({ videoId, title: name.trim() || file.name, description: desc.trim() || undefined });
-      onDone?.(videoId);
-
-      // reset + close
-      setName("");
-      setDesc("");
-      setThumbFile(null);
-      setFile(null);
-      setProgress(0);
-      onClose();
-    } catch (e) {
-      // mark as failed in the card
-      if (tempId) onStage?.(tempId, "FAILED");
-
-      const err = e as StorageLimitError;
-
-      if (err?.code === "STORAGE_LIMIT" && err.payload) {
-        const remainingGB = fmtGB(err.payload.remainingBytes);
-        const incomingGB = fmtGB(err.payload.incomingBytes);
-
-        setErrorMsg(`You have ${remainingGB} GB remaining. This file is ${incomingGB} GB.`);
-        return; // ✅ don't throw
-      }
-
-      logUploadFailure({
-        where: "UPLOAD",
-        videoId: tempId ?? "unknown",
-        reason: (e as any)?.message ?? null,
-      });
-
-      setErrorMsg((e as any)?.message || "Upload failed.");
-      return; // ✅ don't throw
-    } finally {
-      setBusy(false);
-    }
+    // Kicked off in the global manager (lib/uploads/UploadManagerContext.tsx)
+    // rather than awaited here -- it keeps running (and calls onBound/
+    // onStage/onUploaded/onDone) even if this modal closes or unmounts.
+    startUpload({
+      id,
+      tempId,
+      galleryId,
+      file,
+      title: name.trim() || file.name,
+      description: desc.trim() || undefined,
+      thumbnailFile: thumbFile,
+      onBound,
+      onStage,
+      onUploaded,
+      onDone,
+    });
   }
 
   return (
@@ -222,7 +220,8 @@ export default function UploadVideoModal({
       <div
         className="absolute inset-0 bg-black/70"
         onClick={() => {
-          if (busy) return;
+          // Closing no longer cancels an in-flight upload -- it keeps
+          // running in the background (lib/uploads/UploadManagerContext.tsx).
           setFile(null);
           onClose();
         }}
@@ -234,7 +233,6 @@ export default function UploadVideoModal({
             <button
               type="button"
               onClick={() => {
-                if (busy) return;
                 setFile(null);
                 onClose();
               }}
@@ -412,13 +410,11 @@ export default function UploadVideoModal({
             <Button
               variant="secondary"
               onClick={() => {
-                if (busy) return;
                 setFile(null);
                 onClose();
               }}
-              disabled={busy}
             >
-              Cancel
+              {busy ? "Close (keep uploading)" : "Cancel"}
             </Button>
             <Button
               variant={willFit === false ? "destructive" : "primary"}

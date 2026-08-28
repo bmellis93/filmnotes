@@ -53,6 +53,7 @@ export async function getOwnerGalleryDetail(
               originalSize: true,
               approvalStatus: true,
               approvalUpdatedAt: true,
+              uploadId: true,
             },
           },
         },
@@ -96,6 +97,10 @@ export async function getOwnerGalleryDetail(
       originalSize: v.originalSize == null ? null : Number(v.originalSize),
       approvalStatus: v.approvalStatus,
       firstViewedAt: viewSummaries.get(v.id)?.firstViewedAt ?? null,
+      // Non-null only while status is UPLOADED and the multipart upload is
+      // still open server-side -- see components/owner/GalleryDetailScreen's
+      // resume-prompt logic.
+      uploadId: v.uploadId ?? null,
     };
   });
 

@@ -32,6 +32,10 @@ export async function POST(req: Request) {
     const contentType = s(body.contentType) || "application/octet-stream";
     const title = s(body.title) || "Untitled";
     const description = body.description ? s(body.description) : null;
+    // Client-computed as `${file.name}|${file.size}|${file.lastModified}` --
+    // lets a later resume attempt confirm a re-picked file is the same one
+    // before continuing into its in-progress multipart upload.
+    const fingerprint = body.fingerprint ? s(body.fingerprint) : null;
 
     const sizeRaw = Number(body.size ?? 0);
     if (!Number.isFinite(sizeRaw) || sizeRaw <= 0) {
@@ -178,6 +182,16 @@ export async function POST(req: Request) {
     if (!created.UploadId) {
       throw new Error("R2 did not return an upload id");
     }
+
+    await prisma.video.update({
+      where: { id: video.id },
+      data: {
+        uploadId: created.UploadId,
+        uploadPartSize: partSize,
+        uploadTotalParts: totalParts,
+        uploadFingerprint: fingerprint,
+      },
+    });
 
     return NextResponse.json({
       ok: true,

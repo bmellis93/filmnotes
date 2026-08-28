@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MoreHorizontal, Share2, Eye } from "lucide-react";
 import Button from "@/components/ui/Button";
 import StatusPill, { type PillTone } from "@/components/ui/StatusPill";
+import FilePickerButton from "@/components/owner/FilePickerButton";
 
 export type GalleryVideo = {
   id: string;
@@ -20,6 +21,10 @@ export type GalleryVideo = {
   failureReason?: string | null;
   approvalStatus?: "PENDING" | "CHANGES_REQUESTED" | "APPROVED";
   firstViewedAt?: string | null;
+  /** Non-null only while status is UPLOADED and the multipart upload is
+   *  still open server-side -- lets a stalled (tab closed/reloaded)
+   *  upload offer to resume instead of just sitting there forever. */
+  uploadId?: string | null;
 };
 
 function viewedLabel(iso: string | null | undefined) {
@@ -54,6 +59,13 @@ type Props = {
   isStackCard?: (videoId: string) => boolean;
 
     onRetryFailed?: (videoId: string) => void;
+
+  // Resuming an upload whose tab was closed/reloaded mid-upload (status
+  // UPLOADED with a live uploadId, but not one of this tab's own active
+  // uploads -- see activeUploadVideoIds).
+  activeUploadVideoIds?: Set<string>;
+  onResumeStalled?: (videoId: string, file: File) => void;
+  onDiscardStalled?: (videoId: string, uploadId: string) => void;
 };
 
 function statusLabel(status: GalleryVideo["status"]) {
@@ -92,6 +104,10 @@ export default function VideoGrid({
   onMenuAction,
   isStackCard,
   onRetryFailed,
+
+  activeUploadVideoIds,
+  onResumeStalled,
+  onDiscardStalled,
 }: Props) {
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
 
@@ -136,7 +152,10 @@ export default function VideoGrid({
 
         const isArchived = Boolean(v.archivedAt);
 
-        const pill = statusPill(v.status);
+        const isStalledUpload =
+          v.status === "UPLOADED" && Boolean(v.uploadId) && !activeUploadVideoIds?.has(v.id);
+
+        const pill = isStalledUpload ? { label: "Interrupted", tone: "warning" as PillTone } : statusPill(v.status);
 
         return (
           <div
@@ -345,9 +364,11 @@ export default function VideoGrid({
                 ) : v.status === "UPLOADING" || v.status === "UPLOADED" || v.status === "PROCESSING" ? (
                   <div className="absolute inset-0 overflow-hidden">
                     <div className="h-full w-full bg-gradient-to-br from-[var(--surface-2)]/60 via-[var(--surface-1)]/30 to-[var(--surface-2)]/60" />
-                    <div className="absolute inset-0 -translate-x-full animate-shimmer -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    {!isStalledUpload && (
+                      <div className="absolute inset-0 -translate-x-full animate-shimmer -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    )}
                     <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-3)]">
-                      {statusLabel(v.status)}
+                      {isStalledUpload ? "Interrupted" : statusLabel(v.status)}
                     </div>
                   </div>
                 ) : (
@@ -426,6 +447,37 @@ export default function VideoGrid({
                 {v.status === "FAILED" ? (
                   <div className="mt-2 text-[11px] text-[var(--text-3)]/80">
                     Try “Retry upload”. If it fails again, the file may be unsupported.
+                  </div>
+                ) : null}
+
+                {isStalledUpload && !isArchived ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {onResumeStalled && (
+                      <FilePickerButton
+                        accept="video/*"
+                        label="Resume upload"
+                        className="inline-flex items-center rounded-lg bg-[var(--accent-solid)] px-3 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
+                        onFile={(file) => {
+                          if (file) onResumeStalled(v.id, file);
+                        }}
+                      />
+                    )}
+                    {onDiscardStalled && v.uploadId && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onDiscardStalled(v.id, v.uploadId!)}
+                      >
+                        Discard
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
+
+                {isStalledUpload ? (
+                  <div className="mt-2 text-[11px] text-[var(--text-3)]/80">
+                    This upload was interrupted (tab closed or reloaded). Pick the same file to
+                    resume without re-sending what's already uploaded.
                   </div>
                 ) : null}
               </div>

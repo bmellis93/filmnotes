@@ -119,6 +119,18 @@ model Video {
   originalMime String?
   originalSize BigInt?
 
+  // In-progress R2 multipart upload state, set at init and cleared on
+  // complete/abort -- lets the server resume an interrupted upload (ask R2
+  // via ListParts which parts already landed) instead of only being able to
+  // finish or discard it. uploadFingerprint (client-computed as
+  // `${file.name}|${file.size}|${file.lastModified}`, same default scheme
+  // the tus resumable-upload protocol uses) lets a reopened tab confirm a
+  // re-picked file is actually the same one before resuming into it.
+  uploadId          String?
+  uploadPartSize    Int?
+  uploadTotalParts  Int?
+  uploadFingerprint String?
+
   // Set once this video's originalSize has been counted into the org's
   // monthly ingestedBytesThisPeriod meter (see Org model) -- guards against
   // double-counting if Mux redelivers the video.asset.ready webhook.
