@@ -9,4 +9,10 @@
 // existing owners signing back in and still targets the private app.
 export const GET_APP_URL = "/api/auth/oauth/start/paid?next=/owner/galleries";
 
+// Same idea as GET_APP_URL, but for the Agency-only-distribution Marketplace
+// app (lib/ghl/oauthApps.ts's getAgencyAppConfig) -- only ever reachable by
+// an agency admin in the first place, but linked separately so the pricing
+// page's agency toggle sends people to the right install flow.
+export const GET_AGENCY_APP_URL = "/api/auth/oauth/start/agency?next=/owner/galleries";
+
 export const LOGIN_URL = "/login";

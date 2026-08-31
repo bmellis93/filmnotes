@@ -9,6 +9,14 @@ const PLAN_ID_ENV_VARS: Record<string, OrgPlan> = {
   GHL_PLAN_ID_STARTER: "STARTER",
   GHL_PLAN_ID_STUDIO: "STUDIO",
   GHL_PLAN_ID_PRO: "PRO",
+  // Agency-app plan ids -- same storage tiers/OrgPlan values as above, just
+  // priced lower and sold through the Agency-only-distribution listing
+  // instead of the public one. Two GHL plan ids can map to the same
+  // OrgPlan since storageLimitBytes only depends on the plan enum, not
+  // which listing or price got the org there.
+  GHL_PLAN_ID_AGENCY_STARTER: "STARTER",
+  GHL_PLAN_ID_AGENCY_STUDIO: "STUDIO",
+  GHL_PLAN_ID_AGENCY_PRO: "PRO",
 };
 
 /**

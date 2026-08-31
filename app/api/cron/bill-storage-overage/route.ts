@@ -42,13 +42,13 @@ export async function GET(req: NextRequest) {
 
   // OWNER plan is never billed, and PRIVATE-edition orgs (installed via the
   // free/private GHL app, which has no pricing configured) are never billed
-  // either -- only PAID-edition orgs (the public Marketplace app) are
-  // candidates. Filtering "actually over their limit" happens in JS below
-  // since Prisma can't compare two columns of the same row in a `where`
-  // clause, and the org count here is nowhere near large enough to need a
-  // raw query for it.
+  // either -- only PAID and AGENCY orgs (the two monetized Marketplace
+  // listings) are candidates. Filtering "actually over their limit" happens
+  // in JS below since Prisma can't compare two columns of the same row in a
+  // `where` clause, and the org count here is nowhere near large enough to
+  // need a raw query for it.
   const orgs = await prisma.org.findMany({
-    where: { plan: { not: "OWNER" }, appEdition: "PAID" },
+    where: { plan: { not: "OWNER" }, appEdition: { in: ["PAID", "AGENCY"] } },
     select: {
       id: true,
       plan: true,

@@ -6,12 +6,6 @@ import { getAppConfigForOrg } from "@/lib/ghl/oauthApps";
 
 const GHL_BASE_URL = process.env.GHL_API_BASE_URL!;
 
-function mustEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env var: ${name}`);
-  return v;
-}
-
 /**
  * companyId is a required field on every Wallet Charge, but wasn't captured
  * for orgs that connected before app/api/auth/oauth/callback/route.ts
@@ -74,19 +68,22 @@ export async function chargeStorageOverage({
   eventId,
   price,
 }: ChargeStorageOverageArgs): Promise<{ chargeId: string }> {
-  const meterId = mustEnv("GHL_STORAGE_OVERAGE_METER_ID");
-
   // Wallet Charges must be raised under the app that actually owns the
   // billing meter -- was hardcoded to the private app's id, which has no
-  // pricing/meters configured at all. In practice this only ever runs for
-  // PAID orgs (the billing cron already filters to appEdition: "PAID"), but
-  // resolving it properly rather than assuming keeps this correct if that
-  // ever changes.
-  const [{ appId }, accessToken, companyId] = await Promise.all([
+  // pricing/meters configured at all. The meter id itself is just as
+  // app-scoped as appId (PAID and AGENCY each have their own "Storage
+  // Overage" meter in the dev portal), so both come from the same
+  // per-org config instead of a single global env var.
+  const [{ appId, storageOverageMeterId }, accessToken, companyId] = await Promise.all([
     getAppConfigForOrg(orgId),
     getGhlAccessToken(orgId),
     getOrgCompanyId(orgId),
   ]);
+
+  if (!storageOverageMeterId) {
+    throw new Error(`No storage overage meter configured for the app that owns org ${orgId}`);
+  }
+  const meterId = storageOverageMeterId;
 
   const res = await fetch(`${GHL_BASE_URL}/marketplace/billing/charges`, {
     method: "POST",

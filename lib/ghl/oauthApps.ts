@@ -20,6 +20,15 @@ export type GhlAppConfig = {
    * in the dev portal's Marketplace listing settings.
    */
   versionId?: string;
+  /**
+   * The "Storage Overage" Custom Event billing meter's id for this app.
+   * Meters are opaque and scoped to a single Marketplace app registration
+   * (like plan ids), so each paid/agency app needs its own even though they
+   * charge for the same thing -- see chargeStorageOverage in
+   * lib/ghl/billing.ts, which raises the Wallet Charge under whichever app
+   * installed the org. Undefined for editions that are never billed.
+   */
+  storageOverageMeterId?: string;
 };
 
 function mustEnv(name: string) {
@@ -61,6 +70,27 @@ export function getPaidAppConfig(): GhlAppConfig {
     apiBaseUrl: mustEnv("GHL_API_BASE_URL"),
     scopes: process.env.GHL_PAID_SCOPES || "locations.read",
     versionId: mustEnv("GHL_PAID_APP_VERSION_ID"),
+    storageOverageMeterId: mustEnv("GHL_STORAGE_OVERAGE_METER_ID"),
+  };
+}
+
+// The agency-tier GHL Marketplace app -- filmnotes.app/api/auth/oauth/callback/agency.
+// A distinct Marketplace listing (own client id/secret/version/meter/plan
+// ids) restricted to Agency-only distribution in the dev portal, so
+// individual sub-account owners can never see or install it -- see the
+// pricing discussion this was built from. Otherwise mirrors the paid app.
+export function getAgencyAppConfig(): GhlAppConfig {
+  return {
+    edition: "AGENCY",
+    appId: mustEnv("GHL_AGENCY_APP_ID"),
+    clientId: mustEnv("GHL_AGENCY_CLIENT_ID"),
+    clientSecret: mustEnv("GHL_AGENCY_CLIENT_SECRET"),
+    redirectUri: mustEnv("GHL_AGENCY_REDIRECT_URI"),
+    authorizeUrl: process.env.GHL_AGENCY_AUTHORIZE_URL || mustEnv("GHL_AUTHORIZE_URL"),
+    apiBaseUrl: mustEnv("GHL_API_BASE_URL"),
+    scopes: process.env.GHL_AGENCY_SCOPES || "locations.read",
+    versionId: mustEnv("GHL_AGENCY_APP_VERSION_ID"),
+    storageOverageMeterId: mustEnv("GHL_AGENCY_STORAGE_OVERAGE_METER_ID"),
   };
 }
 
@@ -74,5 +104,7 @@ export function getPaidAppConfig(): GhlAppConfig {
  */
 export async function getAppConfigForOrg(orgId: string): Promise<GhlAppConfig> {
   const org = await prisma.org.findUnique({ where: { id: orgId }, select: { appEdition: true } });
-  return org?.appEdition === "PAID" ? getPaidAppConfig() : getPrivateAppConfig();
+  if (org?.appEdition === "PAID") return getPaidAppConfig();
+  if (org?.appEdition === "AGENCY") return getAgencyAppConfig();
+  return getPrivateAppConfig();
 }

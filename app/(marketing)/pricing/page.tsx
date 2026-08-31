@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Check, TrendingDown } from "lucide-react";
 import { buttonVariants } from "@/components/ui/Button";
-import { GET_APP_URL } from "@/lib/marketing/links";
+import { GET_APP_URL, GET_AGENCY_APP_URL } from "@/lib/marketing/links";
+import { PricingPlans, type PricingPlan } from "@/components/marketing/PricingPlans";
 
 export const metadata: Metadata = {
   title: "Pricing — FilmNotes",
@@ -9,15 +9,7 @@ export const metadata: Metadata = {
     "Simple, storage-based pricing for FilmNotes. Every plan includes unlimited galleries, timestamped comments, and client approvals.",
 };
 
-const includedEverywhere = [
-  "Unlimited galleries & videos",
-  "Unlimited client reviewers",
-  "Timestamped comments & approvals",
-  "Mux-powered HD/4K playback",
-  "Built into your HighLevel account",
-];
-
-const plans = [
+const individualPlans: PricingPlan[] = [
   {
     name: "Starter",
     price: "$19",
@@ -25,7 +17,7 @@ const plans = [
     capacity: "~6-7 full projects live at once",
     overageRate: "$0.12/GB over",
     blurb: "For solo editors keeping a handful of active projects at once.",
-    perk: null as string | null,
+    perk: null,
     featured: false,
   },
   {
@@ -35,7 +27,7 @@ const plans = [
     capacity: "~30-35 full projects live at once",
     overageRate: "$0.12/GB over",
     blurb: "For a busy editing or production schedule with several clients in flight.",
-    perk: null as string | null,
+    perk: null,
     featured: true,
   },
   {
@@ -45,7 +37,44 @@ const plans = [
     capacity: "~65-70 full projects live at once",
     overageRate: "$0.09/GB over",
     blurb: "For high-volume shops delivering long-form or high-resolution footage.",
-    perk: "25% lower overage rate than Starter & Studio" as string | null,
+    perk: "25% lower overage rate than Starter & Studio",
+    featured: false,
+  },
+];
+
+// Same storage tiers as individualPlans, priced lower -- sold through the
+// Agency-only-distribution Marketplace app (see the pricing discussion this
+// was built from). Overage rates are intentionally left the same as the
+// individual tiers rather than discounted too.
+const agencyPlans: PricingPlan[] = [
+  {
+    name: "Starter",
+    price: "$15",
+    storage: "100 GB storage",
+    capacity: "~6-7 full projects live at once",
+    overageRate: "$0.12/GB over",
+    blurb: "Agency pricing for a single client sub-account, with room to add more anytime.",
+    perk: null,
+    featured: false,
+  },
+  {
+    name: "Studio",
+    price: "$47",
+    storage: "500 GB storage",
+    capacity: "~30-35 full projects live at once",
+    overageRate: "$0.12/GB over",
+    blurb: "Agency pricing for a busier sub-account managing several client projects.",
+    perk: null,
+    featured: true,
+  },
+  {
+    name: "Pro",
+    price: "$99",
+    storage: "1 TB storage",
+    capacity: "~65-70 full projects live at once",
+    overageRate: "$0.09/GB over",
+    blurb: "Agency pricing for high-volume sub-accounts delivering long-form or 4K footage.",
+    perk: "25% lower overage rate than Starter & Studio",
     featured: false,
   },
 ];
@@ -91,62 +120,12 @@ export default function PricingPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="grid gap-6 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={[
-                "flex flex-col rounded-3xl border p-8",
-                plan.featured
-                  ? "border-[var(--cue)] bg-[var(--surface-1)] shadow-lg shadow-[var(--cue)]/10"
-                  : "border-[var(--border-1)] bg-[var(--surface-1)]/40",
-              ].join(" ")}
-            >
-              {plan.featured && (
-                <span className="mb-4 inline-flex w-fit items-center rounded-full bg-[var(--cue)]/15 px-3 py-1 text-xs font-semibold text-[var(--cue)]">
-                  Most popular
-                </span>
-              )}
-
-              <h2 className="text-xl">{plan.name}</h2>
-              <p className="mt-2 text-sm text-[var(--text-3)]">{plan.blurb}</p>
-
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-semibold tracking-tight">{plan.price}</span>
-                <span className="text-sm text-[var(--text-muted)]">/mo</span>
-              </div>
-              <div className="mt-1 text-sm font-medium text-[var(--text-2)]">{plan.storage}</div>
-              <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-                {plan.capacity} &middot; {plan.overageRate}
-              </div>
-
-              <a
-                href={GET_APP_URL}
-                className={buttonVariants({
-                  variant: plan.featured ? "primary" : "secondary",
-                  className: "mt-6 w-full py-2.5",
-                })}
-              >
-                Start free trial
-              </a>
-
-              <ul className="mt-8 flex flex-col gap-3 border-t border-[var(--border-2)] pt-6">
-                {plan.perk && (
-                  <li className="flex items-start gap-2.5 text-sm font-medium text-[var(--cue)]">
-                    <TrendingDown className="mt-0.5 h-4 w-4 shrink-0" />
-                    {plan.perk}
-                  </li>
-                )}
-                {includedEverywhere.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-[var(--text-2)]">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--scope)]" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+        <PricingPlans
+          individualPlans={individualPlans}
+          agencyPlans={agencyPlans}
+          individualCtaHref={GET_APP_URL}
+          agencyCtaHref={GET_AGENCY_APP_URL}
+        />
 
         <p className="mt-4 text-center text-xs text-[var(--text-muted)]">
           Capacity estimates assume a mix of full-length masters and highlight reels —

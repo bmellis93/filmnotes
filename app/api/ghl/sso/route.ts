@@ -49,9 +49,11 @@ export async function POST(req: NextRequest) {
   // Config errors (missing env vars) are ours, not the caller's -- keep them
   // out of the payload try/catch below so they don't get reported back as
   // "Invalid SSO payload".
-  const sharedSecrets = [mustEnv("GHL_SSO_SHARED_SECRET"), process.env.GHL_PAID_SSO_SHARED_SECRET].filter(
-    (s): s is string => Boolean(s)
-  );
+  const sharedSecrets = [
+    mustEnv("GHL_SSO_SHARED_SECRET"),
+    process.env.GHL_PAID_SSO_SHARED_SECRET,
+    process.env.GHL_AGENCY_SSO_SHARED_SECRET,
+  ].filter((s): s is string => Boolean(s));
   const appJwtSecret = mustEnv("APP_JWT_SECRET");
 
   try {

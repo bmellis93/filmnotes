@@ -323,6 +323,7 @@ enum OrgPlan {
 enum AppEdition {
   PRIVATE
   PAID
+  AGENCY
 }
 
 enum CommentStatus {
