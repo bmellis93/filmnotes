@@ -5,6 +5,7 @@ import { resolveTemplateText, resolveTemplateHtml } from "@/lib/ghl/templateMerg
 import TemplateFolderPicker, { type PickedTemplate } from "@/components/owner/TemplateFolderPicker";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast";
+import MergeFieldMenu from "@/components/ui/MergeFieldMenu";
 
 type Contact = {
   id: string;
@@ -186,6 +187,10 @@ export default function RecipientShareModal({
   const { toast } = useToast();
   const searchAbortRef = useRef<AbortController | null>(null);
   const justSentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const smsTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const emailSubjectRef = useRef<HTMLInputElement | null>(null);
+  const emailMessageTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -784,25 +789,33 @@ export default function RecipientShareModal({
 
               {/* SMS message */}
               <div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div className="text-sm font-semibold">SMS message</div>
-                  <select
-                    value={smsTemplateId}
-                    onChange={(e) => onSmsTemplateChange(e.target.value)}
-                    disabled={loadingTemplates}
-                    className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)]"
-                  >
-                    <option value="">Custom message</option>
-                    {smsTemplates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <MergeFieldMenu
+                      targetRef={smsTextareaRef}
+                      value={smsTemplateId ? smsTemplateText : customMessage}
+                      onChange={(next) => (smsTemplateId ? setSmsTemplateText(next) : setCustomMessage(next))}
+                    />
+                    <select
+                      value={smsTemplateId}
+                      onChange={(e) => onSmsTemplateChange(e.target.value)}
+                      disabled={loadingTemplates}
+                      className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-2 py-1 text-xs text-[var(--text-2)]"
+                    >
+                      <option value="">Custom message</option>
+                      {smsTemplates.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="mt-2">
                   <textarea
+                    ref={smsTextareaRef}
                     value={smsTemplateId ? smsTemplateText : customMessage}
                     onChange={(e) =>
                       smsTemplateId ? setSmsTemplateText(e.target.value) : setCustomMessage(e.target.value)
@@ -862,13 +875,15 @@ export default function RecipientShareModal({
                   </div>
                 )}
 
-                <div className="mt-2">
+                <div className="mt-2 flex items-center gap-2">
                   <input
+                    ref={emailSubjectRef}
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
                     placeholder="Subject"
                     className="w-full rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-2.5 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
                   />
+                  <MergeFieldMenu targetRef={emailSubjectRef} value={emailSubject} onChange={setEmailSubject} label="Insert" />
                 </div>
 
                 <div className="mt-2">
@@ -892,12 +907,22 @@ export default function RecipientShareModal({
                       />
                     </div>
                   ) : (
-                    <textarea
-                      value={emailCustomMessage}
-                      onChange={(e) => setEmailCustomMessage(e.target.value)}
-                      placeholder={customMessage || defaultMessage}
-                      className="h-24 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
-                    />
+                    <div>
+                      <div className="mb-1.5 flex justify-end">
+                        <MergeFieldMenu
+                          targetRef={emailMessageTextareaRef}
+                          value={emailCustomMessage}
+                          onChange={setEmailCustomMessage}
+                        />
+                      </div>
+                      <textarea
+                        ref={emailMessageTextareaRef}
+                        value={emailCustomMessage}
+                        onChange={(e) => setEmailCustomMessage(e.target.value)}
+                        placeholder={customMessage || defaultMessage}
+                        className="h-24 w-full resize-none rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--border-3)]"
+                      />
+                    </div>
                   )}
                   <div className="mt-1 text-xs text-[var(--text-muted)]">
                     {effectiveEmailHtml
