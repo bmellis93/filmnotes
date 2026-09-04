@@ -405,6 +405,19 @@ export default function GalleryDetailScreen({
     );
   }, [uploads]);
 
+  // Live upload percentage, keyed by the real videoId once it's bound (see
+  // activeUploadVideoIds above for the same tempId->videoId timing note) --
+  // lets VideoGrid show an actual progress bar instead of just a shimmer,
+  // which matters most for a background upload the user has navigated back
+  // to check on rather than watching in the upload modal.
+  const uploadProgressByVideoId = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const u of uploads) {
+      if (u.status === "uploading" && u.videoId) out[u.videoId] = u.progress;
+    }
+    return out;
+  }, [uploads]);
+
   function handleResumeStalled(videoId: string, file: File) {
     resumeUpload({
       id: crypto.randomUUID(),
@@ -801,6 +814,7 @@ export default function GalleryDetailScreen({
               onDragEndCard={onDragEndCard}
               onDragOverCard={onDragOverCard}
               onDropOnCard={onDropOnCard}
+              uploadProgressByVideoId={uploadProgressByVideoId}
               onMenuAction={(videoId, action) => {
                 if (action === "MANAGE_VERSIONS") openManageFor(videoId);
                 if (action === "UNSTACK") unstack(videoId);

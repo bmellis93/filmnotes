@@ -28,7 +28,13 @@ export async function GET(
   });
 
   if (!video?.muxPlaybackId) {
-    return NextResponse.json({ error: "Video not ready" }, { status: 404 });
+    // status lets the player distinguish "still transcoding, keep retrying"
+    // from "transcoding failed, stop retrying and show an error" instead of
+    // treating every non-ready video the same way.
+    return NextResponse.json(
+      { error: "Video not ready", status: video?.status ?? null },
+      { status: 404 }
+    );
   }
 
   const token = await mux.jwt.signPlaybackId(video.muxPlaybackId, {

@@ -744,6 +744,29 @@ export default function VideoReviewScreen(props: Props) {
                   onTimeUpdate={player.onTimeUpdate}
                 />
 
+                {player.sourceState !== "ready" && (
+                  <div className="absolute inset-0 z-10 grid place-items-center bg-[var(--surface-0)]">
+                    <div className="flex flex-col items-center gap-3 px-6 text-center">
+                      {player.sourceState === "failed" ? (
+                        <>
+                          <div className="text-sm font-medium text-[var(--text-1)]">Processing failed</div>
+                          <div className="max-w-xs text-xs text-[var(--text-3)]">
+                            This video couldn't be processed. Try re-uploading it.
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-2)] border-t-[var(--text-2)]" />
+                          <div className="text-sm font-medium text-[var(--text-1)]">Processing your video…</div>
+                          <div className="max-w-xs text-xs text-[var(--text-3)]">
+                            This page will update on its own once it's ready — no need to refresh.
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {player.isCasting && (
                   <div className="absolute inset-0 grid place-items-center bg-black/90">
                     <div className="flex flex-col items-center gap-3 px-6 text-center">

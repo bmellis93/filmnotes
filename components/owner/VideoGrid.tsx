@@ -66,6 +66,12 @@ type Props = {
   activeUploadVideoIds?: Set<string>;
   onResumeStalled?: (videoId: string, file: File) => void;
   onDiscardStalled?: (videoId: string, uploadId: string) => void;
+
+  /** 0-100, keyed by videoId -- only ever populated while status is
+   *  UPLOADING (by the time it flips to PROCESSING the upload manager has
+   *  already reported 100%), and only for uploads this tab is actively
+   *  driving. See UploadManagerContext's ManagedUpload.progress. */
+  uploadProgressByVideoId?: Record<string, number>;
 };
 
 function statusLabel(status: GalleryVideo["status"]) {
@@ -108,6 +114,7 @@ export default function VideoGrid({
   activeUploadVideoIds,
   onResumeStalled,
   onDiscardStalled,
+  uploadProgressByVideoId,
 }: Props) {
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
 
@@ -156,6 +163,7 @@ export default function VideoGrid({
           v.status === "UPLOADED" && Boolean(v.uploadId) && !activeUploadVideoIds?.has(v.id);
 
         const pill = isStalledUpload ? { label: "Interrupted", tone: "warning" as PillTone } : statusPill(v.status);
+        const uploadProgress = v.status === "UPLOADING" ? uploadProgressByVideoId?.[v.id] : undefined;
 
         return (
           <div
@@ -367,8 +375,21 @@ export default function VideoGrid({
                     {!isStalledUpload && (
                       <div className="absolute inset-0 -translate-x-full animate-shimmer -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-3)]">
-                      {isStalledUpload ? "Interrupted" : statusLabel(v.status)}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-xs text-[var(--text-3)]">
+                      <span>{isStalledUpload ? "Interrupted" : statusLabel(v.status)}</span>
+                      {typeof uploadProgress === "number" && (
+                        <div className="w-full max-w-[140px]">
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+                            <div
+                              className="h-full rounded-full bg-[var(--accent-solid)] transition-[width] duration-300 ease-out"
+                              style={{ width: `${Math.max(0, Math.min(100, uploadProgress))}%` }}
+                            />
+                          </div>
+                          <div className="mt-1 text-center text-[10px] text-[var(--text-3)]">
+                            {Math.round(uploadProgress)}%
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (

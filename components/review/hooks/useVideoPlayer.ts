@@ -65,6 +65,13 @@ type UseVideoPlayerReturn = {
   startCast: () => Promise<void>;
   stopCast: () => void;
 
+  // "loading" until a playback token/src has resolved at least once, "failed"
+  // once the server reports the video's transcoding itself failed (stops
+  // retrying at that point), "ready" otherwise. Lets a caller show a
+  // processing/error placeholder instead of a blank player while a video
+  // is still transcoding.
+  sourceState: "loading" | "ready" | "failed";
+
   // quality (real, when the source is HLS and hls.js is driving playback)
   qualityLevels: QualityLevel[];
   currentQualityIndex: number; // the level actually playing right now
@@ -113,6 +120,10 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
   );
   const currentTokenRef = useRef<string | null>(null);
   const isSignedRef = useRef(Boolean(playbackTokenUrl));
+  // True once the server reports the video's transcoding failed (a 404 with
+  // status: "FAILED") -- distinct from the ordinary "still processing" 404,
+  // which keeps retrying instead.
+  const [sourceFailed, setSourceFailed] = useState(false);
   // Unsigned "public" playback id, when the playback-token endpoint reports
   // one -- handed to a Chromecast receiver instead of the signed stream,
   // since a receiver is a separate device with no path to receive our
@@ -152,11 +163,26 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     let cancelled = false;
     let refreshTimer: number | undefined;
 
+    setSourceFailed(false);
+
+    // How long transcoding takes varies a lot with footage length/resolution,
+    // so this isn't backing off -- a flat 5s keeps "processing" -> "ready"
+    // feeling responsive without a page refresh, for the common case of
+    // someone sitting on this exact video's page waiting for it.
+    const NOT_READY_RETRY_MS = 5_000;
+
     async function fetchToken() {
       try {
         const res = await fetch(playbackTokenUrl!, { cache: "no-store" });
         const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Failed to get playback token");
+
+        if (!res.ok) {
+          if (data?.status === "FAILED") {
+            if (!cancelled) setSourceFailed(true);
+            return; // transcoding failed -- no point retrying
+          }
+          throw new Error(data?.error || "Failed to get playback token");
+        }
         if (cancelled) return;
 
         currentTokenRef.current = data.token as string;
@@ -171,8 +197,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
         refreshTimer = window.setTimeout(fetchToken, ttlMs * 0.8);
       } catch (err) {
         console.error("Failed to fetch/refresh Mux playback token:", err);
-        // Retry in a minute rather than leaving playback permanently stuck.
-        if (!cancelled) refreshTimer = window.setTimeout(fetchToken, 60_000);
+        if (!cancelled) refreshTimer = window.setTimeout(fetchToken, NOT_READY_RETRY_MS);
       }
     }
 
@@ -624,6 +649,8 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     durationMs,
     currentMs,
     isPlaying,
+
+    sourceState: sourceFailed ? "failed" : resolvedSrc ? "ready" : "loading",
 
     volume,
     muted,
