@@ -34,7 +34,7 @@ function viewedLabel(iso: string | null | undefined) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-type MenuAction = "MANAGE_VERSIONS" | "UNSTACK" | "EDIT_THUMBNAIL" | "SHARE";
+type MenuAction = "MANAGE_VERSIONS" | "UNSTACK" | "EDIT_DETAILS" | "SHARE";
 
 type Props = {
   videos: GalleryVideo[];
@@ -278,11 +278,11 @@ export default function VideoGrid({
                       type="button"
                       onClick={() => {
                         closeMenu();
-                        onMenuAction?.(v.id, "EDIT_THUMBNAIL");
+                        onMenuAction?.(v.id, "EDIT_DETAILS");
                       }}
                       className="w-full px-3 py-2 text-left text-sm text-[var(--text-1)] hover:bg-[var(--surface-1)] focus:outline-none focus-visible:bg-[var(--surface-1)]"
                     >
-                      Edit Thumbnail
+                      Edit Details
                     </button>
 
                     {stackCard && (

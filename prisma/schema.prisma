@@ -152,8 +152,9 @@ model Gallery {
   orgId String
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
-  title      String?
-  stacksJson String?
+  title       String?
+  description String?
+  stacksJson  String?
   
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

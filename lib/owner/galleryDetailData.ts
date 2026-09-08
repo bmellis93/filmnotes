@@ -33,6 +33,7 @@ export async function getOwnerGalleryDetail(
     select: {
       id: true,
       title: true,
+      description: true,
       stacksJson: true,
       archivedAt: true,
       deletedAt: true,
@@ -108,7 +109,7 @@ export async function getOwnerGalleryDetail(
     gallery: {
       id: gallery.id,
       name: gallery.title ?? `Gallery ${gallery.id}`,
-      description: "",
+      description: gallery.description ?? "",
     },
     initialVideos,
     initialStacks: stacks,

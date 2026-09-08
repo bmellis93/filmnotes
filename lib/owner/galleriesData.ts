@@ -20,6 +20,7 @@ export async function getOwnerGalleriesList(orgId: string): Promise<OwnerGallery
     select: {
       id: true,
       title: true,
+      description: true,
       createdAt: true,
       updatedAt: true,
       videos: {
@@ -53,7 +54,7 @@ export async function getOwnerGalleriesList(orgId: string): Promise<OwnerGallery
     return {
       id: g.id,
       name: g.title ?? "Untitled gallery",
-      description: null,
+      description: g.description ?? null,
       createdAt: g.createdAt.toISOString(),
       updatedAt: g.updatedAt.toISOString(),
       lastClientCommentedAt: null,

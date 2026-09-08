@@ -21,11 +21,13 @@ export async function POST(req: Request) {
       data: {
         orgId: owner.orgId,
         title: name,
+        description: description || null,
         stacksJson: "{}", // keep predictable
       },
       select: {
         id: true,
         title: true,
+        description: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
       gallery: {
         id: gallery.id,
         name: gallery.title ?? "Untitled gallery",
-        description: description || "",
+        description: gallery.description ?? "",
         createdAt: gallery.createdAt.toISOString(),
         updatedAt: gallery.updatedAt.toISOString(),
         lastClientCommentedAt: null,

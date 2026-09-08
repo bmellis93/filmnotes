@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Share2, Upload, ArrowLeft, Layers, Link2 } from "lucide-react";
+import { Plus, Share2, Upload, ArrowLeft, Layers, Link2, Pencil } from "lucide-react";
 
 import UploadDropzone from "@/components/owner/UploadDropzone";
 import VideoGrid, { GalleryVideo } from "@/components/owner/VideoGrid";
@@ -13,7 +13,8 @@ import ShareGalleryModal from "@/components/owner/ShareGalleryModal";
 import ShareModal from "@/components/share-modal";
 import ManageSharesModal from "@/components/owner/ManageSharesModal";
 import ManageVersionsModal from "@/components/owner/ManageVersionsModal";
-import EditThumbnailModal from "@/components/owner/EditThumbnailModal";
+import EditVideoModal from "@/components/owner/EditVideoModal";
+import EditGalleryModal from "@/components/owner/EditGalleryModal";
 import Button from "@/components/ui/Button";
 import { useOwnerRole } from "@/components/owner/OwnerRoleContext";
 
@@ -50,12 +51,13 @@ type Props = {
 };
 
 export default function GalleryDetailScreen({
-  gallery,
+  gallery: initialGallery,
   initialVideos,
   initialStacks,
   basePath = "/owner/galleries",
 }: Props) {
   const router = useRouter();
+  const [gallery, setGallery] = useState(initialGallery);
   const galleryId = gallery.id;
   const { toast } = useToast();
   const { hasRole } = useOwnerRole();
@@ -68,12 +70,13 @@ export default function GalleryDetailScreen({
 
   // Modals
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [editGalleryOpen, setEditGalleryOpen] = useState(false);
+  const [editVideoId, setEditVideoId] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareVideoId, setShareVideoId] = useState<string | null>(null);
   const [manageSharesOpen, setManageSharesOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [retryForVideoId, setRetryForVideoId] = useState<string | null>(null);
-  const [editThumbnailVideoId, setEditThumbnailVideoId] = useState<string | null>(null);
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -621,6 +624,18 @@ export default function GalleryDetailScreen({
                   <div className="text-sm text-[var(--text-muted)]">No description</div>
                 )}
               </div>
+
+              {canManageGalleries && (
+                <button
+                  type="button"
+                  onClick={() => setEditGalleryOpen(true)}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 text-[var(--text-2)] hover:bg-[var(--surface-1)]"
+                  aria-label="Edit gallery"
+                  title="Edit gallery"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -818,7 +833,7 @@ export default function GalleryDetailScreen({
               onMenuAction={(videoId, action) => {
                 if (action === "MANAGE_VERSIONS") openManageFor(videoId);
                 if (action === "UNSTACK") unstack(videoId);
-                if (action === "EDIT_THUMBNAIL") setEditThumbnailVideoId(videoId);
+                if (action === "EDIT_DETAILS") setEditVideoId(videoId);
                 if (action === "SHARE") setShareVideoId(videoId);
               }}
               isStackCard={(videoId) => {
@@ -915,15 +930,40 @@ export default function GalleryDetailScreen({
         }}
       />
 
-      <EditThumbnailModal
-        open={Boolean(editThumbnailVideoId)}
-        onClose={() => setEditThumbnailVideoId(null)}
-        videoId={editThumbnailVideoId}
-        currentThumbnailUrl={
-          editThumbnailVideoId ? (byId.get(editThumbnailVideoId)?.thumbnailUrl ?? null) : null
-        }
-        onUpdated={(videoId, thumbnailUrl) => {
-          patchVideo(videoId, { thumbnailUrl });
+      <EditVideoModal
+        open={Boolean(editVideoId)}
+        onClose={() => setEditVideoId(null)}
+        videoId={editVideoId}
+        currentTitle={editVideoId ? (byId.get(editVideoId)?.name ?? "") : ""}
+        currentDescription={editVideoId ? (byId.get(editVideoId)?.description ?? "") : ""}
+        currentThumbnailUrl={editVideoId ? (byId.get(editVideoId)?.thumbnailUrl ?? null) : null}
+        onUpdated={(videoId, patch) => {
+          patchVideo(videoId, {
+            ...(patch.title !== undefined ? { name: patch.title } : {}),
+            ...(patch.description !== undefined ? { description: patch.description } : {}),
+            ...(patch.thumbnailUrl !== undefined ? { thumbnailUrl: patch.thumbnailUrl } : {}),
+          });
+        }}
+      />
+
+      <EditGalleryModal
+        open={editGalleryOpen}
+        onClose={() => setEditGalleryOpen(false)}
+        currentName={gallery.name}
+        currentDescription={gallery.description ?? ""}
+        onSave={async ({ name, description }) => {
+          const res = await fetch(`/api/owner/galleries/${galleryId}/update`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, description }),
+          });
+          const data = (await res.json().catch(() => ({}))) as {
+            ok?: boolean;
+            gallery?: { name: string; description: string };
+            error?: string;
+          };
+          if (!res.ok || !data.ok || !data.gallery) throw new Error(data.error || "Failed to save gallery.");
+          setGallery((prev) => ({ ...prev, name: data.gallery!.name, description: data.gallery!.description }));
         }}
       />
     </div>
