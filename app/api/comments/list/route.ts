@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
 import { prisma } from "@/lib/prisma";
-import { parseAllowedIds } from "@/lib/share/shareLinkUtils";
+import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
 import { parseAnnotationJson } from "@/lib/annotations/types";
 
 export const runtime = "nodejs";
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status });
 
     const share = res.share;
-    const allowed = parseAllowedIds(share);
+    const { allowedVideoIds: allowed } = await resolveShareVideos(share);
 
     const vid = String(videoId || "").trim();
     if (!vid) return NextResponse.json({ error: "videoId is required" }, { status: 400 });

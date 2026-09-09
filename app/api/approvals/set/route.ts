@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
 import { prisma } from "@/lib/prisma";
-import { parseAllowedIds } from "@/lib/share/shareLinkUtils";
+import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
 import { sendOwnerWebhook, getOwnerVideoContext, buildOwnerVideoUrl } from "@/lib/notify/sendOwnerWebhook";
 import { sendOwnerEmail } from "@/lib/notify/sendOwnerEmail";
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "videoId is required" }, { status: 400 });
     }
 
-    const allowed = parseAllowedIds(share);
+    const { allowedVideoIds: allowed } = await resolveShareVideos(share);
     if (!allowed.includes(vid)) {
       return NextResponse.json({ error: "Video not allowed for this link" }, { status: 403 });
     }

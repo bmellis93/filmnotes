@@ -9,7 +9,7 @@ import SharePasswordGate from "@/components/share/SharePasswordGate";
 import { prisma } from "@/lib/prisma";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
-import { parseAllowedIds, parseStacks } from "@/lib/share/shareLinkUtils";
+import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
 
 export const runtime = "nodejs";
 
@@ -38,8 +38,7 @@ export default async function ShareTokenPage({ params }: Props) {
     redirect(`/r/${cleanToken}/videos/${share.videoId}`);
   }
 
-  const allowedVideoIds = parseAllowedIds(share);
-  const stacks = parseStacks(share, allowedVideoIds);
+  const { allowedVideoIds, stacks } = await resolveShareVideos(share);
 
   const rows = await prisma.video.findMany({
     where: { id: { in: allowedVideoIds } },

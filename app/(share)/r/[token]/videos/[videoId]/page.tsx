@@ -5,7 +5,7 @@ import VideoReviewScreen from "@/components/review/VideoReviewScreen";
 import SharePasswordGate from "@/components/share/SharePasswordGate";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
-import { parseAllowedIds, parseStacks } from "@/lib/share/shareLinkUtils";
+import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
 import { buildChildToParent, latestIdForCard } from "@/components/domain/stacks";
 import { prisma } from "@/lib/prisma";
 import { buildVideoMaps } from "@/lib/videoMaps";
@@ -32,10 +32,8 @@ export default async function TokenVideoPage({ params }: Props) {
 
   const share = res.share;
 
-  const allowed = parseAllowedIds(share);
+  const { allowedVideoIds: allowed, stacks } = await resolveShareVideos(share);
   if (!allowed.includes(videoId)) notFound();
-
-  const stacks = parseStacks(share, allowed);
 
   // Redirect to latest in stack (keeps URL stable + avoids viewing old versions)
   const childToParent = buildChildToParent(stacks);

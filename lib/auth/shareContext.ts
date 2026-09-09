@@ -3,6 +3,7 @@ import "server-only";
 import { NextRequest } from "next/server";
 import { loadGatedShare } from "@/lib/share/shareGate";
 import { unlockCookieName } from "@/lib/share/sharePassword";
+import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
 
 export type ShareContext =
   | {
@@ -36,25 +37,6 @@ function getTokenFromRequest(req: NextRequest) {
   return null;
 }
 
-function parseAllowedVideoIds(link: {
-  videoId: string | null;
-  allowedVideoIdsJson: string | null;
-}) {
-  // 1) legacy single-video token
-  if (link.videoId) return [link.videoId];
-
-  // 2) gallery / multi-video token
-  if (!link.allowedVideoIdsJson) return [];
-
-  try {
-    const arr = JSON.parse(link.allowedVideoIdsJson);
-    if (!Array.isArray(arr)) return [];
-    return arr.filter((x) => typeof x === "string" && x.trim().length > 0);
-  } catch {
-    return [];
-  }
-}
-
 export async function getShareContextFromRequest(req: NextRequest): Promise<ShareContext> {
   const token = getTokenFromRequest(req);
   if (!token) return null;
@@ -68,7 +50,7 @@ export async function getShareContextFromRequest(req: NextRequest): Promise<Shar
   if (!gate.ok) return null;
 
   const link = gate.share;
-  const videoIds = parseAllowedVideoIds(link);
+  const { allowedVideoIds: videoIds } = await resolveShareVideos(link);
   if (videoIds.length === 0) return null;
 
   return {

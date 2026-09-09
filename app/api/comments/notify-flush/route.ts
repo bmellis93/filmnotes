@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
-import { parseAllowedIds } from "@/lib/share/shareLinkUtils";
+import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
 import { flushPendingCommentNotifications } from "@/lib/notify/flushCommentNotifications";
 
 export const runtime = "nodejs";
@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     }
 
     const vid = String(videoId || "").trim();
-    if (!vid || !parseAllowedIds(res.share).includes(vid)) {
+    const { allowedVideoIds } = await resolveShareVideos(res.share);
+    if (!vid || !allowedVideoIds.includes(vid)) {
       return NextResponse.json({ ok: true, ignored: "Video not allowed for this link" });
     }
 

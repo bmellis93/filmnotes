@@ -7,6 +7,7 @@ import type {
 } from "@/components/share/ClientGalleryScreen";
 import { prisma } from "@/lib/prisma";
 import { loadGatedShare } from "@/lib/share/shareGate";
+import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
 
 export type SharePayload = {
   shareId: string; // token
@@ -20,29 +21,6 @@ export type SharePayload = {
 export type FetchShareResult =
   | { ok: true; share: SharePayload }
   | { ok: false; status: number; error: string; passwordRequired?: true };
-
-function parseJsonArray(value: string | null | undefined): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed.map(String) : [];
-  } catch {
-    return [];
-  }
-}
-
-function parseJsonObject<T>(value: string | null | undefined, fallback: T): T {
-  if (!value) return fallback;
-  try {
-    const parsed = JSON.parse(value);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as T;
-    }
-    return fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 // You said thumbnail auto-pick is already settled; keep this consistent with your app.
 function muxThumbUrl(playbackId: string, timeSeconds: number) {
@@ -62,22 +40,10 @@ export async function fetchShare(shareId: string, unlockProof?: string | null): 
 
   const share = gate.share;
 
-  // Allowed IDs: gallery shares use allowedVideoIdsJson; single-video shares fall back to videoId
-  const parsedAllowed = parseJsonArray(share.allowedVideoIdsJson);
-  const allowedVideoIds =
-    parsedAllowed.length > 0
-      ? parsedAllowed
-      : share.videoId
-      ? [share.videoId]
-      : [];
-
-  // 🔒 limit stacks to videos actually allowed in this share
-  const allowedSet = new Set(allowedVideoIds);
-  const stacks = Object.fromEntries(
-    Object.entries(parseJsonObject<StackMap>(share.stacksJson, {})).filter(
-      ([parentId]) => allowedSet.has(parentId)
-    )
-  );
+  // Computed live from the gallery's current state -- see
+  // resolveShareVideos for why this isn't just parsing the share's own
+  // frozen allowedVideoIdsJson/stacksJson columns.
+  const { allowedVideoIds, stacks } = await resolveShareVideos(share);
 
   const permissions: SharePermissions = {
     view: share.view === "VIEW_ONLY" ? "VIEW_ONLY" : "REVIEW_DOWNLOAD",

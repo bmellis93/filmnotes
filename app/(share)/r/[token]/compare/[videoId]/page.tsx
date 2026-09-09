@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
-import { parseAllowedIds, parseStacks } from "@/lib/share/shareLinkUtils";
+import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
 import { getLatestIdForVideo, getStackIdsForVideo } from "@/lib/share/stackView";
 import VideoCompareScreen from "@/components/review/VideoCompareScreen";
 import SharePasswordGate from "@/components/share/SharePasswordGate";
@@ -30,8 +30,7 @@ export default async function TokenVideoPage({ params }: Props) {
 
   const share = res.share;
 
-  const allowed = parseAllowedIds(share);
-  const stacks = parseStacks(share, allowed);
+  const { allowedVideoIds: allowed, stacks } = await resolveShareVideos(share);
 
   if (!allowed.includes(videoId)) notFound();
 
