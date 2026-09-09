@@ -6,7 +6,7 @@
 
 /* Shimmer sweep for processing-video placeholders (VideoGrid.tsx). */
 @theme {
-  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
 }
 
 @keyframes shimmer {

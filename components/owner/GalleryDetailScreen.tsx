@@ -408,15 +408,19 @@ export default function GalleryDetailScreen({
     );
   }, [uploads]);
 
-  // Live upload percentage, keyed by the real videoId once it's bound (see
-  // activeUploadVideoIds above for the same tempId->videoId timing note) --
-  // lets VideoGrid show an actual progress bar instead of just a shimmer,
-  // which matters most for a background upload the user has navigated back
-  // to check on rather than watching in the upload modal.
+  // Live upload percentage, keyed by BOTH the manager's own upload id and
+  // the real videoId. The tile itself is keyed by `id` = the optimistic
+  // tempId (see handleFiles below) for the *entire* upload -- it only gets
+  // renamed to the real videoId in onBound, which fires once the upload has
+  // already finished (see UploadManagerContext's startUpload .then()), not
+  // when the videoId first becomes known. Keying only by videoId meant this
+  // map and the tile's id never matched while progress actually mattered.
   const uploadProgressByVideoId = useMemo(() => {
     const out: Record<string, number> = {};
     for (const u of uploads) {
-      if (u.status === "uploading" && u.videoId) out[u.videoId] = u.progress;
+      if (u.status !== "uploading") continue;
+      out[u.id] = u.progress;
+      if (u.videoId) out[u.videoId] = u.progress;
     }
     return out;
   }, [uploads]);
