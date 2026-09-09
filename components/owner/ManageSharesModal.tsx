@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { X, Copy, Trash2, Link2, Lock, LockOpen } from "lucide-react";
+import { X, Copy, Trash2, Link2, Lock, LockOpen, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import Button from "@/components/ui/Button";
 
@@ -152,6 +152,28 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
     }
   }
 
+  // The allowed-video list and version stacks a share link shows are
+  // snapshotted once at send time (see create-gallery/route.ts) -- adding a
+  // new version to an already-shared video's stack afterward never reaches
+  // an already-issued link on its own. This resyncs it without touching the
+  // token, contact, or sending any notification.
+  async function refreshShare(share: ShareRow) {
+    setBusyId(share.id);
+    try {
+      const res = await fetch(`/api/owner/shares/${share.id}/refresh`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to refresh link");
+      toast({
+        kind: "success",
+        message: `Link refreshed — now shows ${data.videoCount} video${data.videoCount === 1 ? "" : "s"}.`,
+      });
+    } catch (e: any) {
+      toast({ kind: "error", message: e?.message || "Failed to refresh link" });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${url}`);
@@ -231,6 +253,16 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => refreshShare(s)}
+                      disabled={busyId === s.id}
+                      title="Resync this link's videos and versions from the gallery"
+                      aria-label="Refresh link"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text-1)] disabled:opacity-50"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => copyLink(s.url)}
