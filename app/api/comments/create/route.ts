@@ -3,6 +3,7 @@ import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
 import { prisma } from "@/lib/prisma";
 import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
+import { resolveVideoPermissions } from "@/lib/share/resolveVideoPermissions";
 import { sanitizeAnnotationInput, parseAnnotationJson } from "@/lib/annotations/types";
 
 export const runtime = "nodejs";
@@ -35,7 +36,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Video not allowed for this link" }, { status: 403 });
     }
 
-    if (!share.allowComments) {
+    const perms = resolveVideoPermissions(
+      Boolean(share.allowComments),
+      Boolean(share.allowDownload),
+      share.videoPermissionsJson,
+      vid
+    );
+    if (!perms.allowComments) {
       return NextResponse.json({ error: "Comments disabled for this link" }, { status: 403 });
     }
 

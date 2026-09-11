@@ -16,6 +16,11 @@ export type SharePayload = {
   allowedVideoIds: string[];
   stacks: StackMap;
   videos: ShareGalleryVideo[];
+  // Raw per-video overrides -- see lib/share/resolveVideoPermissions.ts.
+  // `permissions` above is the link's own default; a caller that knows
+  // which specific video it's showing should resolve against this instead
+  // of trusting `permissions` directly.
+  videoPermissionsJson: string | null;
 };
 
 export type FetchShareResult =
@@ -62,6 +67,7 @@ export async function fetchShare(shareId: string, unlockProof?: string | null): 
         allowedVideoIds: [],
         stacks,
         videos: [],
+        videoPermissionsJson: share.videoPermissionsJson,
       },
     };
   }
@@ -112,6 +118,7 @@ export async function fetchShare(shareId: string, unlockProof?: string | null): 
       allowedVideoIds,
       stacks,
       videos,
+      videoPermissionsJson: share.videoPermissionsJson,
     },
   };
 }

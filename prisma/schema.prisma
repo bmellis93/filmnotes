@@ -18,6 +18,13 @@ model ShareLink {
   view                ShareView @default(REVIEW_DOWNLOAD)
   allowComments       Boolean   @default(true)
   allowDownload       Boolean   @default(false)
+  // Per-video overrides for a gallery share, e.g. one video not cleared
+  // for download yet while the rest of the gallery is -- JSON map of
+  // { [videoId]: { allowComments?: boolean; allowDownload?: boolean } }.
+  // A video with no entry (or an entry missing one of the two keys) falls
+  // back to allowComments/allowDownload above. See
+  // lib/share/resolveVideoPermissions.ts.
+  videoPermissionsJson String?
   createdAt           DateTime  @default(now())
   expiresAt           DateTime?
   revokedAt           DateTime?

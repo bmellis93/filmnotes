@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { fetchShare } from "@/lib/share/fetchShare";
 import { unlockCookieName } from "@/lib/share/sharePassword";
 import { buildChildToParent, latestIdForCard } from "@/components/domain/stacks";
+import { resolveVideoPermissions } from "@/lib/share/resolveVideoPermissions";
 import { buildVideoMaps } from "@/lib/videoMaps";
 
 export const runtime = "nodejs";
@@ -59,6 +60,13 @@ export default async function ClientVideoPage({ params }: Props) {
   const { videoMetaById } = buildVideoMaps(videos);
   const currentVideo = videos.find((v) => v.id === videoId);
 
+  const permissions = resolveVideoPermissions(
+    Boolean(share.permissions?.allowComments),
+    Boolean(share.permissions?.allowDownload),
+    share.videoPermissionsJson,
+    videoId
+  );
+
   return (
     <VideoReviewScreen
       mode="client"
@@ -68,10 +76,7 @@ export default async function ClientVideoPage({ params }: Props) {
       projectTitle={share.title ?? "Client Gallery"}
       view={share.permissions?.view === "VIEW_ONLY" ? "VIEW_ONLY" : "REVIEW_DOWNLOAD"}
       backHref={`/share/${shareId}`}
-      permissions={{
-        allowComments: Boolean(share.permissions?.allowComments),
-        allowDownload: Boolean(share.permissions?.allowDownload),
-      }}
+      permissions={permissions}
       videoMetaById={videoMetaById}
       initialApprovalStatus={currentVideo?.approvalStatus}
       initialApprovalUpdatedAt={currentVideo?.approvalUpdatedAt?.toISOString() ?? null}

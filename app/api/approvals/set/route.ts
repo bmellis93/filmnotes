@@ -3,6 +3,7 @@ import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
 import { prisma } from "@/lib/prisma";
 import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
+import { resolveVideoPermissions } from "@/lib/share/resolveVideoPermissions";
 import { sendOwnerWebhook, getOwnerVideoContext, buildOwnerVideoUrl } from "@/lib/notify/sendOwnerWebhook";
 import { sendOwnerEmail } from "@/lib/notify/sendOwnerEmail";
 
@@ -47,7 +48,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Video not allowed for this link" }, { status: 403 });
     }
 
-    if (share.view === "VIEW_ONLY" || !share.allowComments) {
+    const perms = resolveVideoPermissions(
+      Boolean(share.allowComments),
+      Boolean(share.allowDownload),
+      share.videoPermissionsJson,
+      vid
+    );
+    if (share.view === "VIEW_ONLY" || !perms.allowComments) {
       return NextResponse.json({ error: "Approval actions disabled for this link" }, { status: 403 });
     }
 

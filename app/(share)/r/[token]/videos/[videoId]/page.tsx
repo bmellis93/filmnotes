@@ -6,6 +6,7 @@ import SharePasswordGate from "@/components/share/SharePasswordGate";
 import { requireValidShareToken } from "@/lib/share-auth";
 import { unlockCookieName } from "@/lib/share/sharePassword";
 import { resolveShareVideos } from "@/lib/share/resolveShareVideos";
+import { resolveVideoPermissions } from "@/lib/share/resolveVideoPermissions";
 import { buildChildToParent, latestIdForCard } from "@/components/domain/stacks";
 import { prisma } from "@/lib/prisma";
 import { buildVideoMaps } from "@/lib/videoMaps";
@@ -62,6 +63,13 @@ export default async function TokenVideoPage({ params }: Props) {
   const { videoMetaById } = buildVideoMaps(videos);
   const currentVideo = videos.find((v) => v.id === videoId);
 
+  const permissions = resolveVideoPermissions(
+    Boolean(share.allowComments),
+    Boolean(share.allowDownload),
+    share.videoPermissionsJson,
+    videoId
+  );
+
   return (
     <VideoReviewScreen
       mode="token"
@@ -71,10 +79,7 @@ export default async function TokenVideoPage({ params }: Props) {
       projectTitle={share.title ?? "Client Gallery"}
       view={share.view === "VIEW_ONLY" ? "VIEW_ONLY" : "REVIEW_DOWNLOAD"}
       backHref={`/r/${token}`}
-      permissions={{
-        allowComments: Boolean(share.allowComments),
-        allowDownload: Boolean(share.allowDownload),
-      }}
+      permissions={permissions}
       videoMetaById={videoMetaById}
       initialApprovalStatus={currentVideo?.approvalStatus}
       initialApprovalUpdatedAt={currentVideo?.approvalUpdatedAt?.toISOString() ?? null}

@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerContext, hasRole } from "@/lib/auth/ownerSession";
 import { getShareContextFromRequest } from "@/lib/auth/shareContext";
+import { resolveVideoPermissions } from "@/lib/share/resolveVideoPermissions";
 
 export type VideoAccess =
   | { allowed: true; orgId: string }
@@ -38,13 +39,16 @@ export async function resolveVideoAccess(
 
   // Share-token access (only if not owner)
   const share = await getShareContextFromRequest(req);
-  if (
-    share &&
-    share.orgId === video.orgId &&
-    share.videoIds.includes(videoId) &&
-    (!opts?.requireAllowDownload || share.allowDownload)
-  ) {
-    return { allowed: true, orgId: video.orgId };
+  if (share && share.orgId === video.orgId && share.videoIds.includes(videoId)) {
+    const perms = resolveVideoPermissions(
+      Boolean(share.allowComments),
+      Boolean(share.allowDownload),
+      share.videoPermissionsJson,
+      videoId
+    );
+    if (!opts?.requireAllowDownload || perms.allowDownload) {
+      return { allowed: true, orgId: video.orgId };
+    }
   }
 
   return { allowed: false };

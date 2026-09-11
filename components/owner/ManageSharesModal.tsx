@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { X, Copy, Trash2, Link2, Lock, LockOpen } from "lucide-react";
+import { X, Copy, Trash2, Link2, Lock, LockOpen, ChevronDown, ChevronRight } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import Button from "@/components/ui/Button";
 
@@ -19,6 +19,15 @@ type ShareRow = {
   hasPassword: boolean;
   contactName: string | null;
   url: string;
+};
+
+type ShareVideoRow = {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  allowComments: boolean;
+  allowDownload: boolean;
+  hasOverride: boolean;
 };
 
 const EXPIRY_OPTIONS = [
@@ -60,6 +69,11 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingPasswordFor, setEditingPasswordFor] = useState<string | null>(null);
   const [passwordDraft, setPasswordDraft] = useState("");
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [videosByShareId, setVideosByShareId] = useState<Record<string, ShareVideoRow[]>>({});
+  const [videosLoadingId, setVideosLoadingId] = useState<string | null>(null);
+  const [videoBusyKey, setVideoBusyKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -149,6 +163,55 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
       toast({ kind: "error", message: e?.message || "Failed to delete link" });
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function toggleExpanded(share: ShareRow) {
+    if (expandedId === share.id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(share.id);
+    if (videosByShareId[share.id]) return; // already loaded
+
+    setVideosLoadingId(share.id);
+    try {
+      const res = await fetch(`/api/owner/shares/${share.id}/videos`, { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load videos");
+      setVideosByShareId((prev) => ({ ...prev, [share.id]: data.videos as ShareVideoRow[] }));
+    } catch (e: any) {
+      toast({ kind: "error", message: e?.message || "Failed to load videos" });
+      setExpandedId(null);
+    } finally {
+      setVideosLoadingId(null);
+    }
+  }
+
+  async function setVideoPermission(
+    shareId: string,
+    videoId: string,
+    patch: { allowComments?: boolean; allowDownload?: boolean } | { reset: true }
+  ) {
+    const key = `${shareId}:${videoId}`;
+    setVideoBusyKey(key);
+    try {
+      const res = await fetch(`/api/owner/shares/${shareId}/video-permissions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId, ...patch }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to update video permissions");
+
+      setVideosByShareId((prev) => ({
+        ...prev,
+        [shareId]: (prev[shareId] ?? []).map((v) => (v.id === videoId ? { ...v, ...data.video } : v)),
+      }));
+    } catch (e: any) {
+      toast({ kind: "error", message: e?.message || "Failed to update video permissions" });
+    } finally {
+      setVideoBusyKey(null);
     }
   }
 
@@ -327,16 +390,106 @@ export default function ManageSharesModal({ open, onClose, galleryId, galleryTit
                     {s.hasPassword ? "Change password" : "Set password"}
                   </button>
 
+                  {s.kind === "gallery" && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(s)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text-1)]"
+                    >
+                      {expandedId === s.id ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
+                      Per-video permissions
+                    </button>
+                  )}
+
                   <a
                     href={s.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text-1)]"
+                    className={[
+                      "inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text-1)]",
+                      s.kind === "gallery" ? "" : "ml-auto",
+                    ].join(" ")}
                   >
                     <Link2 className="h-3.5 w-3.5" />
                     Open
                   </a>
                 </div>
+
+                {s.kind === "gallery" && expandedId === s.id && (
+                  <div className="mt-3 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/30 p-3">
+                    {videosLoadingId === s.id ? (
+                      <div className="text-xs text-[var(--text-muted)]">Loading videos…</div>
+                    ) : (videosByShareId[s.id] ?? []).length === 0 ? (
+                      <div className="text-xs text-[var(--text-muted)]">No videos in this link.</div>
+                    ) : (
+                      <div className="flex flex-col divide-y divide-[var(--border-2)]">
+                        {(videosByShareId[s.id] ?? []).map((v) => {
+                          const vBusy = videoBusyKey === `${s.id}:${v.id}`;
+                          return (
+                            <div key={v.id} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+                              {v.thumbnailUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={v.thumbnailUrl}
+                                  alt=""
+                                  className="h-9 w-16 shrink-0 rounded-md border border-[var(--border-1)] object-cover"
+                                />
+                              ) : (
+                                <div className="h-9 w-16 shrink-0 rounded-md border border-[var(--border-1)] bg-[var(--surface-1)]" />
+                              )}
+
+                              <div className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--text-1)]">
+                                {v.title}
+                              </div>
+
+                              <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-[var(--text-2)]">
+                                <input
+                                  type="checkbox"
+                                  checked={v.allowComments}
+                                  disabled={vBusy}
+                                  onChange={(e) =>
+                                    setVideoPermission(s.id, v.id, { allowComments: e.target.checked })
+                                  }
+                                  className="h-3.5 w-3.5"
+                                />
+                                Comments
+                              </label>
+
+                              <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-[var(--text-2)]">
+                                <input
+                                  type="checkbox"
+                                  checked={v.allowDownload}
+                                  disabled={vBusy}
+                                  onChange={(e) =>
+                                    setVideoPermission(s.id, v.id, { allowDownload: e.target.checked })
+                                  }
+                                  className="h-3.5 w-3.5"
+                                />
+                                Downloads
+                              </label>
+
+                              {v.hasOverride && (
+                                <button
+                                  type="button"
+                                  disabled={vBusy}
+                                  onClick={() => setVideoPermission(s.id, v.id, { reset: true })}
+                                  className="shrink-0 text-[11px] font-semibold text-[var(--text-3)] hover:text-[var(--text-1)] disabled:opacity-50"
+                                  title="Reset to this link's default"
+                                >
+                                  Reset
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {editingPasswordFor === s.id && (
                   <div className="mt-2 flex items-center gap-2">

@@ -15,6 +15,11 @@ export type ShareContext =
       allowDownload?: boolean;
       allowComments?: boolean;
       view?: "VIEW_ONLY" | "REVIEW_DOWNLOAD";
+      // Raw per-video overrides -- see lib/share/resolveVideoPermissions.ts.
+      // Callers that need a specific video's effective permission (not just
+      // the link's own default) resolve against this with the videoId they
+      // already have, rather than this type carrying a single flat answer.
+      videoPermissionsJson?: string | null;
     }
   | null;
 
@@ -62,5 +67,6 @@ export async function getShareContextFromRequest(req: NextRequest): Promise<Shar
     allowDownload: Boolean(link.allowDownload),
     allowComments: Boolean(link.allowComments),
     view: link.view === "VIEW_ONLY" ? "VIEW_ONLY" : "REVIEW_DOWNLOAD",
+    videoPermissionsJson: link.videoPermissionsJson,
   };
 }
