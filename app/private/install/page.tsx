@@ -1,27 +1,21 @@
 // app/private/install/page.tsx
 //
-// Not linked from anywhere public -- bookmarked as
-// /private/install?key=<PRIVATE_APP_LOGIN_SECRET>, same gate as
-// /private/login. Use this (not /private/login) when the private app
-// itself needs reinstalling or reauthorizing through GHL -- e.g. after
-// publishing an updated version, or adding a new OAuth scope that an
-// existing installation needs to re-grant. A routine sign-in should use
+// Not linked from anywhere public. Gated via lib/auth/privateAppGate.ts --
+// same key-or-cookie model as /private/login (see that page's comment).
+// Use this (not /private/login) when the private app itself needs
+// reinstalling or reauthorizing through GHL -- e.g. after publishing an
+// updated version, or adding a new OAuth scope that an existing
+// installation needs to re-grant. A routine sign-in should use
 // /private/login instead, which skips this GHL round trip entirely.
 //
 // The restricted branch below is exempt from the key gate: it only ever
-// appears as the *result* of an already-attempted (already-keyed) install,
+// appears as the *result* of an already-attempted (already-gated) install,
 // and reveals nothing sensitive on its own.
 import { redirect } from "next/navigation";
-import crypto from "crypto";
+import { cookies } from "next/headers";
 import { Logo } from "@/components/brand/Logo";
 import { buttonVariants } from "@/components/ui/Button";
-
-function safeEqual(a: string, b: string) {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
+import { isValidPrivateKey, PRIVATE_GATE_COOKIE_NAME } from "@/lib/auth/privateAppGate";
 
 export default async function PrivateInstallPage({
   searchParams,
@@ -32,14 +26,16 @@ export default async function PrivateInstallPage({
   const next = encodeURIComponent(params?.next ?? "/owner/galleries");
   const restricted = params?.error === "private_app_restricted";
 
-  const secret = process.env.PRIVATE_APP_LOGIN_SECRET;
-  const hasValidKey = Boolean(secret && params?.key && safeEqual(params.key, secret));
+  const cookieStore = await cookies();
+  const hasValidKey =
+    isValidPrivateKey(params?.key) || isValidPrivateKey(cookieStore.get(PRIVATE_GATE_COOKIE_NAME)?.value);
 
   if (!restricted && !hasValidKey) {
     redirect("/pricing");
   }
 
-  const startUrl = `/api/auth/oauth/start?next=${next}&key=${encodeURIComponent(params?.key ?? "")}`;
+  const keyParam = params?.key ? `&key=${encodeURIComponent(params.key)}` : "";
+  const startUrl = `/api/auth/oauth/start?next=${next}${keyParam}`;
 
   return (
     <main className="min-h-[100dvh] grid place-items-center bg-[var(--surface-0)] text-[var(--text-1)]">

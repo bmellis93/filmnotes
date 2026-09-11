@@ -10,27 +10,27 @@
 // refresh token pair in Installation, which lib/ghl/client.ts already
 // refreshes on demand regardless of whether this cookie is current.
 //
-// Gated the same way as /api/auth/oauth/start (PRIVATE_APP_LOGIN_SECRET) --
-// not linked from anywhere public except the bookmarked /private/login page.
+// Gated the same way as /api/auth/oauth/start (lib/auth/privateAppGate.ts)
+// -- accepts the secret via ?key= or the long-lived gate cookie, and
+// refreshes that cookie on success so a bookmark of the plain
+// /private/login page (no key in the URL) keeps working.
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { setOwnerSession } from "@/lib/auth/ownerSession";
+import {
+  isValidPrivateKey,
+  PRIVATE_GATE_COOKIE_NAME,
+  privateGateCookieOptions,
+} from "@/lib/auth/privateAppGate";
 
 export const runtime = "nodejs";
-
-function safeEqual(a: string, b: string) {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
 
 export async function GET(req: NextRequest) {
   const secret = process.env.PRIVATE_APP_LOGIN_SECRET;
   const key = req.nextUrl.searchParams.get("key");
+  const cookieKey = req.cookies.get(PRIVATE_GATE_COOKIE_NAME)?.value;
 
-  if (!secret || !key || !safeEqual(key, secret)) {
+  if (!isValidPrivateKey(key) && !isValidPrivateKey(cookieKey)) {
     return new NextResponse("Not found", { status: 404 });
   }
 
@@ -54,5 +54,7 @@ export async function GET(req: NextRequest) {
   const nextParam = req.nextUrl.searchParams.get("next");
   const next = nextParam && nextParam.startsWith("/") ? nextParam : "/owner/galleries";
 
-  return NextResponse.redirect(new URL(next, req.url));
+  const res = NextResponse.redirect(new URL(next, req.url));
+  if (secret) res.cookies.set(PRIVATE_GATE_COOKIE_NAME, secret, privateGateCookieOptions());
+  return res;
 }

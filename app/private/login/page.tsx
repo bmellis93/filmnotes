@@ -1,11 +1,14 @@
 // app/private/login/page.tsx
 //
 // Not linked from anywhere public -- this is Ben's own personal entry
-// point into the private app, bookmarked as
-// /private/login?key=<PRIVATE_APP_LOGIN_SECRET>. Anyone hitting this page
-// without the right key gets sent to /pricing instead, same as if this
-// route didn't exist. /login (a sibling, public page) is a different thing
-// entirely -- the real customer reconnect flow for paid/agency orgs.
+// point into the private app. Gated via lib/auth/privateAppGate.ts: the
+// first visit needs ?key=<PRIVATE_APP_LOGIN_SECRET>, which the backing API
+// route (api/auth/private-login) turns into a long-lived httpOnly cookie --
+// after that, the plain /private/login URL (no key visible) keeps working
+// from the same browser. Anyone without either gets sent to /pricing
+// instead, same as if this route didn't exist. /login (a sibling, public
+// page) is a different thing entirely -- the real customer reconnect flow
+// for paid/agency orgs.
 //
 // Signs back into an already-installed state only -- re-issues the session
 // directly (see api/auth/private-login) rather than round-tripping through
@@ -15,16 +18,10 @@
 // reinstall through the marketplace (e.g. after an app update or a scope
 // change), use /private/install instead.
 import { redirect } from "next/navigation";
-import crypto from "crypto";
+import { cookies } from "next/headers";
 import { Logo } from "@/components/brand/Logo";
 import { buttonVariants } from "@/components/ui/Button";
-
-function safeEqual(a: string, b: string) {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
+import { isValidPrivateKey, PRIVATE_GATE_COOKIE_NAME } from "@/lib/auth/privateAppGate";
 
 export default async function PrivateLoginPage({
   searchParams,
@@ -34,15 +31,16 @@ export default async function PrivateLoginPage({
   const params = await searchParams;
   const next = encodeURIComponent(params?.next ?? "/owner/galleries");
 
-  const secret = process.env.PRIVATE_APP_LOGIN_SECRET;
-  const hasValidKey = Boolean(secret && params?.key && safeEqual(params.key, secret));
+  const cookieStore = await cookies();
+  const hasValidKey =
+    isValidPrivateKey(params?.key) || isValidPrivateKey(cookieStore.get(PRIVATE_GATE_COOKIE_NAME)?.value);
 
   if (!hasValidKey) {
     redirect("/pricing");
   }
 
-  const key = encodeURIComponent(params?.key ?? "");
-  const loginUrl = `/api/auth/private-login?next=${next}&key=${key}`;
+  const keyParam = params?.key ? `&key=${encodeURIComponent(params.key)}` : "";
+  const loginUrl = `/api/auth/private-login?next=${next}${keyParam}`;
 
   return (
     <main className="min-h-[100dvh] grid place-items-center bg-[var(--surface-0)] text-[var(--text-1)]">
