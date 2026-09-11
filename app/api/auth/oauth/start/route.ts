@@ -1,12 +1,14 @@
 // app/api/auth/oauth/start/route.ts -- the private/free GHL app.
 //
 // Deliberately not linked from anywhere public -- reached only via
-// app/private/login (Ben's own gated personal entry point), not the public
-// app/login (which is the real customer reconnect flow, for paid/agency
-// orgs only). Gated on a shared secret so a random visitor (e.g. a GHL
-// Marketplace reviewer poking around the site) can't stumble into a real
-// OAuth handshake for the private app at all, rather than relying solely
-// on the callback-side allowlist (lib/ghl/oauthCallback.ts's
+// app/private/install (Ben's own gated reinstall/reauthorize entry point;
+// a routine sign-in uses app/private/login instead, which skips this GHL
+// round trip via api/auth/private-login). Not the public app/login either,
+// which is the real customer reconnect flow, for paid/agency orgs only.
+// Gated on a shared secret so a random visitor (e.g. a GHL Marketplace
+// reviewer poking around the site) can't stumble into a real OAuth
+// handshake for the private app at all, rather than relying solely on the
+// callback-side allowlist (lib/ghl/oauthCallback.ts's
 // isAllowedNewPrivateOrg) to reject them afterward.
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";

@@ -121,13 +121,13 @@ export async function handleOauthCallback(req: NextRequest, config: GhlAppConfig
 
     // The private app has no billing at all -- it must never silently grant
     // a brand-new org free access just because someone completed the OAuth
-    // handshake (e.g. via the key-gated /private/login page). Existing orgs
-    // can always re-authenticate; a genuinely new org needs to be
+    // handshake (e.g. via the key-gated /private/install page). Existing
+    // orgs can always re-authenticate; a genuinely new org needs to be
     // explicitly allowed.
     if (config.edition === "PRIVATE") {
       const existingOrg = await prisma.org.findUnique({ where: { id: ctx.orgId }, select: { id: true } });
       if (!existingOrg && !isAllowedNewPrivateOrg(ctx.orgId)) {
-        const res = NextResponse.redirect(new URL("/private/login?error=private_app_restricted", url.origin));
+        const res = NextResponse.redirect(new URL("/private/install?error=private_app_restricted", url.origin));
         res.cookies.set("rm_oauth_nonce", "", { path: "/", maxAge: 0 });
         return res;
       }
@@ -190,7 +190,7 @@ export async function handleOauthCallback(req: NextRequest, config: GhlAppConfig
     return res;
   } catch (err: any) {
     console.error(`OAUTH CALLBACK ERROR (${config.edition}):`, err);
-    const errorPath = config.edition === "PRIVATE" ? "/private/login" : "/login";
+    const errorPath = config.edition === "PRIVATE" ? "/private/install" : "/login";
     return NextResponse.redirect(
       new URL(`${errorPath}?next=${encodeURIComponent("/owner/galleries")}`, url.origin)
     );
