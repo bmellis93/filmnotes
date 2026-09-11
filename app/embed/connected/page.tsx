@@ -25,7 +25,7 @@ export default function GhlEmbedConnectedPage() {
         <div className="mt-1 text-sm text-[var(--text-muted)]">
           {canAutoClose
             ? "This tab will close automatically."
-            : "You can close this tab and go back to HighLevel."}
+            : "You can close this tab and go back to your CRM."}
         </div>
       </div>
     </div>

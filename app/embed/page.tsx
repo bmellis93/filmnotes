@@ -42,13 +42,13 @@ export default function GhlEmbedPage() {
 
       setView({
         status: "error",
-        message: "This page needs to be opened from a HighLevel location, not the agency view.",
+        message: "This page needs to be opened from a CRM location, not the agency view.",
       });
     } catch {
       setView({
         status: "error",
         message:
-          "Couldn't reach HighLevel. Make sure this page is opened from inside your HighLevel account (it won't load standalone).",
+          "Couldn't reach your CRM. Make sure this page is opened from inside your CRM account (it won't load standalone).",
       });
     }
   }, [router]);
@@ -96,14 +96,14 @@ export default function GhlEmbedPage() {
       <div className="max-w-sm text-center">
         <div className="text-lg font-semibold">Connect this location</div>
         <div className="mt-1 text-sm text-[var(--text-muted)]">
-          Authorize once to start reviewing videos from inside HighLevel.
+          Authorize once to start reviewing videos from inside your CRM.
         </div>
         <button
           type="button"
           onClick={() => handleConnect(view.connectUrl)}
           className="mt-4 rounded-xl bg-[var(--accent-solid)] px-4 py-2 text-sm font-semibold text-[var(--accent-solid-fg)] hover:bg-[var(--accent-solid-hover)]"
         >
-          Connect HighLevel
+          Connect to your CRM
         </button>
       </div>
     </div>

@@ -1,4 +1,18 @@
 // app/login/page.tsx
+//
+// The real customer-facing reconnect flow -- requireOwnerContext()
+// redirects here whenever a paid or agency org's dashboard is opened
+// without a valid session (e.g. the session cookie expired, or the
+// dashboard URL was opened directly rather than from inside the CRM
+// iframe). Deliberately public and ungated: an existing customer has no
+// secret to present, only their CRM login. Distinct from /private/login,
+// Ben's own gated entry point into the private app.
+//
+// We don't know whether a returning visitor's org is a paid or agency
+// install until they've picked a location on GHL's own authorize screen,
+// so this offers both rather than guessing -- picking the wrong one would
+// silently reissue their org's tokens under the wrong app's client
+// credentials (see lib/ghl/oauthApps.ts's getAppConfigForOrg).
 import { Logo } from "@/components/brand/Logo";
 import { buttonVariants } from "@/components/ui/Button";
 
@@ -9,7 +23,6 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const next = encodeURIComponent(params?.next ?? "/owner/galleries");
-  const restricted = params?.error === "private_app_restricted";
   const noAccess = params?.error === "no_access";
 
   return (
@@ -17,19 +30,7 @@ export default async function LoginPage({
       <div className="w-full max-w-sm rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 p-6">
         <Logo className="mb-6" />
 
-        {restricted ? (
-          <>
-            <h1 className="text-lg">This account isn't available here</h1>
-            <p className="mt-1 text-sm text-[var(--text-3)]">
-              This sign-in is for existing FilmNotes accounts only. Looking to get
-              started? Visit our pricing page to install FilmNotes from the
-              HighLevel Marketplace.
-            </p>
-            <a href="/pricing" className={buttonVariants({ className: "mt-6 w-full" })}>
-              See pricing
-            </a>
-          </>
-        ) : noAccess ? (
+        {noAccess ? (
           <>
             <h1 className="text-lg">You don't have access to this account</h1>
             <p className="mt-1 text-sm text-[var(--text-3)]">
@@ -41,14 +42,21 @@ export default async function LoginPage({
           <>
             <h1 className="text-lg">Sign in</h1>
             <p className="mt-1 text-sm text-[var(--text-3)]">
-              Connect your HighLevel account to continue.
+              Connect your CRM account to continue.
             </p>
 
             <a
               className={buttonVariants({ className: "mt-6 w-full" })}
-              href={`/api/auth/oauth/start?next=${next}`}
+              href={`/api/auth/oauth/start/paid?next=${next}`}
             >
-              Connect HighLevel
+              Connect to your CRM
+            </a>
+
+            <a
+              href={`/api/auth/oauth/start/agency?next=${next}`}
+              className="mt-3 block text-center text-xs text-[var(--text-3)] hover:text-[var(--text-1)]"
+            >
+              Signed up through an agency? Connect here instead.
             </a>
           </>
         )}
