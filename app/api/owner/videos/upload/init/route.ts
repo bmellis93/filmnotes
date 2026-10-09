@@ -130,6 +130,8 @@ export async function POST(req: Request) {
     const video = await prisma.video.create({
       data: {
         orgId,
+        // "unknown" is ownerSession's placeholder for an embed token with no user id.
+        uploadedByUserId: owner.userId !== "unknown" ? owner.userId : null,
         title,
         description,
         status: "UPLOADED",

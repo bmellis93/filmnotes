@@ -47,11 +47,16 @@ export function buildOwnerVideoUrl(origin: string, galleryId: string | null, vid
  * caller that triggered it. Awaited (not truly "fire and forget") because
  * serverless functions can freeze right after the response is sent, which
  * would silently drop an unawaited fetch.
+ *
+ * Resolves to whether delivery actually succeeded ("skipped" when no
+ * webhook is configured), so callers that track delivery -- the batched
+ * comment flush -- can retry instead of marking a failed send as done. A
+ * non-2xx response counts as a failure, not just a thrown fetch.
  */
 async function postToOwnerWebhook(
   orgId: string,
   payload: OwnerWebhookPayload | OwnerCommentsBatchWebhookPayload
-): Promise<void> {
+): Promise<NotifyResult> {
   try {
     const org = await prisma.org.findUnique({
       where: { id: orgId },
@@ -59,24 +64,33 @@ async function postToOwnerWebhook(
     });
 
     const url = org?.notificationWebhookUrl;
-    if (!url) return;
+    if (!url) return "skipped";
 
-    await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10000),
     });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error(`Owner webhook notify failed: HTTP ${res.status} (${payload.event}, org ${orgId})`, text.slice(0, 500));
+      return "failed";
+    }
+    return "sent";
   } catch (err) {
-    console.error("Owner webhook notify failed:", err);
+    console.error(`Owner webhook notify failed (${payload.event}, org ${orgId}):`, err);
+    return "failed";
   }
 }
 
-export async function sendOwnerWebhook(payload: OwnerWebhookPayload): Promise<void> {
+export type NotifyResult = "sent" | "skipped" | "failed";
+
+export async function sendOwnerWebhook(payload: OwnerWebhookPayload): Promise<NotifyResult> {
   return postToOwnerWebhook(payload.orgId, payload);
 }
 
 /** Single POST summarizing a batch of client comments, in place of one-per-comment. */
-export async function sendOwnerBatchWebhook(payload: OwnerCommentsBatchWebhookPayload): Promise<void> {
+export async function sendOwnerBatchWebhook(payload: OwnerCommentsBatchWebhookPayload): Promise<NotifyResult> {
   return postToOwnerWebhook(payload.orgId, payload);
 }

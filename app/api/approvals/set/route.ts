@@ -131,6 +131,7 @@ export async function POST(req: NextRequest) {
     const noteHtml = trimmedNote ? `<p>${escapeHtml(trimmedNote)}</p>` : "";
     await sendOwnerEmail({
       orgId,
+      videoId: vid,
       subject: `A client ${verb} ${videoTitle}`,
       html: `
         <p>A client ${verb} <strong>${escapeHtml(videoTitle)}</strong>.</p>

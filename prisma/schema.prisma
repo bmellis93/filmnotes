@@ -117,6 +117,12 @@ model Video {
   // lib/notify/flushCommentNotifications.ts) -- null means nothing notified yet.
   commentsNotifiedThroughAt DateTime?
 
+  // AppUser.id of whoever started the upload -- owner notification emails
+  // for this video also go to that user's (GHL-synced) email. Plain id, no
+  // relation: null for videos uploaded before this existed or from an embed
+  // session with no user id, and it shouldn't block deleting a user.
+  uploadedByUserId String?
+
   galleryVideos GalleryVideo[]
 
   shareLinks ShareLink[]

@@ -58,7 +58,7 @@ export async function flushPendingCommentNotifications(
   const { galleryId, title } = await getOwnerVideoContext(videoId);
   const ownerUrl = buildOwnerVideoUrl(origin, galleryId, videoId);
 
-  await sendOwnerBatchWebhook({
+  const webhookResult = await sendOwnerBatchWebhook({
     event: "comments_batch",
     orgId: video.orgId,
     videoId,
@@ -79,8 +79,9 @@ export async function flushPendingCommentNotifications(
     .map((c) => `<li>${escapeHtml(c.body)}</li>`)
     .join("");
 
-  await sendOwnerEmail({
+  const emailResult = await sendOwnerEmail({
     orgId: video.orgId,
+    videoId,
     subject: `${who} left ${pending.length} comment${pending.length === 1 ? "" : "s"} on ${title ?? "your video"}`,
     html: `
       <p>${who} left ${pending.length} comment${pending.length === 1 ? "" : "s"} on <strong>${escapeHtml(title ?? "your video")}</strong>:</p>
@@ -88,6 +89,16 @@ export async function flushPendingCommentNotifications(
       <p><a href="${ownerUrl}">Open in FilmNotes</a></p>
     `,
   });
+
+  // Only mark these comments as notified if every configured channel
+  // actually delivered. Otherwise leave the marker where it was so the next
+  // flush (the reviewer's next page-leave, or the daily cron) retries --
+  // previously a failed/non-2xx send still advanced the marker, which lost
+  // the notification for good. A retry may re-send on a channel that did
+  // succeed; a duplicate beats a silent miss.
+  if (webhookResult === "failed" || emailResult === "failed") {
+    throw new Error(`Comment notification delivery failed (webhook: ${webhookResult}, email: ${emailResult})`);
+  }
 
   const maxCreatedAt = pending[pending.length - 1].createdAt;
 
