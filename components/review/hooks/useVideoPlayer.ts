@@ -119,6 +119,11 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
     playbackTokenUrl ? undefined : legacySrc
   );
   const currentTokenRef = useRef<string | null>(null);
+  // Safari-only AirPlay alternative <source> appended next to hls.js's
+  // ManagedMediaSource one (see the attach effect below). Its src carries
+  // the token, so it's kept current on every refresh -- Safari reads it
+  // only at the moment AirPlay is chosen, which may be hours in.
+  const airplaySourceRef = useRef<{ el: HTMLSourceElement; baseSrc: string } | null>(null);
   const isSignedRef = useRef(Boolean(playbackTokenUrl));
   // True once the server reports the video's transcoding failed (a 404 with
   // status: "FAILED") -- distinct from the ordinary "still processing" 404,
@@ -186,6 +191,9 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
         if (cancelled) return;
 
         currentTokenRef.current = data.token as string;
+        if (airplaySourceRef.current) {
+          airplaySourceRef.current.el.src = withCurrentToken(airplaySourceRef.current.baseSrc);
+        }
         muxPublicPlaybackIdRef.current = (data.muxPublicPlaybackId as string | null) ?? null;
         setResolvedSrc((prev) => {
           const next = `https://stream.mux.com/${data.playbackId}.m3u8`;
@@ -207,7 +215,7 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
       cancelled = true;
       if (refreshTimer) window.clearTimeout(refreshTimer);
     };
-  }, [playbackTokenUrl, legacySrc]);
+  }, [playbackTokenUrl, legacySrc, withCurrentToken]);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const viewerRef = useRef<HTMLDivElement | null>(null);
@@ -502,24 +510,20 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
 
     const isHlsSource = src.includes(".m3u8");
 
-    // Engines with *native* HLS support (Safari, desktop and iOS) are
-    // exactly the ones where AirPlay matters, so they're the one case where
-    // native playback is preferred over hls.js despite losing the manual
-    // quality picker: a third-party AirPlay 2 receiver (a smart TV, not an
-    // Apple TV) needs a real, independently-fetchable URL to stream video,
-    // which only native <video src> playback can hand off. hls.js's
-    // MSE/ManagedMediaSource-backed video has no such URL to hand over, so
-    // Safari silently falls back to routing audio only -- confirmed against
-    // real hardware (a third-party AirPlay 2 TV played audio with no video).
-    // feature-detected via canPlayType rather than UA-sniffed.
-    const hasNativeHls = video.canPlayType("application/vnd.apple.mpegurl") !== "";
-
-    // Elsewhere (Chrome, Firefox, Android -- no native HLS at all), keep
-    // preferring hls.js over nothing, same approach YouTube's web player
-    // uses: native playback there would give the decoder no JS API for
-    // picking a quality level, so manual selection would silently not work
-    // anywhere it's actually needed.
-    if (isHlsSource && Hls.isSupported() && !hasNativeHls) {
+    // Always prefer hls.js when MSE is available -- including Safari, which
+    // also plays HLS natively -- same approach YouTube's web player uses:
+    // native playback gives the decoder no JS API for picking a quality
+    // level, so manual selection would silently not work.
+    //
+    // AirPlay used to be the catch: hls.js uses Apple's ManagedMediaSource
+    // on Safari, and MSE-backed video has no URL a third-party AirPlay 2 TV
+    // can fetch itself, so Safari forwarded audio only (confirmed against
+    // real hardware). WebKit's supported fix is an AirPlay "source
+    // alternative": a second <source type="application/x-mpegURL"> next to
+    // the MSE one. Local playback stays on hls.js; when AirPlay is chosen,
+    // Safari hands the receiver that HLS URL instead. See
+    // https://webkit.org/blog/15036/how-to-use-media-source-extensions-with-airplay/
+    if (isHlsSource && Hls.isSupported()) {
       setIsHlsActive(true);
 
       const hls = new Hls(
@@ -536,6 +540,25 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
           : undefined
       );
       hlsRef.current = hls;
+
+      const hasNativeHls = video.canPlayType("application/vnd.apple.mpegurl") !== "";
+
+      // Registered after hls.js's own controllers (constructed above), so
+      // this runs right after its BufferController has swapped in the MSE
+      // <source> child and called load() -- and again on any re-attach from
+      // error recovery, which wipes <source> children. hls.js forces
+      // disableRemotePlayback on for ManagedMediaSource since it assumes no
+      // alternative exists; providing one is what makes it safe to undo.
+      // Safari's resource selection runs async, so this lands in time.
+      hls.on(Hls.Events.MEDIA_ATTACHING, () => {
+        if (!hasNativeHls || !video.querySelector("source")) return;
+        const alt = document.createElement("source");
+        alt.type = "application/x-mpegURL";
+        alt.src = withCurrentToken(src);
+        video.appendChild(alt);
+        video.disableRemotePlayback = false;
+        airplaySourceRef.current = { el: alt, baseSrc: src };
+      });
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_evt, data) => {
         const levels: QualityLevel[] = data.levels.map((lvl, i) => ({
@@ -575,14 +598,12 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
       hls.loadSource(src);
       hls.attachMedia(video);
     } else {
-      // Native <video src> path: Safari (for real AirPlay video support, see
-      // above) plus the old fallback case of engines with neither native
-      // HLS nor MSE. Background token refresh can't silently update an
+      // Native <video src> fallback: plain files before Mux has finished
+      // transcoding, or engines without MSE at all (very old iOS Safari). Background token refresh can't silently update an
       // already-set src the way hls.js's xhrSetup does, so playback here is
       // only guaranteed for one token TTL (4h) from when this src was set --
       // a Safari tab left open/paused longer than that could fail to fetch
-      // further segments. Not fixed here since it's a pre-existing
-      // limitation of this fallback path, just now hit by more traffic.
+      // further segments. Acceptable given how narrow this path is.
       setIsHlsActive(false);
       video.src = withCurrentToken(src);
       attemptAutoplay(video);
@@ -593,6 +614,8 @@ export function useVideoPlayer(opts: UseVideoPlayerOptions = {}): UseVideoPlayer
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
+      airplaySourceRef.current?.el.remove();
+      airplaySourceRef.current = null;
     };
   }, [resolvedSrc, attemptAutoplay, withCurrentToken]);
 
