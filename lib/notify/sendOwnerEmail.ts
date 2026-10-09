@@ -50,8 +50,10 @@ export async function sendOwnerEmail({
     const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.RESEND_FROM_EMAIL;
     if (!apiKey || !from) {
+      // Misconfiguration, not a transient failure -- "skipped" so the comment
+      // flush doesn't retry (and re-send the webhook) indefinitely over it.
       console.error("Owner email notify skipped: RESEND_API_KEY / RESEND_FROM_EMAIL not set");
-      return "failed";
+      return "skipped";
     }
 
     const res = await fetch("https://api.resend.com/emails", {
