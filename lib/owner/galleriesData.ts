@@ -7,6 +7,16 @@ function muxThumbUrl(playbackId: string, timeSeconds: number) {
   return `https://image.mux.com/${playbackId}/thumbnail.jpg?time=${timeSeconds}`;
 }
 
+/** A video's card thumbnail: its custom/uploaded one, else a Mux still. */
+export function videoThumbUrl(video: {
+  thumbnailUrl: string | null;
+  muxPublicPlaybackId: string | null;
+}): string | null {
+  if (video.thumbnailUrl) return video.thumbnailUrl;
+  if (video.muxPublicPlaybackId) return muxThumbUrl(video.muxPublicPlaybackId, 5);
+  return null;
+}
+
 // Shared by the standalone Server Component page (app/(owner)/owner/galleries)
 // and the embed's client-fetched GET /api/owner/galleries -- keeping this in
 // one place means the two entry points can't silently drift apart.
@@ -44,9 +54,8 @@ export async function getOwnerGalleriesList(orgId: string): Promise<OwnerGallery
   return galleries.map((g) => {
     const thumbs = g.videos
       .map(({ video }) => {
-        if (video.thumbnailUrl) return { url: video.thumbnailUrl, alt: video.title };
-        if (video.muxPublicPlaybackId) return { url: muxThumbUrl(video.muxPublicPlaybackId, 5), alt: video.title };
-        return null;
+        const url = videoThumbUrl(video);
+        return url ? { url, alt: video.title } : null;
       })
       .filter(Boolean)
       .slice(0, 4) as { url: string; alt?: string }[];
